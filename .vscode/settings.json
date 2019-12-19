@@ -1,5 +1,16 @@
 {
     "python.pythonPath": "./ve/wsl_ve/bin/python3",
     "autoDocstring.docstringFormat": "sphinx",
-    "editor.rulers": [80,120]
+    "editor.rulers": [
+        80,
+        120
+    ],
+    "python.linting.prospectorEnabled": true,
+    "python.linting.enabled": true,
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true
 }

@@ -1,0 +1,7 @@
+{
+    "name": "Python: Test",
+    "type": "python",
+    "request": "test",
+    "console": "integratedTerminal",
+    "envFile": "${workspaceFolder}/.env"
+}

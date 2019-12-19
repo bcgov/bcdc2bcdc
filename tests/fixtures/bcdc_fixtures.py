@@ -1,5 +1,7 @@
 
 import os
+import ckanCompare
+import pytest
 
 @pytest.fixture(scope="session")
 def remoteAPI():
@@ -13,3 +15,7 @@ def remoteAPI():
 
     rmt_api = ckanapi.RemoteCKAN(ckan_url, ckanAPIKey)
     yield rmt_api
+
+@pytest.fixture(scope="session")
+def CKANWrapper():
+    yield ckanCompare.CKANWrapper()

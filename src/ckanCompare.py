@@ -14,7 +14,7 @@ class CKANWrapper:
 
         if url is None:
             url = os.environ['CKAN_URL']
-        if self.apiKey is None:
+        if apiKey is None:
             apiKey = os.environ['CKAN_API_KEY']
         
         if not apiKey or not url:
@@ -22,7 +22,7 @@ class CKANWrapper:
                   "to this constructor or define them in env vars: CKAN_URL" + \
                   ", CKAN_API_KEY"
             raise ValueError(msg)
-        self.remoteapi = ckanapi.RemoteCKAN(self.url, apikey=self.apiKey)
+        self.remoteapi = ckanapi.RemoteCKAN(url, apikey=apiKey)
         
         # debug helper
         self.pp = pprint.PrettyPrinter(indent=4)
@@ -33,7 +33,7 @@ class CKANWrapper:
         :return: a list of package names
         :rtype: list
         """
-        packageList = []
-        pkgs = self.remoteapi.action.package_list()
-        self.pp.pprint(pkgs)
+        packageList = self.remoteapi.action.package_list()
         return packageList
+
+        
