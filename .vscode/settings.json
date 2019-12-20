@@ -12,5 +12,16 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "CKAN",
+        "ckanapi",
+        "mccabe",
+        "pycache",
+        "pylint",
+        "pytest",
+        "rtype",
+        "veryhigh"
+    ],
+    "python.formatting.provider": "black"
 }

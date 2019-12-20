@@ -1,0 +1,808 @@
+{
+    "help": "https://cati.data.gov.bc.ca/api/3/action/help_show?name=package_show",
+    "success": true,
+    "result": {
+        "license_title": "Open Government Licence - British Columbia",
+        "maintainer": null,
+        "publish_state": "PUBLISHED",
+        "relationships_as_object": [],
+        "view_audience": "Public",
+        "private": false,
+        "maintainer_email": null,
+        "num_tags": 13,
+        "id": "1130248f-f1a3-4956-8b2e-38d29d3e4af7",
+        "metadata_created": "2014-12-11T01:35:39.487742",
+        "metadata_modified": "2019-05-13T19:12:25.452653",
+        "author": "d0716cb8-7eb5-4d43-9f57-6022096fd79f",
+        "author_email": null,
+        "state": "active",
+        "version": null,
+        "license_id": "2",
+        "type": "bcdc_dataset",
+        "resources": [
+            {
+                "cache_last_updated": null,
+                "iso_topic_string": [
+                    "boundaries"
+                ],
+                "package_id": "1130248f-f1a3-4956-8b2e-38d29d3e4af7",
+                "resource_storage_access_method": "direct access",
+                "datastore_active": false,
+                "id": "f46779c9-3d5f-4ea3-9de9-9e6061285e85",
+                "description": "",
+                "state": "active",
+                "temporal_extent": {
+                    "beginning_date": "",
+                    "end_date": ""
+                },
+                "object_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW",
+                "details": "[{\"data_type\":\"NUMBER\",\"column_name\":\"ADMIN_AREA_SID\",\"short_name\":\"ADMIN_AREA\",\"data_precision\":\"38\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"PROT_NAME\",\"column_comments\":\"null\",\"column_name\":\"PROTECTED_LANDS_NAME\",\"data_precision\":\"50\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"short_name\":\"PROT_CODE\",\"column_name\":\"PROTECTED_LANDS_CODE\",\"data_precision\":\"8\"},{\"data_type\":\"VARCHAR2\",\"data_precision\":\"50\",\"column_name\":\"PROTECTED_LANDS_DESIGNATION\",\"short_name\":\"PROT_DESG\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"PARK_CLASS\",\"short_name\":\"PARK_CLASS\",\"data_precision\":\"240\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"SRV_GEN_PL\",\"column_name\":\"SURVEYOR_GENERAL_PLAN_NO\",\"column_comments\":\"null\",\"data_precision\":\"4000\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"ORCS_PRIMARY\",\"short_name\":\"ORC_PRIMRY\",\"data_precision\":\"4\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"ORC_SCNDRY\",\"column_name\":\"ORCS_SECONDARY\",\"column_comments\":\"null\",\"data_precision\":\"2\"},{\"data_type\":\"VARCHAR2\",\"column_name\":\"FEATURE_CODE\",\"column_comments\":\"null\",\"short_name\":\"F_CODE\",\"data_precision\":\"10\"},{\"data_type\":\"SDO_GEOMETRY\",\"column_name\":\"SHAPE\",\"column_comments\":\"null\",\"short_name\":\"SHAPE\",\"data_precision\":\"64\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_AREA_SQM\",\"column_comments\":\"null\",\"short_name\":\"null\",\"data_precision\":\"19\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_LENGTH_M\",\"short_name\":\"null\",\"column_comments\":\"null\",\"data_precision\":\"19\"},{\"short_name\":\"OBJECTID\",\"data_type\":\"NUMBER\",\"column_comments\":\"OBJECTID is a required attribute of feature classes and object classes in a geodatabase. \",\"column_name\":\"OBJECTID\",\"data_precision\":\"38\"},{\"column_name\":\"SE_ANNO_CAD_DATA\",\"short_name\":\"null\",\"data_type\":\"BLOB\",\"column_comments\":\"null\",\"data_precision\":\"4000\"}]",
+                "bcdc_type": "geographic",
+                "size": 0,
+                "edc_resource_type": "Data",
+                "hash": "",
+                "object_short_name": "TA_PEP_SVW",
+                "format": "other",
+                "cache_url": null,
+                "preview_info": {
+                    "preview_latitude": "48.42220743",
+                    "preview_longitude": "-123.24268434",
+                    "preview_map_service_url": "https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?",
+                    "preview_zoom_level": "7",
+                    "image_url": "",
+                    "preview_image_url": "",
+                    "link_to_imap": "http://maps.gov.bc.ca/ess/hm/imap4m/?catalogLayers=432,433,434,435&scale=9600000.0&center=-13719312.8651,6177384.75053",
+                    "layer_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW"
+                },
+                "mimetype_inner": null,
+                "geographic_extent": {
+                    "east_bound_longitude": "-110.7",
+                    "south_bound_latitude": "47.7",
+                    "west_bound_longitude": "-138.2",
+                    "north_bound_latitude": "60.5"
+                },
+                "url_type": null,
+                "object_table_comments": "null",
+                "mimetype": null,
+                "resource_storage_location": "catalogue data store",
+                "name": "BC Geographic Warehouse Custom Download",
+                "created": "2017-04-03T15:20:38.595511",
+                "url": "https://catalogue.data.gov.bc.ca/api/ofi/other/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW",
+                "last_modified": null,
+                "supplemental_info": "",
+                "resource_update_cycle": "asNeeded",
+                "position": 0,
+                "revision_id": "f96e90c7-2910-4499-8209-4897b58c1bc4"
+            },
+            {
+                "cache_last_updated": null,
+                "iso_topic_string": [
+                    "boundaries"
+                ],
+                "package_id": "1130248f-f1a3-4956-8b2e-38d29d3e4af7",
+                "resource_storage_access_method": "direct access",
+                "datastore_active": false,
+                "id": "c1bf2c35-3775-4b80-aa06-aa14630132f1",
+                "description": "For use in viewers such as ESRI tools use this truncated link: https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?   \\    \\  For information on how to connect see: http://www.data.gov.bc.ca/dbc/geographic/connect/index.page",
+                "state": "active",
+                "temporal_extent": {
+                    "beginning_date": "",
+                    "end_date": ""
+                },
+                "object_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW",
+                "details": "[{\"data_type\":\"NUMBER\",\"column_name\":\"ADMIN_AREA_SID\",\"short_name\":\"ADMIN_AREA\",\"data_precision\":\"38\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"PROT_NAME\",\"column_comments\":\"null\",\"column_name\":\"PROTECTED_LANDS_NAME\",\"data_precision\":\"50\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"short_name\":\"PROT_CODE\",\"column_name\":\"PROTECTED_LANDS_CODE\",\"data_precision\":\"8\"},{\"data_type\":\"VARCHAR2\",\"data_precision\":\"50\",\"column_name\":\"PROTECTED_LANDS_DESIGNATION\",\"short_name\":\"PROT_DESG\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"PARK_CLASS\",\"short_name\":\"PARK_CLASS\",\"data_precision\":\"240\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"SRV_GEN_PL\",\"column_name\":\"SURVEYOR_GENERAL_PLAN_NO\",\"column_comments\":\"null\",\"data_precision\":\"4000\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"ORCS_PRIMARY\",\"short_name\":\"ORC_PRIMRY\",\"data_precision\":\"4\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"ORC_SCNDRY\",\"column_name\":\"ORCS_SECONDARY\",\"column_comments\":\"null\",\"data_precision\":\"2\"},{\"data_type\":\"VARCHAR2\",\"column_name\":\"FEATURE_CODE\",\"column_comments\":\"null\",\"short_name\":\"F_CODE\",\"data_precision\":\"10\"},{\"data_type\":\"SDO_GEOMETRY\",\"column_name\":\"SHAPE\",\"column_comments\":\"null\",\"short_name\":\"SHAPE\",\"data_precision\":\"64\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_AREA_SQM\",\"column_comments\":\"null\",\"short_name\":\"null\",\"data_precision\":\"19\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_LENGTH_M\",\"short_name\":\"null\",\"column_comments\":\"null\",\"data_precision\":\"19\"},{\"short_name\":\"OBJECTID\",\"data_type\":\"NUMBER\",\"column_comments\":\"OBJECTID is a required attribute of feature classes and object classes in a geodatabase. \",\"column_name\":\"OBJECTID\",\"data_precision\":\"38\"},{\"column_name\":\"SE_ANNO_CAD_DATA\",\"short_name\":\"null\",\"data_type\":\"BLOB\",\"column_comments\":\"null\",\"data_precision\":\"4000\"}]",
+                "bcdc_type": "geographic",
+                "size": null,
+                "edc_resource_type": "Data",
+                "hash": "",
+                "object_short_name": "TA_PEP_SVW",
+                "format": "WMS",
+                "cache_url": null,
+                "preview_info": {
+                    "preview_latitude": "48.42220743",
+                    "preview_longitude": "-123.24268434",
+                    "preview_map_service_url": "https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?",
+                    "preview_zoom_level": "7",
+                    "image_url": "",
+                    "preview_image_url": "",
+                    "link_to_imap": "http://maps.gov.bc.ca/ess/hm/imap4m/?catalogLayers=432,433,434,435&scale=9600000.0&center=-13719312.8651,6177384.75053",
+                    "layer_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW"
+                },
+                "mimetype_inner": null,
+                "geographic_extent": {
+                    "east_bound_longitude": "-110.7",
+                    "south_bound_latitude": "47.7",
+                    "west_bound_longitude": "-138.2",
+                    "north_bound_latitude": "60.5"
+                },
+                "url_type": null,
+                "object_table_comments": "null",
+                "mimetype": null,
+                "resource_storage_location": "catalogue data store",
+                "name": "WMS getCapabilities request",
+                "created": "2015-12-14T10:59:59.246327",
+                "url": "https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?service=WMS&request=GetCapabilities",
+                "last_modified": null,
+                "supplemental_info": "",
+                "resource_update_cycle": "asNeeded",
+                "position": 1,
+                "revision_id": "f96e90c7-2910-4499-8209-4897b58c1bc4"
+            },
+            {
+                "cache_last_updated": null,
+                "iso_topic_string": [
+                    "boundaries"
+                ],
+                "package_id": "1130248f-f1a3-4956-8b2e-38d29d3e4af7",
+                "resource_storage_access_method": "direct access",
+                "datastore_active": false,
+                "id": "814776de-44ac-49eb-9183-54f9859c93b6",
+                "description": "For use in viewers such as Google Earth <BR> [Click here for information on how to connect](http://www2.gov.bc.ca/gov/content/data/geographic-data-services/web-based-mapping/map-services)",
+                "state": "active",
+                "temporal_extent": {
+                    "beginning_date": "",
+                    "end_date": ""
+                },
+                "object_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW",
+                "details": "[{\"data_type\":\"NUMBER\",\"column_name\":\"ADMIN_AREA_SID\",\"short_name\":\"ADMIN_AREA\",\"data_precision\":\"38\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"PROT_NAME\",\"column_comments\":\"null\",\"column_name\":\"PROTECTED_LANDS_NAME\",\"data_precision\":\"50\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"short_name\":\"PROT_CODE\",\"column_name\":\"PROTECTED_LANDS_CODE\",\"data_precision\":\"8\"},{\"data_type\":\"VARCHAR2\",\"data_precision\":\"50\",\"column_name\":\"PROTECTED_LANDS_DESIGNATION\",\"short_name\":\"PROT_DESG\",\"column_comments\":\"null\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"PARK_CLASS\",\"short_name\":\"PARK_CLASS\",\"data_precision\":\"240\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"SRV_GEN_PL\",\"column_name\":\"SURVEYOR_GENERAL_PLAN_NO\",\"column_comments\":\"null\",\"data_precision\":\"4000\"},{\"data_type\":\"VARCHAR2\",\"column_comments\":\"null\",\"column_name\":\"ORCS_PRIMARY\",\"short_name\":\"ORC_PRIMRY\",\"data_precision\":\"4\"},{\"data_type\":\"VARCHAR2\",\"short_name\":\"ORC_SCNDRY\",\"column_name\":\"ORCS_SECONDARY\",\"column_comments\":\"null\",\"data_precision\":\"2\"},{\"data_type\":\"VARCHAR2\",\"column_name\":\"FEATURE_CODE\",\"column_comments\":\"null\",\"short_name\":\"F_CODE\",\"data_precision\":\"10\"},{\"data_type\":\"SDO_GEOMETRY\",\"column_name\":\"SHAPE\",\"column_comments\":\"null\",\"short_name\":\"SHAPE\",\"data_precision\":\"64\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_AREA_SQM\",\"column_comments\":\"null\",\"short_name\":\"null\",\"data_precision\":\"19\"},{\"data_type\":\"NUMBER\",\"column_name\":\"FEATURE_LENGTH_M\",\"short_name\":\"null\",\"column_comments\":\"null\",\"data_precision\":\"19\"},{\"short_name\":\"OBJECTID\",\"data_type\":\"NUMBER\",\"column_comments\":\"OBJECTID is a required attribute of feature classes and object classes in a geodatabase. \",\"column_name\":\"OBJECTID\",\"data_precision\":\"38\"},{\"column_name\":\"SE_ANNO_CAD_DATA\",\"short_name\":\"null\",\"data_type\":\"BLOB\",\"column_comments\":\"null\",\"data_precision\":\"4000\"}]",
+                "bcdc_type": "geographic",
+                "size": 0,
+                "edc_resource_type": "Data",
+                "hash": "",
+                "object_short_name": "TA_PEP_SVW",
+                "format": "KML",
+                "cache_url": null,
+                "preview_info": {
+                    "preview_latitude": "48.42220743",
+                    "preview_longitude": "-123.24268434",
+                    "preview_map_service_url": "https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?",
+                    "preview_zoom_level": "7",
+                    "image_url": "",
+                    "preview_image_url": "",
+                    "link_to_imap": "http://maps.gov.bc.ca/ess/hm/imap4m/?catalogLayers=432,433,434,435&scale=9600000.0&center=-13719312.8651,6177384.75053",
+                    "layer_name": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW"
+                },
+                "mimetype_inner": null,
+                "geographic_extent": {
+                    "east_bound_longitude": "-110.7",
+                    "south_bound_latitude": "47.7",
+                    "west_bound_longitude": "-138.2",
+                    "north_bound_latitude": "60.5"
+                },
+                "url_type": null,
+                "object_table_comments": "null",
+                "mimetype": null,
+                "resource_storage_location": "catalogue data store",
+                "name": "KML Network Link",
+                "created": "2017-09-25T23:46:02.517655",
+                "url": "http://openmaps.gov.bc.ca/kml/geo/layers/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW_loader.kml",
+                "last_modified": null,
+                "supplemental_info": "",
+                "resource_update_cycle": "asNeeded",
+                "position": 2,
+                "revision_id": "f96e90c7-2910-4499-8209-4897b58c1bc4"
+            }
+        ],
+        "more_info": "[{\"delete\":\"0\",\"url\":\"\"}]",
+        "num_resources": 3,
+        "tags": [
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "BC Parks",
+                "id": "5118124b-40e7-4f4c-a1c4-5ca2f1aa4200",
+                "name": "BC Parks"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Boundaries",
+                "id": "a203abab-f51c-4d38-82ef-2aad2b975e41",
+                "name": "Boundaries"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Canada",
+                "id": "629dffcd-9d8a-4651-a65d-2a29e93a62b8",
+                "name": "Canada"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Crown Land",
+                "id": "f964efbf-8a9f-4201-b931-42d85a55b4bf",
+                "name": "Crown Land"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Crown Land Registry",
+                "id": "0d17e838-3920-4980-acb7-78c7ed85367e",
+                "name": "Crown Land Registry"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Crown Tenure",
+                "id": "477469fe-ba01-4e8e-964d-4913178db945",
+                "name": "Crown Tenure"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Eco Reserves",
+                "id": "aa726da6-f307-4d52-95b8-a722e11f76c1",
+                "name": "Eco Reserves"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Ecological Reserves",
+                "id": "604175be-0f79-4f32-a064-29fbefb3caf0",
+                "name": "Ecological Reserves"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Parks",
+                "id": "d868d460-3454-4545-894f-88331a3f66a8",
+                "name": "Parks"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Protected Area",
+                "id": "02970ee8-6e9f-4159-8256-3e5310382f88",
+                "name": "Protected Area"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Protected Land",
+                "id": "da2ac1dd-4d26-431a-88b9-8cd595692109",
+                "name": "Protected Land"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Provincial Parks",
+                "id": "bb140a9c-3874-4065-b28f-8e580191c349",
+                "name": "Provincial Parks"
+            },
+            {
+                "vocabulary_id": null,
+                "state": "active",
+                "display_name": "Tantalis",
+                "id": "704e4d0b-e9c8-491e-9a82-499351524eba",
+                "name": "Tantalis"
+            }
+        ],
+        "contacts": "[{\"email\":\"Glenna.Erlandson@gov.bc.ca\",\"delete\":\"0\",\"private\":\"Display\",\"role\":\"pointOfContact\",\"name\":\"Glenna Erlandson\",\"org\":\"f88f6935-107e-4e4e-82d8-f57f73f8fc40\"},{\"name\":\"Scott MacPhail\",\"org\":\"e51a8106-11c7-4436-a967-7cee18bfb159\",\"delete\":\"0\",\"role\":\"pointOfContact\",\"private\":\"Display\",\"email\":\"Scott.Macphail@gov.bc.ca\"}]",
+        "resource_status": "onGoing",
+        "purpose": "The information about parks, ecological reserves, and protected areas represented in this view can be used to support a variety of purposes including, but not limited to: land use planning processes (e.g. Forest Stewardship Planning); statutory processes (e.g. free miner notification under the Mineral Tenure Act); and timber supply review processes. The parks, ecological reserves, and protected areas represented in this view are a subset of the Crown tenure types held in the Crown Land Registry system (Tantalis). This dataset is a spatial representation of BC parks, ecological reserves and protected areas. Legal description of these boundaries can be found through the legislation or order in council describing the boundaries and any accompanying official plan.",
+        "groups": [],
+        "creator_user_id": "d0716cb8-7eb5-4d43-9f57-6022096fd79f",
+        "download_audience": "Public",
+        "retention_expiry_date": "",
+        "replacement_record": "",
+        "lineage_statement": "80% accurate. With the exception of unsurveyed (digitized) boundaries, the cadastral data is captured at a 1:1 scale.",
+        "relationships_as_subject": [],
+        "security_class": "LOW-PUBLIC",
+        "dates": "[{\"type\":\"Created\",\"date\":\"2008-11-14\",\"delete\":\"0\"}]",
+        "organization": {
+            "description": "",
+            "created": "2014-12-10T15:05:31.891884",
+            "title": "Parks Planning and Management",
+            "name": "parks-planning-and-management",
+            "is_organization": true,
+            "state": "active",
+            "image_url": "2018-10-26-004207.177396bcparks.jpg",
+            "revision_id": "d3e69cac-6f89-40c1-ac38-92f48533f907",
+            "type": "organization",
+            "id": "f88f6935-107e-4e4e-82d8-f57f73f8fc40",
+            "approval_status": "approved"
+        },
+        "name": "bc-parks-ecological-reserves-and-protected-areas",
+        "isopen": false,
+        "url": null,
+        "source_data_path": "",
+        "notes": "This dataset contains parks and protected areas managed for important conservation values and are dedicated for the preservation of their natural environments for the inspiration, use and enjoyment of the public. Places of special ecological importance are designated as ecological reserves for scientific research and educational purposes. Source data is Tantalis. \r\n*April 18, 2018: Prior to this date this dataset had one spatial boundary per park per survey plan that intersected the boundary of that park. This resulted in multiple identical boundaries for each park that had more than one survey plan overlapping it’s boundaries. The change aggregated the park data so that there is just one boundary per park with the plan numbers concatenated into a single column where each different plan number is separated by a comma.",
+        "owner_org": "f88f6935-107e-4e4e-82d8-f57f73f8fc40",
+        "extras": [
+            {
+                "key": "contacts:0:branch",
+                "value": "f88f6935-107e-4e4e-82d8-f57f73f8fc40"
+            },
+            {
+                "key": "contacts:0:delete",
+                "value": "0"
+            },
+            {
+                "key": "contacts:0:email",
+                "value": "Glenna.Erlandson@gov.bc.ca"
+            },
+            {
+                "key": "contacts:0:name",
+                "value": "Glenna Erlandson"
+            },
+            {
+                "key": "contacts:0:organization",
+                "value": "2a242ed6-e26e-4e45-b046-66bd0d402203"
+            },
+            {
+                "key": "contacts:0:private",
+                "value": "Display"
+            },
+            {
+                "key": "contacts:0:role",
+                "value": "pointOfContact"
+            },
+            {
+                "key": "contacts:1:branch",
+                "value": "e51a8106-11c7-4436-a967-7cee18bfb159"
+            },
+            {
+                "key": "contacts:1:delete",
+                "value": "0"
+            },
+            {
+                "key": "contacts:1:email",
+                "value": "Scott.Macphail@gov.bc.ca"
+            },
+            {
+                "key": "contacts:1:name",
+                "value": "Scott MacPhail"
+            },
+            {
+                "key": "contacts:1:organization",
+                "value": "3275286d-4ec9-422a-817f-ab0e232eddfe"
+            },
+            {
+                "key": "contacts:1:private",
+                "value": "Display"
+            },
+            {
+                "key": "contacts:1:role",
+                "value": "pointOfContact"
+            },
+            {
+                "key": "dates:0:date",
+                "value": "2008-11-14"
+            },
+            {
+                "key": "dates:0:type",
+                "value": "Created"
+            },
+            {
+                "key": "details:0:column_name",
+                "value": "ADMIN_AREA_SID"
+            },
+            {
+                "key": "details:0:data_precision",
+                "value": "38"
+            },
+            {
+                "key": "details:0:data_type",
+                "value": "NUMBER"
+            },
+            {
+                "key": "details:0:short_name",
+                "value": "ADMIN_AREA"
+            },
+            {
+                "key": "details:10:column_name",
+                "value": "FEATURE_AREA_SQM"
+            },
+            {
+                "key": "details:10:data_precision",
+                "value": "19"
+            },
+            {
+                "key": "details:10:data_type",
+                "value": "NUMBER"
+            },
+            {
+                "key": "details:11:column_name",
+                "value": "FEATURE_LENGTH_M"
+            },
+            {
+                "key": "details:11:data_precision",
+                "value": "19"
+            },
+            {
+                "key": "details:11:data_type",
+                "value": "NUMBER"
+            },
+            {
+                "key": "details:12:column_comments",
+                "value": "OBJECTID is a required attribute of feature classes and object classes in a geodatabase. "
+            },
+            {
+                "key": "details:12:column_name",
+                "value": "OBJECTID"
+            },
+            {
+                "key": "details:12:data_precision",
+                "value": "38"
+            },
+            {
+                "key": "details:12:data_type",
+                "value": "NUMBER"
+            },
+            {
+                "key": "details:12:short_name",
+                "value": "OBJECTID"
+            },
+            {
+                "key": "details:13:column_name",
+                "value": "SE_ANNO_CAD_DATA"
+            },
+            {
+                "key": "details:13:data_precision",
+                "value": "4000"
+            },
+            {
+                "key": "details:13:data_type",
+                "value": "BLOB"
+            },
+            {
+                "key": "details:1:column_name",
+                "value": "PROTECTED_LANDS_NAME"
+            },
+            {
+                "key": "details:1:data_precision",
+                "value": "50"
+            },
+            {
+                "key": "details:1:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:1:short_name",
+                "value": "PROT_NAME"
+            },
+            {
+                "key": "details:2:column_name",
+                "value": "PROTECTED_LANDS_CODE"
+            },
+            {
+                "key": "details:2:data_precision",
+                "value": "8"
+            },
+            {
+                "key": "details:2:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:2:short_name",
+                "value": "PROT_CODE"
+            },
+            {
+                "key": "details:3:column_name",
+                "value": "PROTECTED_LANDS_DESIGNATION"
+            },
+            {
+                "key": "details:3:data_precision",
+                "value": "50"
+            },
+            {
+                "key": "details:3:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:3:short_name",
+                "value": "PROT_DESG"
+            },
+            {
+                "key": "details:4:column_name",
+                "value": "PARK_CLASS"
+            },
+            {
+                "key": "details:4:data_precision",
+                "value": "240"
+            },
+            {
+                "key": "details:4:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:4:short_name",
+                "value": "PARK_CLASS"
+            },
+            {
+                "key": "details:5:column_name",
+                "value": "SURVEYOR_GENERAL_PLAN_NO"
+            },
+            {
+                "key": "details:5:data_precision",
+                "value": "4000"
+            },
+            {
+                "key": "details:5:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:5:short_name",
+                "value": "SRV_GEN_PL"
+            },
+            {
+                "key": "details:6:column_name",
+                "value": "ORCS_PRIMARY"
+            },
+            {
+                "key": "details:6:data_precision",
+                "value": "4"
+            },
+            {
+                "key": "details:6:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:6:short_name",
+                "value": "ORC_PRIMRY"
+            },
+            {
+                "key": "details:7:column_name",
+                "value": "ORCS_SECONDARY"
+            },
+            {
+                "key": "details:7:data_precision",
+                "value": "2"
+            },
+            {
+                "key": "details:7:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:7:short_name",
+                "value": "ORC_SCNDRY"
+            },
+            {
+                "key": "details:8:column_name",
+                "value": "FEATURE_CODE"
+            },
+            {
+                "key": "details:8:data_precision",
+                "value": "10"
+            },
+            {
+                "key": "details:8:data_type",
+                "value": "VARCHAR2"
+            },
+            {
+                "key": "details:8:short_name",
+                "value": "F_CODE"
+            },
+            {
+                "key": "details:9:column_name",
+                "value": "SHAPE"
+            },
+            {
+                "key": "details:9:data_precision",
+                "value": "64"
+            },
+            {
+                "key": "details:9:data_type",
+                "value": "SDO_GEOMETRY"
+            },
+            {
+                "key": "details:9:short_name",
+                "value": "SHAPE"
+            },
+            {
+                "key": "east_bound_longitude",
+                "value": "-110.7"
+            },
+            {
+                "key": "edc_state",
+                "value": "PUBLISHED"
+            },
+            {
+                "key": "image_display_url",
+                "value": ""
+            },
+            {
+                "key": "image_url",
+                "value": ""
+            },
+            {
+                "key": "iso_topic_string",
+                "value": "boundaries"
+            },
+            {
+                "key": "layer_name",
+                "value": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW"
+            },
+            {
+                "key": "link_to_imap",
+                "value": "http://maps.gov.bc.ca/ess/hm/imap4m/?catalogLayers=432,433,434,435&scale=9600000.0&center=-13719312.8651,6177384.75053"
+            },
+            {
+                "key": "metadata_character_set",
+                "value": "utf8"
+            },
+            {
+                "key": "metadata_language",
+                "value": "English"
+            },
+            {
+                "key": "metadata_standard_name",
+                "value": "ISO 19115, MSRM profile Version 2.0"
+            },
+            {
+                "key": "metadata_standard_version",
+                "value": "FDIS, MSRM Profile v2.0"
+            },
+            {
+                "key": "metastar_uid",
+                "value": "54259"
+            },
+            {
+                "key": "more_info:0:delete",
+                "value": "0"
+            },
+            {
+                "key": "more_info:0:link",
+                "value": ""
+            },
+            {
+                "key": "north_bound_latitude",
+                "value": "60.5"
+            },
+            {
+                "key": "object_name",
+                "value": "WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW"
+            },
+            {
+                "key": "object_short_name",
+                "value": "TA_PEP_SVW"
+            },
+            {
+                "key": "odsi_uid",
+                "value": "173844"
+            },
+            {
+                "key": "org",
+                "value": "2a242ed6-e26e-4e45-b046-66bd0d402203"
+            },
+            {
+                "key": "preview_image_url",
+                "value": ""
+            },
+            {
+                "key": "preview_latitude",
+                "value": "48.42220743"
+            },
+            {
+                "key": "preview_longitude",
+                "value": "-123.24268434"
+            },
+            {
+                "key": "preview_map_service_url",
+                "value": "https://openmaps.gov.bc.ca/geo/pub/WHSE_TANTALIS.TA_PARK_ECORES_PA_SVW/ows?"
+            },
+            {
+                "key": "preview_zoom_level",
+                "value": "7"
+            },
+            {
+                "key": "record_archive_date",
+                "value": ""
+            },
+            {
+                "key": "record_create_date",
+                "value": "2008-11-14"
+            },
+            {
+                "key": "record_last_modified",
+                "value": "2019-05-13"
+            },
+            {
+                "key": "record_publish_date",
+                "value": "2011-03-09"
+            },
+            {
+                "key": "resources:0:data_collection_end_date",
+                "value": ""
+            },
+            {
+                "key": "resources:0:data_collection_start_date",
+                "value": ""
+            },
+            {
+                "key": "resources:0:edc_resource_type",
+                "value": "Data"
+            },
+            {
+                "key": "resources:0:ofi",
+                "value": "true"
+            },
+            {
+                "key": "resources:0:projection_name",
+                "value": "EPSG_3005 - NAD83 BC Albers"
+            },
+            {
+                "key": "resources:0:resource_storage_access_method",
+                "value": "Indirect Access"
+            },
+            {
+                "key": "resources:0:resource_storage_location",
+                "value": "BCGW DataStore"
+            },
+            {
+                "key": "resources:0:resource_update_cycle",
+                "value": "daily"
+            },
+            {
+                "key": "resources:0:supplemental_info",
+                "value": ""
+            },
+            {
+                "key": "resources:1:edc_resource_type",
+                "value": "Data"
+            },
+            {
+                "key": "resources:1:projection_name",
+                "value": "EPSG_3005 - NAD83 BC Albers"
+            },
+            {
+                "key": "resources:1:resource_storage_access_method",
+                "value": "Service"
+            },
+            {
+                "key": "resources:1:resource_storage_location",
+                "value": "BCGW Data Store"
+            },
+            {
+                "key": "resources:1:resource_update_cycle",
+                "value": "daily"
+            },
+            {
+                "key": "resources:2:edc_resource_type",
+                "value": "Data"
+            },
+            {
+                "key": "resources:2:projection_name",
+                "value": "EPSG_4326 - WGS84 - World Geodetic System 1984"
+            },
+            {
+                "key": "resources:2:resource_storage_access_method",
+                "value": "Service"
+            },
+            {
+                "key": "resources:2:resource_storage_location",
+                "value": "BCGW Data Store"
+            },
+            {
+                "key": "resources:2:resource_update_cycle",
+                "value": "daily"
+            },
+            {
+                "key": "sector",
+                "value": "Natural Resources"
+            },
+            {
+                "key": "south_bound_latitude",
+                "value": "47.7"
+            },
+            {
+                "key": "spatial",
+                "value": "{\"type\": \"Polygon\", \"coordinates\": [[[-138.2, 47.7], [-138.2, 60.5], [-110.7, 60.5], [-110.7, 47.7], [-138.2, 47.7]]]}"
+            },
+            {
+                "key": "sub_org",
+                "value": "f88f6935-107e-4e4e-82d8-f57f73f8fc40"
+            },
+            {
+                "key": "west_bound_longitude",
+                "value": "-138.2"
+            }
+        ],
+        "license_url": "https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61",
+        "metadata_visibility": "Public",
+        "title": "BC Parks, Ecological Reserves, and Protected Areas",
+        "revision_id": "cf487a07-6d4b-43fe-bf52-faa41762d971",
+        "data_quality": "*April 18, 2018: Prior to this date this dataset had one spatial boundary per park per survey plan that intersected the boundary of that park. This resulted in multiple identical boundaries for each park that had more than one survey plan overlapping it’s boundaries. The change aggregated the park data so that there is just one boundary per park with the plan numbers concatenated into a single column where each different plan number is separated by a comma."
+    }
+}
