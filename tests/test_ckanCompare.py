@@ -24,3 +24,16 @@ def test_package_list_Prod(CKANWrapperProd):
 
     assert isinstance(pkgNamesProd, list)
     assert len(pkgNamesProd) > 1
+
+def test_getOrganizationNames_Test(CKANWrapperTest):
+    orgNames = CKANWrapperTest.getOrganizationNames()
+    LOGGER.debug(f"orgNames test count: {len(orgNames)}")
+    assert len(orgNames) > 10
+    assert isinstance(orgNames, list)
+
+def test_getOrganizationNames_Prod(CKANWrapperProd):
+    orgNames = CKANWrapperProd.getOrganizationNames()
+    LOGGER.debug(f"orgNames prod count: {len(orgNames)}")
+    assert len(orgNames) > 10
+    assert isinstance(orgNames, list)
+

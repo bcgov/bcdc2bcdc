@@ -15,7 +15,10 @@ class RunUpdate:
             os.environ[constants.CKAN_URL_TEST], 
             os.environ[constants.CKAN_APIKEY_TEST])
 
-    def compare():
+    def comparePackages():
+
+        # TODO: need to complete this method... ... left incomplete while work on 
+        #       org compare and update instead.
         prodPkgList = self.prodWrapper.getPackageNames()
         testPkgList = self.testWrapper.getPackageNames()
         

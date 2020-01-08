@@ -126,6 +126,17 @@ class CKANWrapper:
 
         return packageList
 
+    def getOrganizationNames(self):
+        """retrieves a list of the organizations from CKAN and 
+        returns them.
+        
+        :return: [description]
+        :rtype: [type]
+        """
+        orgList = self.remoteapi.action.organization_list()
+        return orgList
+
+
 
 class CKANComparison:
     """
