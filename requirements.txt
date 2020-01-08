@@ -1,3 +1,5 @@
 requests==2.22.0
 ckanapi==4.3
+# def requirements
 pytest==5.3.2
+black>=19

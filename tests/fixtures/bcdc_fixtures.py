@@ -1,15 +1,61 @@
-
 import os
+import CKANCompare
+import pytest
+import constants
+import ckanapi
+
 
 @pytest.fixture(scope="session")
-def remoteAPI():
-    '''
-    :return: a remote ckan object with super admin privs that has been
+def CKANParamsProd():
+    obj = {}
+    obj["ckanUrl"] = os.environ[constants.CKAN_URL_PROD]
+    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_PROD]
+    yield obj
+
+
+@pytest.fixture(scope="session")
+def CKANParamsTest():
+    obj = {}
+    obj["ckanUrl"] = os.environ[constants.CKAN_URL_TEST]
+    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_TEST]
+    yield obj
+
+
+@pytest.fixture(scope="session")
+def remoteAPITest(CKANParamsTest):
+    """
+    :return: a remote ckan object with super admin privledges that has been
              authenticated with an api key
     :rtype: ckanapi.RemoteCKAN
-    '''
-    ckanUrl = os.environ['CKAN_URL']
-    ckanAPIKey = os.environ['CKAN_API_KEY']
-
-    rmt_api = ckanapi.RemoteCKAN(ckan_url, ckanAPIKey)
+    """
+    rmt_api = ckanapi.RemoteCKAN(
+        CKANParamsTest["ckanUrl"], CKANParamsTest["ckanAPIKey"]
+    )
     yield rmt_api
+
+
+@pytest.fixture(scope="session")
+def remoteAPIProd(CKANParamsProd):
+    """
+    :return: a remote ckan object with super admin privledges that has been
+             authenticated with an api key
+    :rtype: ckanapi.RemoteCKAN
+    """
+    rmt_api = ckanapi.RemoteCKAN(
+        CKANParamsProd["ckanUrl"], CKANParamsProd["ckanAPIKey"]
+    )
+    yield rmt_api
+
+
+@pytest.fixture(scope="session")
+def CKANWrapperTest(CKANParamsTest):
+    yield CKANCompare.CKANWrapper(
+        url=CKANParamsTest["ckanUrl"], apiKey=CKANParamsTest["ckanAPIKey"]
+    )
+
+
+@pytest.fixture(scope="session")
+def CKANWrapperProd(CKANParamsProd):
+    yield CKANCompare.CKANWrapper(
+        url=CKANParamsProd["ckanUrl"], apiKey=CKANParamsProd["ckanAPIKey"]
+    )
