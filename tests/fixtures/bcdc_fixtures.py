@@ -1,5 +1,5 @@
 import os
-import CKANCompare
+import CKAN
 import pytest
 import constants
 import ckanapi
@@ -49,13 +49,13 @@ def remoteAPIProd(CKANParamsProd):
 
 @pytest.fixture(scope="session")
 def CKANWrapperTest(CKANParamsTest):
-    yield CKANCompare.CKANWrapper(
+    yield CKAN.CKANWrapper(
         url=CKANParamsTest["ckanUrl"], apiKey=CKANParamsTest["ckanAPIKey"]
     )
 
 
 @pytest.fixture(scope="session")
 def CKANWrapperProd(CKANParamsProd):
-    yield CKANCompare.CKANWrapper(
+    yield CKAN.CKANWrapper(
         url=CKANParamsProd["ckanUrl"], apiKey=CKANParamsProd["ckanAPIKey"]
     )

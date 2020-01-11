@@ -1,6 +1,6 @@
 output-format: json
 
-strictness: veryhigh
+strictness: high
 test-warnings: true
 doc-warnings: true
 

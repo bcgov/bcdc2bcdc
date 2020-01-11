@@ -11,3 +11,4 @@ print(f'devPath: {devPath}')
 sys.path.insert(0, devPath)
 
 from tests.fixtures.bcdc_fixtures import *
+from tests.fixtures.transformation_fixures import *

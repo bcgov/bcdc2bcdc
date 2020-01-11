@@ -1,0 +1,21 @@
+{
+    "users": {
+        "user_populated_properties" : {
+            "openid": true,
+            "about": true,
+            "apikey": false,
+            "display_name": true,
+            "name": true,
+            "created": true,
+            "email_hash": false,
+            "email": true,
+            "sysadmin": true,
+            "activity_streams_email_notifications": true,
+            "state": true,
+            "number_of_edits": false,
+            "fullname": true,
+            "id": false,
+            "number_created_packages": false
+        }
+    }
+}

@@ -37,3 +37,9 @@ def test_getOrganizationNames_Prod(CKANWrapperProd):
     assert len(orgNames) > 10
     assert isinstance(orgNames, list)
 
+def test_getUsers_Test(CKANWrapperTest):
+    userNames = CKANWrapperTest.getUsers(includeData=True)
+    LOGGER.debug(f"userNames: {userNames}")
+    LOGGER.debug(f"usernames test count: {len(userNames)}")
+    assert len(userNames) > 10
+    assert isinstance(userNames, list)
