@@ -8,6 +8,11 @@ CKAN_URL_SRC = "CKAN_URL_PRD"
 TRANSFORM_CONFIG_FILE_NAME = "transformationConfig.json"
 TRANSFORM_CONFIG_DIR = "config"
 
+# transformation config sections, each of these sections in the config
+# file will describe different information necessary for either the 
+# transformation of the data or the comparison
+TRANSFORM_PARAM_USER_POPULATED_PROPERTIES = 'user_populated_properties'
+
 
 # Constants used to define different transformation types.  Refer to sections
 # in the TRANSFORM_CONFIG_FILE_NAME
@@ -19,3 +24,5 @@ TRANSFORM_TYPE_PACKAGES = 'packages'
 VALID_TRANSFORM_TYPES = [TRANSFORM_TYPE_USERS, TRANSFORM_TYPE_GROUPS,
                          TRANSFORM_TYPE_ORGS, TRANSFORM_TYPE_RESOURCES, 
                          TRANSFORM_TYPE_PACKAGES]
+
+        

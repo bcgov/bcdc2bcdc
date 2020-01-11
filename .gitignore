@@ -2,3 +2,4 @@ ve/
 .env
 __pycache__
 junk.py
+junk.json
