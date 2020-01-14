@@ -23,7 +23,8 @@ def TransformFile(DataDir):
 
 
 @pytest.fixture(scope="session")
-def Transform(TransformFile):
+def TransformationConfig(TransformFile):
     LOGGER.debug(f"TransformFile: {TransformFile}")
-    trans = CKANTransform.Transform(TransformFile)
+    trans = CKANTransform.TransformationConfig(TransformFile)
     yield trans
+
