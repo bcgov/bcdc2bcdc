@@ -1,7 +1,7 @@
 """
 Methods used to compare various CKAN objects.
 
-
+ON HOLD... THINKING OF IMPLEMENTING USING PYTHON BUILT IN METHODS.
 """
 
 
