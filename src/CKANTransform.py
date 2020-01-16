@@ -47,6 +47,7 @@ def getTransformationConfig(transformConfigFile=None):
         transConfData = json.load(json_file)
     return transConfData
 
+# TODO: Idea of transform data set is going to be moved to its own module
 class TransformDataSet:
     """Ties together a transform config with the data allowing you to apply
     transformations to the dataset as a whole.  Includes a record iterator
