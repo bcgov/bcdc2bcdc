@@ -134,6 +134,7 @@ class TransformationConfig:
                         "dict / list or bool, fix the config file and rerun" + \
                         f"type is: {type(value)} value is {value}"
                     raise ValueError(msg)
+
         elif isinstance(data, list):
             if parsedData is None:
                 parsedData = []
@@ -173,6 +174,7 @@ class TransformationConfig:
                 properties = self.transConf[datatype][section]
                 LOGGER.debug(f"properties: {properties}")
                 retData = self.__parseNestForBools(properties, sectionValue)
+        
         return retData
 
     def getUserPopulatedProperties(self, datatype):
@@ -209,6 +211,16 @@ class TransformationConfig:
         autoPopulated = self.__getProperties(datatype, section, False)
         return autoPopulated
 
+    def getUniqueField(self, datatype):
+        validateType(datatype)
+        section = constants.TRANSFORM_PARAM_UNIQUE_ID_PROPERTY
+        if section not in self.transConf[datatype]:
+            msg = "The transformation configuration file does for type " + \
+                  f"{datatype} does not include a key for the section " + \
+                  f"{section}.  This is a mandatory field"
+            raise InvalidTransformationConfiguration(msg)
+        return self.transConf[datatype][section]
+
 
 class TransformRecord:
 
@@ -228,6 +240,15 @@ class TransformRecord:
 
 
     
+class InvalidTransformationConfiguration(AttributeError):
+    """Raised when values cannot be found or incorrect values are found in the 
+    transformation configuration.
+    
+    :param AttributeError: [description]
+    :type AttributeError: [type]
+    """
+    def __init__(self, message):
+        self.message = message
 
 
 class InValidTransformationTypeError(AttributeError):
