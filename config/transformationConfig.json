@@ -3,7 +3,7 @@
         "unique_id_field": "name",
         "user_populated_properties" : {
             "name": true,
-            "email": true,
+            "email": false,
             "fullname": true,
             "about": true,
             "display_name": true,

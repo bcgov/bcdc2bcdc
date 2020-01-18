@@ -12,6 +12,7 @@ import pprint
 
 import ckanapi
 import requests
+import constants
 
 # pylint: disable=logging-format-interpolation
 
@@ -22,15 +23,15 @@ class CKANWrapper:
     def __init__(self, url=None, apiKey=None):
 
         if url is None:
-            url = os.environ["CKAN_URL_TEST"]
+            url = os.environ[constants.CKAN_URL_DEST]
         if apiKey is None:
-            apiKey = os.environ["CKAN_APIKEY_TEST"]
+            apiKey = os.environ[constants.CKAN_APIKEY_DEST]
 
         if not apiKey or not url:
             msg = (
                 "Need to either provide ckan url and api key as args "
-                + "to this constructor or define them in env vars: CKAN_URL"
-                + ", CKAN_API_KEY"
+                + "to this constructor or define them in env vars: "
+                + f"{constants.CKAN_URL_DEST} and {constants.CKAN_APIKEY_DEST}"
             )
             raise ValueError(msg)
         self.remoteapi = ckanapi.RemoteCKAN(url, apikey=apiKey)

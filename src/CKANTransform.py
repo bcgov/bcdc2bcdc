@@ -178,7 +178,7 @@ class TransformationConfig:
         return retData
 
     def getUserPopulatedProperties(self, datatype):
-        """If the user populated parameters are defined in the config file for 
+        """ If the user populated parameters are defined in the config file for 
         the given datatype they will be returned.  If they are not defined then
         will return None.
         

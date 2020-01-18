@@ -105,15 +105,12 @@ class CKANRecord:
             newStruct = {}
             for key in flds2Include:
                 LOGGER.debug(f'----key: {key}')
-
-                LOGGER.debug(f'flds2Include: {flds2Include}')
-                LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
-                LOGGER.debug(f'struct: {struct}')
+                #LOGGER.debug(f'flds2Include: {flds2Include}')
+                #LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
+                #LOGGER.debug(f'struct: {struct}')
                 #LOGGER.debug(f'newStruct: {newStruct}')
-                LOGGER.debug(f'struct[key]: {struct[key]}')
+               # LOGGER.debug(f'struct[key]: {struct[key]}')
                 newStruct[key] = self.getComparableStruct(struct[key], flds2Include[key])
-                LOGGER.debug(f"newStruct: {newStruct}")
-
             LOGGER.debug(f"newStruct: {newStruct}")
             return newStruct
         elif isinstance(flds2Include, bool):
@@ -142,25 +139,65 @@ class CKANRecord:
         LOGGER.debug(f"retval from __ne__: {retVal}")
         return retVal
 
-# -------------------- DATASETS --------------------
-
 class CKANUserRecord(CKANRecord):
 
     def __init__(self, jsonData):
         CKANRecord.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS)
 
-    # def __eq__(self, ckanRecord):
-    #     """Compares a ckan record with this record.  ckan record must be a dict
-        
-    #     :param ckanRecord: [description]
-    #     :type ckanRecord: [type]
-    #     """
-    #     validateTypeIsComparable(self, ckanRecord)
-    #     comparableData_self = self.getComparableStruct()
-    #     comparableData_other = ckanRecord.getComparableStruct()
-    #     # now use deepdiff to compare those two structs
-    #     LOGGER.debug(f"comparableData_self: {comparableData_self}")
-    #     LOGGER.debug(f"comparableData_other: {comparableData_other}")
+# -------------------- DATASET DELTA ------------------
+
+class CKANDataSetDeltas:
+    """Class used to represent differences between two objects of the same 
+    type.  Includes all the information necessary to proceed with the update.
+
+    :ivar adds: A list of dicts containing the user defined properties that need
+                to be populated to create an equivalent version of the src data
+                in dest.
+    :ivar deletes: A list of the names or ids on the dest side of objects that 
+                should be deleted.
+    :ivar updates: Same structure as 'adds'. Only difference between these and
+                adds is these will get added to dest using an update method
+                vs a create method.
+    """
+    def __init__(self):
+        self.adds = []
+        self.deletes = []
+        self.updates = {}
+
+    def setAddDataset(self, addDataObj):
+        if not isinstance(addDataObj, dict):
+            msg = "addDataObj parameter needs to be type dict.  You passed " + \
+                  f"{type(addDataObj)}"
+            raise TypeError(msg)
+        self.adds.append(addDataObj)
+
+    def setDeleteDataset(self, deleteName):
+        if not isinstance(deleteName, str):
+            msg = "deleteName parameter needs to be type str.  You passed " + \
+                  f"{type(deleteName)}"
+            raise TypeError(msg)
+        self.deletes.append(deleteName)
+
+    def setUpdateDataSet(self, updateObj):
+        if not isinstance(updateObj, dict):
+            msg = "updateObj parameter needs to be type dict.  You passed " + \
+                  f"{type(updateObj)}"
+            raise TypeError(msg)
+        if 'name' not in updateObj:
+            msg = 'Update object MUST contain a property \'name\'.  Object ' + \
+                  f'provided: {updateObj}'
+            raise ValueError(msg)
+        self.updates[updateObj['name']] = updateObj
+
+    def getAddData(self):
+        return self.add
+    def getDeleteData(self):
+        return self.deletes
+
+    def getUpdateData(self):
+        return self.updates
+
+# -------------------- DATASETS --------------------
 
 
 class CKANDataSet:
@@ -178,6 +215,10 @@ class CKANDataSet:
         self.userPopulatedFields = self.transConf.getUserPopulatedProperties(self.dataType)
         self.iterCnt = 0
         self.recordConstructor = CKANRecord
+
+        # an index to help find records faster. constructed
+        # the first time a record is requested
+        self.uniqueidRecordLookup = {}
 
     def reset(self):
         """reset the iterator
@@ -201,11 +242,58 @@ class CKANDataSet:
         """Gets the record that aligns with this unique id.
         """
         retVal = None
-        for record in self:
-            if  uniqueValueToRetrieve == record.getUniqueIdentifier():
-                retVal = record
-                break
+        if not self.uniqueidRecordLookup:
+            self.reset()
+            for record in self:
+                recordID = record.getUniqueIdentifier()
+                self.uniqueidRecordLookup[recordID] = record
+                if  uniqueValueToRetrieve == recordID:
+                    retVal = record
+        else:
+            if uniqueValueToRetrieve in self.uniqueidRecordLookup:
+                retVal = self.uniqueidRecordLookup[uniqueValueToRetrieve]
         return retVal
+
+    def getDelta(self, destDataSet):
+        """Compares this dataset with the provided 'ckanDataSet' dataset and 
+        returns a CKANDatasetDelta object that identifies
+            * additions
+            * deletions
+            * updates 
+
+        Assumption is that __this__ object is the source dataset and the object  
+        in the parameter destDataSet is the destination dataset, or the dataset
+        that is to be updated
+        
+        :param destDataSet: the dataset that is going to be updated so it 
+            matches the contents of the source dataset
+        :type ckanDataSet: CKANDataSet
+        """
+        deltaObj = CKANDataSetDeltas()
+        dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
+        srcUniqueids = set(self.getUniqueIdentifiers())
+
+        # in dest but not in src, ie deletes
+        deleteSet = dstUniqueIds.difference(srcUniqueids)
+        for deleteUniqueName in deleteSet:
+            deltaObj.setDeleteDataset(deleteUniqueName)
+
+        # in source but not in dest, ie adds
+        addSet = srcUniqueids.difference(dstUniqueIds)
+        for addRecordUniqueName in addSet:
+            LOGGER.debug(f"addRecord: {addRecordUniqueName}")
+            addDataSet = self.getRecordByUniqueId(addRecordUniqueName)
+            addDataStruct = addDataSet.getComparableStruct()
+            deltaObj.setAddDataset(addDataStruct)
+
+        # deal with id of updates
+        chkForUpdateIds = srcUniqueids.intersection(dstUniqueIds)
+        for chkForUpdateId in chkForUpdateIds:
+            srcRecordForUpdate = self.getRecordByUniqueId(chkForUpdateId)
+            destRecordForUpdate = destDataSet.getRecordByUniqueId(chkForUpdateId)
+            if srcRecordForUpdate != destRecordForUpdate:
+                deltaObj.setUpdateDataSet(srcRecordForUpdate.jsonData)
+        return deltaObj
 
     def __eq__(self, ckanDataSet):
         """ Identifies if the input dataset is the same as this dataset
@@ -277,13 +365,12 @@ class CKANUsersDataSet(CKANDataSet):
         CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS)
         self.recordConstructor = CKANUserRecord
 
-
 # ----------------- EXCEPTIONS 
 
 class UserDefiniedFieldDefinitionError(Exception):
     """Raised when the transformation configuration encounters an unexpected 
     value or type
-    
+
     """
     def __init__(self, message):
         LOGGER.debug(f"error message: {message}")
