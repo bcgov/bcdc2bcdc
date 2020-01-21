@@ -150,5 +150,39 @@ class CKANWrapper:
         """
         params = {"all_fields": includeData}
         users = self.remoteapi.action.user_list(data_dict=params)
+        LOGGER.info(f"retreived {len(users)} users")
         return users
         
+    def addUser(self, userData):
+        """makes api call to ckan to create a new user
+        
+        :param userData: data used to create the user
+        :type userData: dict
+        """
+        #TODO: hasn't been tested... Waiting for proper access to prod.
+        LOGGER.debug(f"creating a new user with the data: {userData}")
+        retVal = self.remoteapi.action.user_create(data_dict=userData)
+        LOGGER.debug(f"User Created: {retVal}")
+
+    def updateUser(self, userData):
+        """receives a dictionary that it can use to update the data.
+        
+        :param userData: a dictionary with the data to use to update an existing
+            ckan user
+        :type userData: dict
+        """
+        LOGGER.debug(f"trying to update a user using the data: {userData}")
+        retVal = self.remoteapi.action.user_update(data_dict=userData)
+        LOGGER.debug(f"User Updated: {retVal}")
+
+    def deleteUser(self, userName):
+        """Deletes a user
+        
+        :param userName: [description]
+        :type userName: [type]
+        """
+        LOGGER.debug(f"trying to delete the user: {userName}")
+        userParams = {'name': userName}
+        retVal = self.remoteapi.action.user_delete(data_dict=userParams)
+        LOGGER.debug(f"User Deleted: {retVal}")
+

@@ -1,6 +1,8 @@
 {
     "users": {
         "unique_id_field": "name",
+        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat", 
+            "idir-jchurchi", "bcdc-test-cati", "crigdon", "kjnether"],
         "user_populated_properties" : {
             "name": true,
             "email": false,

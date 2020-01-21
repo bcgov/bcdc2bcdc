@@ -187,10 +187,12 @@ class CKANDataSetDeltas:
             msg = 'Update object MUST contain a property \'name\'.  Object ' + \
                   f'provided: {updateObj}'
             raise ValueError(msg)
+        LOGGER.debug(f"adding update for {updateObj['name']}")
         self.updates[updateObj['name']] = updateObj
 
     def getAddData(self):
-        return self.add
+        return self.adds
+
     def getDeleteData(self):
         return self.deletes
 

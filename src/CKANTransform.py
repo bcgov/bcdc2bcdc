@@ -212,6 +212,18 @@ class TransformationConfig:
         return autoPopulated
 
     def getUniqueField(self, datatype):
+        """retrieves from the transformtion config file the field that has been
+        identified as the unique identifier.  Usually will be 'name' but could
+        be 'id' or some other field that has a unique constraint applied to it.
+        
+        :param datatype: The type of CKAN object. users, orgs, groups, packages,
+            resources, etc...
+        :type datatype: str
+        :raises InvalidTransformationConfiguration: if the datatype is not a valid
+            data type.
+        :return: name of the field with the unique constraint
+        :rtype: str
+        """
         validateType(datatype)
         section = constants.TRANSFORM_PARAM_UNIQUE_ID_PROPERTY
         if section not in self.transConf[datatype]:
@@ -221,6 +233,23 @@ class TransformationConfig:
             raise InvalidTransformationConfiguration(msg)
         return self.transConf[datatype][section]
 
+    def getIgnoreList(self, datatype):
+        """retrieves from the config file the objects that should be ignored 
+        when it comes to any update actions.  Values in this field are values
+        identified by the config files 'unique_id_field'.  This is an optional 
+        field.  If it does not exist then the update will assume that there are 
+        no values that should be ignored.
+        """
+        validateType(datatype)
+        section = constants.TRANSFORM_PARAM_IGNORE_IDS
+        retVal = []
+        if section in self.transConf[datatype]:
+            retVal = self.transConf[datatype][section]
+            LOGGER.debug(f"found ignore list for the datatype {datatype}," + \
+                f"ignore values: {retVal}")
+        else:
+            LOGGER.info(f"no ignore values found for type: {datatype}")
+        return retVal
 
 class TransformRecord:
 
@@ -236,9 +265,6 @@ class TransformRecord:
         # for usrFields:
         #     #TODO: need to add this logic
         #     pass
-
-
-
     
 class InvalidTransformationConfiguration(AttributeError):
     """Raised when values cannot be found or incorrect values are found in the 
@@ -249,7 +275,6 @@ class InvalidTransformationConfiguration(AttributeError):
     """
     def __init__(self, message):
         self.message = message
-
 
 class InValidTransformationTypeError(AttributeError):
     def __init__(self, message):

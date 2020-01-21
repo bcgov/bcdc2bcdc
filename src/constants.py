@@ -13,6 +13,7 @@ TRANSFORM_CONFIG_DIR = "config"
 # transformation of the data or the comparison
 TRANSFORM_PARAM_USER_POPULATED_PROPERTIES = 'user_populated_properties'
 TRANSFORM_PARAM_UNIQUE_ID_PROPERTY = 'unique_id_field'
+TRANSFORM_PARAM_IGNORE_IDS = 'ignore_list'
 
 # Constants used to define different transformation types.  Refer to sections
 # in the TRANSFORM_CONFIG_FILE_NAME
