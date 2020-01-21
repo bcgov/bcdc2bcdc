@@ -8,15 +8,18 @@
     "python.linting.prospectorEnabled": true,
     "python.linting.enabled": true,
     "python.testing.pytestArgs": [
-        "tests"
+        "."
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.words": [
         "CKAN",
+        "apikey",
         "ckanapi",
+        "fullname",
         "mccabe",
+        "openid",
         "pycache",
         "pylint",
         "pytest",

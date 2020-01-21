@@ -1,8 +1,10 @@
 """
+simple access to various CKAN methods:
 
-
-
+Connection api keys are specified in environment variables defined in:
+constants.py
 """
+
 
 import logging
 import os
@@ -10,6 +12,7 @@ import pprint
 
 import ckanapi
 import requests
+import constants
 
 # pylint: disable=logging-format-interpolation
 
@@ -20,15 +23,15 @@ class CKANWrapper:
     def __init__(self, url=None, apiKey=None):
 
         if url is None:
-            url = os.environ["CKAN_URL_TEST"]
+            url = os.environ[constants.CKAN_URL_DEST]
         if apiKey is None:
-            apiKey = os.environ["CKAN_APIKEY_TEST"]
+            apiKey = os.environ[constants.CKAN_APIKEY_DEST]
 
         if not apiKey or not url:
             msg = (
                 "Need to either provide ckan url and api key as args "
-                + "to this constructor or define them in env vars: CKAN_URL"
-                + ", CKAN_API_KEY"
+                + "to this constructor or define them in env vars: "
+                + f"{constants.CKAN_URL_DEST} and {constants.CKAN_APIKEY_DEST}"
             )
             raise ValueError(msg)
         self.remoteapi = ckanapi.RemoteCKAN(url, apikey=apiKey)
@@ -136,25 +139,50 @@ class CKANWrapper:
         orgList = self.remoteapi.action.organization_list()
         return orgList
 
+    def getUsers(self, includeData=False):
+        """gets a list of users in the ckan instance
+        
+        :param includeData: when set to true returns the full user objects 
+            otherwise will only return a list of user names, defaults to False
+        :type includeData: bool, optional
+        :return: a list of usernames or userdata
+        :rtype: list
+        """
+        params = {"all_fields": includeData}
+        users = self.remoteapi.action.user_list(data_dict=params)
+        LOGGER.info(f"retreived {len(users)} users")
+        return users
+        
+    def addUser(self, userData):
+        """makes api call to ckan to create a new user
+        
+        :param userData: data used to create the user
+        :type userData: dict
+        """
+        #TODO: hasn't been tested... Waiting for proper access to prod.
+        LOGGER.debug(f"creating a new user with the data: {userData}")
+        retVal = self.remoteapi.action.user_create(data_dict=userData)
+        LOGGER.debug(f"User Created: {retVal}")
 
+    def updateUser(self, userData):
+        """receives a dictionary that it can use to update the data.
+        
+        :param userData: a dictionary with the data to use to update an existing
+            ckan user
+        :type userData: dict
+        """
+        LOGGER.debug(f"trying to update a user using the data: {userData}")
+        retVal = self.remoteapi.action.user_update(data_dict=userData)
+        LOGGER.debug(f"User Updated: {retVal}")
 
-class CKANComparison:
-    """
-    This method will do the comparison of individual packages
-    
-    """
-
-    def __init__(self):
-        pass
-
-
-class CKANPackageTransform:
-    """
-    supports transformation of ckan packages from one data model to another.
-
-    Treats package and related resources as one bundle.
-    """
-
-    def __init__(self):
-        pass
+    def deleteUser(self, userName):
+        """Deletes a user
+        
+        :param userName: [description]
+        :type userName: [type]
+        """
+        LOGGER.debug(f"trying to delete the user: {userName}")
+        userParams = {'name': userName}
+        retVal = self.remoteapi.action.user_delete(data_dict=userParams)
+        LOGGER.debug(f"User Deleted: {retVal}")
 
