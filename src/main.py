@@ -51,9 +51,12 @@ class RunUpdate:
             # TODO: create update methods
 
     def updateOrganizations(self):
-        orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
+        #orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
+        #LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
         orgDataTest = self.testWrapper.getOrganizations(includeData=True)
-        LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
+        LOGGER.debug(f"first orgDataTest record: {orgDataTest[0]}")
+
+        """
 
         prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataProd)
         testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataTest)
@@ -64,7 +67,8 @@ class RunUpdate:
             #updater = CKANUpdate.CKANOrganizationUpdate(self.testWrapper)
             #updater.update(deltaObj)
 
-
+        """
+        pass
 
     def updatePackages(self):
         # TODO: need to complete this method... ... left incomplete while work on

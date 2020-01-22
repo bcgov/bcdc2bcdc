@@ -217,7 +217,13 @@ class CKANWrapper:
         :param includeData: [description], defaults to False
         :type includeData: bool, optional
         """
+        # TODO: call as it is seems to crash with 502 error. breaking it up into 
+        #       a paged call
         orgConfig = {}
+        organizations = []
+        pageSize = 100
+        currentPosition = 0
+        pageCnt = 1
         if includeData:
             orgConfig = {
                 'order_by': 'name', 
@@ -225,8 +231,21 @@ class CKANWrapper:
                 'include_extras': True,
                 'include_tags': True,
                 'include_groups': True,
-                'include_users': True
+                'include_users': True,
+                'limit': pageSize, 
+                'offset': currentPosition
             }
-        LOGGER.debug(f"OrgConfig is {orgConfig}")
-        retVal = self.remoteapi.action.organization_list(**orgConfig)
-        return retVal
+        while True:
+            LOGGER.debug(f"OrgConfig is {orgConfig}")
+            LOGGER.debug(f"pagecount is {pageCnt}")
+
+            retVal = self.remoteapi.action.organization_list(**orgConfig)
+            LOGGER.debug(f"records returned: {len(retVal)}")
+            organizations.extend(retVal)
+
+            if not retVal or len(retVal) < pageSize:
+                break
+            currentPosition = currentPosition + pageSize
+            orgConfig['offset'] = currentPosition
+            pageCnt += 1
+        return organizations
