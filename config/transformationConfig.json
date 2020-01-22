@@ -20,7 +20,35 @@
             "id": false,
             "number_created_packages": false
         }
-    }, 
+    },
+    "groups": {
+        "unique_id_field": "name",
+        "user_populated_properties": {
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": false,
+            "image_url": false,
+            "groups": [ 
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        }
+    },
     "organizations": {
         "unique_id_field": "name",
         "user_populated_properties": {

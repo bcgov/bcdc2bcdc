@@ -183,6 +183,50 @@ class CKANWrapper:
         """
         LOGGER.debug(f"trying to delete the user: {userName}")
         userParams = {'name': userName}
-        retVal = self.remoteapi.action.user_delete(data_dict=userParams)
+        retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
+    def getGroups(self, includeData=False):
+        """Retrieves groups from ckan api
+        
+        :param includeData: if set to True will return all the properties of 
+            groups, otherwise will return only the names
+        :type includeData: bool, optional
+        :return: list of groups
+        :rtype: list (struct)
+        """
+        groupConfig = {}
+        if includeData:
+            groupConfig = {
+                'order_by': 'name', 
+                'all_fields': True,
+                'include_extras': True,
+                'include_tags': True,
+                'include_groups': True,
+                'include_users': True
+            }
+        LOGGER.debug(f"groupconfig is {groupConfig}")
+        retVal = self.remoteapi.action.group_list(**groupConfig)
+        return retVal
+
+
+    def getOrganizations(self, includeData=False):
+        """Gets organizations, if include data is false then will only
+        get the names, otherwise will return all the data for the orgs
+        
+        :param includeData: [description], defaults to False
+        :type includeData: bool, optional
+        """
+        orgConfig = {}
+        if includeData:
+            orgConfig = {
+                'order_by': 'name', 
+                'all_fields': True,
+                'include_extras': True,
+                'include_tags': True,
+                'include_groups': True,
+                'include_users': True
+            }
+        LOGGER.debug(f"OrgConfig is {orgConfig}")
+        retVal = self.remoteapi.action.organization_list(**orgConfig)
+        return retVal

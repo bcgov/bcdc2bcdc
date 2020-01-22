@@ -66,12 +66,6 @@ class TransformDataSet:
                   f"transformData provided is type: {type(transformData)}"
             raise InValidTransformationData(msg)
 
-def next(self):
-    """ Iterate over features in the dataset
-    """
-    # TODO: implement this method, should transform record one at a time
-    pass
-
     def getComparisonData(self):
         """removed machine generated data from the data allowing for comparison
         between two instances.

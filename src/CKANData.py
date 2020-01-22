@@ -105,11 +105,12 @@ class CKANRecord:
             newStruct = {}
             for key in flds2Include:
                 LOGGER.debug(f'----key: {key}')
-                #LOGGER.debug(f'flds2Include: {flds2Include}')
+                LOGGER.debug(f'flds2Include: {flds2Include}')
                 #LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
-                #LOGGER.debug(f'struct: {struct}')
+                LOGGER.debug(f'struct: {struct}')
                 #LOGGER.debug(f'newStruct: {newStruct}')
-               # LOGGER.debug(f'struct[key]: {struct[key]}')
+                #LOGGER.debug(f'struct[key]: {struct[key]}')
+               
                 newStruct[key] = self.getComparableStruct(struct[key], flds2Include[key])
             LOGGER.debug(f"newStruct: {newStruct}")
             return newStruct
@@ -142,7 +143,20 @@ class CKANRecord:
 class CKANUserRecord(CKANRecord):
 
     def __init__(self, jsonData):
-        CKANRecord.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS)
+        recordType = constants.TRANSFORM_TYPE_USERS
+        CKANRecord.__init__(self, jsonData, recordType)
+
+class CKANGroupRecord(CKANRecord):
+    def __init__(self, jsonData):
+        recordType = constants.TRANSFORM_TYPE_GROUPS
+        CKANRecord.__init__(self, jsonData, recordType)
+
+class CKANOrganizationRecord(CKANRecord):
+    def __init__(self, jsonData):
+        recordType = constants.TRANSFORM_TYPE_ORGS
+        CKANRecord.__init__(self, jsonData, recordType)
+
+
 
 # -------------------- DATASET DELTA ------------------
 
@@ -199,6 +213,14 @@ class CKANDataSetDeltas:
     def getUpdateData(self):
         return self.updates
 
+    def __str__(self):
+        # addNames = []
+        # for add in self.adds:
+        #     addNames.append(add['name'])
+        # updateNames = self.updates.keys()
+        msg = f"add datasets: {len(self.adds)}, deletes: {len(self.deletes)} " + \
+            f"updates: {len(self.updates)}"
+        return msg
 # -------------------- DATASETS --------------------
 
 
@@ -366,6 +388,16 @@ class CKANUsersDataSet(CKANDataSet):
     def __init__(self, jsonData):
         CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS)
         self.recordConstructor = CKANUserRecord
+
+class CKANGroupDataSet(CKANDataSet):
+    def __init__(self, jsonData):
+        CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_GROUPS)
+        self.recordConstructor = CKANGroupRecord
+
+class CKANOrganizationDataSet(CKANDataSet):
+    def __init__(self, jsonData):
+        CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_ORGS)
+        self.recordConstructor = CKANGroupRecord
 
 # ----------------- EXCEPTIONS 
 

@@ -36,11 +36,45 @@ class RunUpdate:
             updater = CKANUpdate.CKANUserUpdate(self.testWrapper)
             updater.update(deltaObj)
 
+    def updateGroups(self):
+        groupDataProd = self.prodWrapper.getGroups(includeData=True)
+        groupDataTest = self.testWrapper.getGroups(includeData=True)
+        #LOGGER.debug(f"Groupdata is: {groupDataProd}")
+
+        prodGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataProd)
+        testGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataTest)
+
+        if prodGroupCKANDataSet != testGroupCKANDataSet:
+            LOGGER.info('found differences between group data in src an dest')
+            deltaObj = prodGroupCKANDataSet.getDelta(testGroupCKANDataSet)
+            LOGGER.info(f"Delta obj for groups: {deltaObj}")
+            # TODO: create update methods
+
+    def updateOrganizations(self):
+        orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
+        orgDataTest = self.testWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
+
+        prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataProd)
+        testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataTest)
+        if prodOrgCKANDataSet != testOrgCKANDataSet:
+            LOGGER.info("found differences between orgs defined in prod and test")
+            deltaObj = prodOrgCKANDataSet.getDelta(testOrgCKANDataSet)
+            LOGGER.info(f"delta object: {deltaObj}")
+            #updater = CKANUpdate.CKANOrganizationUpdate(self.testWrapper)
+            #updater.update(deltaObj)
+
+
+
     def updatePackages(self):
         # TODO: need to complete this method... ... left incomplete while work on
         #       org compare and update instead.  NEEDS TO BE COMPLETED
         prodPkgList = self.prodWrapper.getPackageNames()
         testPkgList = self.testWrapper.getPackageNames()
+
+
+
+
 
 
 if __name__ == "__main__":
@@ -73,4 +107,7 @@ if __name__ == "__main__":
 
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
-    updater.updateUsers()
+    # This is complete, commented out while work on group
+    #updater.updateUsers()
+    #updater.updateGroups()
+    updater.updateOrganizations()
