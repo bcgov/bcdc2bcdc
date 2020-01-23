@@ -69,3 +69,32 @@ def test_UserData_Dataset_eq_ne(CKANData_User_Data_Raw):
     CKANData_User_Data_Raw2[0]['fullname'] = 'Commander Picard'
     ckanUserDataSet_diffRec = CKANData.CKANUsersDataSet(CKANData_User_Data_Raw2)
     assert ckanUserDataSet_diffRec != ckanUserDataSet1
+
+
+def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
+    """tests retrieval of data
+    """
+    # make sure something got returned
+    assert CKAN_Cached_Prod_Org_Data is not None
+    assert CKAN_Cached_Test_Org_Data is not None
+
+    # double check the type of the return data
+    LOGGER.debug(f"first record CKAN_Cached_Prod_Org_Data: {CKAN_Cached_Prod_Org_Data[0]}")
+    assert isinstance(CKAN_Cached_Prod_Org_Data, list)
+    LOGGER.debug(f"first record CKAN_Cached_Test_Org_Data: {CKAN_Cached_Test_Org_Data[0]}")
+    assert isinstance(CKAN_Cached_Test_Org_Data, list)
+
+    # just a sanity check here.. should be around 200+ orgs 
+    assert len(CKAN_Cached_Prod_Org_Data) > 100
+    assert len(CKAN_Cached_Test_Org_Data) > 100
+
+def test_OrgDataDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
+    prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Prod_Org_Data)
+    testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Test_Org_Data)
+
+    deltaObj = prodOrgCKANDataSet.getDelta(testOrgCKANDataSet)
+    LOGGER.info(f"delta obj: {deltaObj}")
+
+
+def test_OrgRecord(CKAN_Cached_Test_Org_Record):
+    CKAN_Cached_Test_Org_Record.getComparableStruct()

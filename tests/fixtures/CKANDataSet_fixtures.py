@@ -35,7 +35,49 @@ def CKANData_User_Data_Record(CKANData_User_Data_Set):
     #yield ckanUserDataSet
     yield ckanUserRecord
 
+@pytest.fixture(scope="session")
+def CKAN_Cached_Prod_Org_Data(TestProdOrgCacheJsonFile, CKANWrapperProd):
+    """Checks to see if a cache file exists in the junk directory.  If it does 
+    load the data from there otherwise will make an api call, cache the data for
+    next time and then return the org data
+
+    This method returns the prod data
+    """
+    #CKANWrapperProd
+    if not os.path.exists(TestProdOrgCacheJsonFile):
+        orgDataProd = CKANWrapperProd.getOrganizations(includeData=True)
+        with open(TestProdOrgCacheJsonFile, 'w') as outfile:
+            json.dump(orgDataProd, outfile)
+    else:
+        with open(TestProdOrgCacheJsonFile) as json_file:
+            orgDataProd = json.load(json_file)
+    yield orgDataProd
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Test_Org_Data(TestTestOrgCacheJsonFile, CKANWrapperTest):
+    """Checks to see if a cache file exists in the junk directory.  If it does 
+    load the data from there otherwise will make an api call, cache the data for
+    next time and then return the org data
+
+    This method returns the prod data
+    """
+    if not os.path.exists(TestTestOrgCacheJsonFile):
+        orgDataTest = CKANWrapperTest.getOrganizations(includeData=True)
+        with open(TestTestOrgCacheJsonFile, 'w') as outfile:
+            json.dump(orgDataTest, outfile)
+    else:
+        with open(TestTestOrgCacheJsonFile) as json_file:
+            orgDataTest = json.load(json_file)
+    yield orgDataTest
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Test_Org_Data_Set(CKAN_Cached_Test_Org_Data):
+    ds = CKANData.CKANOrganizationDataSet(CKAN_Cached_Test_Org_Data)
+    yield ds
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Test_Org_Record(CKAN_Cached_Test_Org_Data_Set):
+    rec = CKAN_Cached_Test_Org_Data_Set.next()
+    yield rec
 
 
-# TODO: need a test that verifies the data iterator works when no configuration is 
-# found

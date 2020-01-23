@@ -5,6 +5,7 @@
         80,
         120
     ],
+    "editor.hover.enabled": false,
     "python.linting.prospectorEnabled": true,
     "python.linting.enabled": true,
     "python.testing.pytestArgs": [

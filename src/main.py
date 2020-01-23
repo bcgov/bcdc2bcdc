@@ -51,10 +51,23 @@ class RunUpdate:
             # TODO: create update methods
 
     def updateOrganizations(self):
-        #orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
-        #LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
+        orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
         orgDataTest = self.testWrapper.getOrganizations(includeData=True)
         LOGGER.debug(f"first orgDataTest record: {orgDataTest[0]}")
+
+        # -------  TEMP: used for dev....  Move to tests.
+        # to speed up dev dumping to json
+        import json
+        junkDir = os.path.join(os.path.dirname(__file__), '..', 'junk')
+        if not os.path.exists(junkDir):
+            os.mkdir(junkDir)
+        prodJsonPath = os.path.join(junkDir, 'prod_org.json')
+        testJsonPath = os.path.join(junkDir, 'test_org.json')
+        with open(prodJsonPath, 'w') as outfile:
+            json.dump(orgDataProd, outfile)
+        with open(testJsonPath, 'w') as outfile:
+            json.dump(testJsonPath, outfile)
 
         """
 

@@ -81,6 +81,10 @@ class CKANRecord:
         :return: The new data structure with only user generated fields
         :rtype: dict or list
         """
+        # TODO: ckan obj can have embedded objects.  Example orgs contain users.
+        # when looking at users should consider the users: ignore values
+        # need to figure out how to implement this. 
+
         if struct is None and flds2Include is None:
             struct = self.jsonData
             flds2Include = self.userPopulatedFields
@@ -104,10 +108,18 @@ class CKANRecord:
         elif isinstance(flds2Include, dict):
             newStruct = {}
             for key in flds2Include:
+                # if the key is a datatype then:
+                #   - get the unique-id for that data type
+                #   - get the ignore list for that data type
+                #   - check each value to make sure its not part 
+                #        of an ignore list.  If it is then do not 
+                #        include the data.
+                # thinking this is part of a post process that should be run
+                # after the comparable struct is generated.
                 LOGGER.debug(f'----key: {key}')
-                LOGGER.debug(f'flds2Include: {flds2Include}')
+                #LOGGER.debug(f'flds2Include: {flds2Include}')
                 #LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
-                LOGGER.debug(f'struct: {struct}')
+                #LOGGER.debug(f'struct: {struct}')
                 #LOGGER.debug(f'newStruct: {newStruct}')
                 #LOGGER.debug(f'struct[key]: {struct[key]}')
                
@@ -119,10 +131,59 @@ class CKANRecord:
             return struct
         return newStruct
 
+    def removeEmbeddedIgnores(self, dataCell):
+        """many data structs in CKAN can contain embedded data types.  Example
+        of data types in CKAN: users, groups, organizations, packages, resources
+
+        An example of an embedded type... users are embedded in organizations.
+        this impacts comparison as any datatype can be configured with an 
+        ignore_list.  The ignore list identifies the unique id of records that 
+        should be ignored for that data type.
+
+        This is easy to handle for the actual data type.  Example for users, a
+        delta object is generated that identifies all the differences even if 
+        they are in the ignore_list.  The update process however will ignore any 
+        differences that correspond with the ignore list.
+
+        For embedded data we want to consider any data that is in the ignore 
+        list of embedded data types and not include these when differences between
+        two objects are calculated.
+
+        This method will recursively iterate through the data structure:
+        * identify if a property is an embedded type.
+        * If so remove any children that match the ignore_list defined for the 
+          type that is being embedded.
+        
+        :param struct: [description]
+        :type struct: [type]
+        """
+        if isinstance(dataCell.struct, dict):
+            for objProperty in dataCell.struct:
+                newCell = dataCell.generateNewCell(objProperty)
+                newCell = self.removeEmbeddedIgnores(newCell)
+            return dataCell
+        elif isinstance(dataCell.struct, list):
+            positions2Remove = []
+            for listPos in range(0, len(dataCell.struct)):
+                newCell = dataCell.generateNewCell(listPos)
+                newCell = self.removeEmbeddedIgnores(newCell)
+                
+                if not dataCell.include:
+                    positions2Remove.append(listPos)
+            dataCell.deleteIndexes(positions2Remove)
+            
+
+        else:
+            # datacell is a primitive, ie: str, int, num, etc, now time for the comparison
+            # struct is just a value,
+            return dataCell
+
     def __eq__(self, inputRecord):
         LOGGER.debug("_________ EQ CALLED")
         retVal = True
         thisComparable = self.getComparableStruct()
+        dataCell = DataCell(thisComparable)
+        dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
         inputComparable = inputRecord.getComparableStruct()
         diff = deepdiff.DeepDiff(thisComparable, 
                                  inputComparable, 
@@ -139,6 +200,82 @@ class CKANRecord:
             retVal = False
         LOGGER.debug(f"retval from __ne__: {retVal}")
         return retVal
+
+class DataCell:
+    """an object that can be used to wrap a data value and other meta data
+    about it from the perspective of a change
+    """
+    def __init__(self, struct, include=True):
+        self.struct = struct
+        self.include = include
+        self.ignoreList = None
+        self.ignoreFld = None
+        self.parent = None
+
+    def deleteIndexes(self, positions):
+        """gets a list of the position that are to be trimmed from the struct
+        
+        :param positions: a list of index positions for the self.struct list that
+            are to be removed.
+        :type positions: list of ints
+        """
+        newStruct = []
+        for pos in range(0, len(self.struct)):
+            if pos not in positions:
+                newStruct.append(self.struct[pos])
+        self.struct = newStruct
+
+    def generateNewCell(self, key, transConf):
+        """The current cell is a dict, generates a new cell for the position
+        associated with the input key.
+        
+        :param key: a key of struct property
+        :type key: str
+        """
+        newCell = DataCell(self.struct[key])
+        newCell.parent = self
+        # copy the attributes from parent to child
+        newCell.include = self.include
+        newCell.ignoreList = self.ignoreList
+        newCell.ignoreFld = self.ignoreFld
+
+        # if the key is an embedded type, users, groups, etc...
+        if key in constants.VALID_TRANSFORM_TYPES:
+            newCell.ignoreList = transConf.getIgnoreList(key)
+            newCell.ignoreFld = transConf.getUniqueField(key)
+
+        # if the key is equal to the name of the ignore field
+        if (newCell.ignoreFld) and key == newCell.ignoreFld:
+            # example key is 'name' and the ignore field is name
+            # now check to see if the value is in the ignore list
+            if newCell.struct in newCell.ignoreList:
+                # continue with example.. now the value for the key name
+                # is in the ignore list.  Set the enclosing object... self
+                # to not be included.
+                self.include = False
+        return newCell
+
+    def setParent(self, oldCell):
+        """The cell properties:
+          * include
+          * ignoreList
+          * ignoreFld
+          * assess 
+
+        should be passed on to child cells, this method will copy these properties
+        from a oldCell to the current cell
+        
+        :param oldCell: a parent datacell
+        :type oldCell: 
+        """
+        self.parent = oldCell
+        self.include = self.parent.include
+        self.ignoreList = self.parent.ignoreList
+        self.ignoreFld = self.parent.ignoreFld
+
+
+        
+
 
 class CKANUserRecord(CKANRecord):
 
@@ -358,7 +495,7 @@ class CKANDataSet:
         return retVal
 
     def next(self):
-        return __next__()
+        return self.__next__()
 
     def __next__(self):
         if self.iterCnt >= len(self.jsonData):
