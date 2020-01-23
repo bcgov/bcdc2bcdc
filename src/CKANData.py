@@ -171,8 +171,6 @@ class CKANRecord:
                 if not dataCell.include:
                     positions2Remove.append(listPos)
             dataCell.deleteIndexes(positions2Remove)
-            
-
         else:
             # datacell is a primitive, ie: str, int, num, etc, now time for the comparison
             # struct is just a value,
