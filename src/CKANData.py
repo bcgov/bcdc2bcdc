@@ -157,24 +157,28 @@ class CKANRecord:
         :param struct: [description]
         :type struct: [type]
         """
+        LOGGER.debug("---------  REMOVE EMBED IGNORES ---------")
         if isinstance(dataCell.struct, dict):
             for objProperty in dataCell.struct:
-                newCell = dataCell.generateNewCell(objProperty)
+                LOGGER.debug(f"objProperty: {objProperty}")
+                newCell = dataCell.generateNewCell(objProperty, self.transConf)
                 newCell = self.removeEmbeddedIgnores(newCell)
-            return dataCell
+                dataCell.copyChanges(newCell)
         elif isinstance(dataCell.struct, list):
             positions2Remove = []
             for listPos in range(0, len(dataCell.struct)):
-                newCell = dataCell.generateNewCell(listPos)
+                LOGGER.debug(f"listPos: {listPos} - {dataCell.struct[listPos]}")
+                newCell = dataCell.generateNewCell(listPos, self.transConf)
                 newCell = self.removeEmbeddedIgnores(newCell)
-                
-                if not dataCell.include:
+                if not newCell.include:
                     positions2Remove.append(listPos)
+                    LOGGER.debug("adding value: {listPos} to remove")
+                LOGGER.debug(f"include value: {dataCell.include}")
+            LOGGER.debug(f"removing positions: {positions2Remove}")
             dataCell.deleteIndexes(positions2Remove)
-        else:
-            # datacell is a primitive, ie: str, int, num, etc, now time for the comparison
-            # struct is just a value,
-            return dataCell
+        #LOGGER.debug(f'returning... {dataCell.struct}, {dataCell.include}')
+        #LOGGER.debug(f"ignore struct: {self.transConf.transConf['users']['ignore_list']}")
+        return dataCell
 
     def __eq__(self, inputRecord):
         LOGGER.debug("_________ EQ CALLED")
@@ -209,6 +213,11 @@ class DataCell:
         self.ignoreList = None
         self.ignoreFld = None
         self.parent = None
+        self.parentType = None
+        self.parentKey = None
+        
+    def copyChanges(self, childDataCell):
+        self.struct[childDataCell.parentKey] = childDataCell.struct
 
     def deleteIndexes(self, positions):
         """gets a list of the position that are to be trimmed from the struct
@@ -217,11 +226,17 @@ class DataCell:
             are to be removed.
         :type positions: list of ints
         """
+        LOGGER.debug(f"remove positions: {positions}")
         newStruct = []
         for pos in range(0, len(self.struct)):
             if pos not in positions:
                 newStruct.append(self.struct[pos])
+            else:
+                LOGGER.debug(f"removing: {pos} {self.struct[pos]}")
+        LOGGER.debug(f"old struct: {self.struct}")
+        LOGGER.debug(f"new struct: {newStruct}")
         self.struct = newStruct
+        # transfer changes to the parent
 
     def generateNewCell(self, key, transConf):
         """The current cell is a dict, generates a new cell for the position
@@ -232,48 +247,30 @@ class DataCell:
         """
         newCell = DataCell(self.struct[key])
         newCell.parent = self
+        newCell.parentKey = key
         # copy the attributes from parent to child
         newCell.include = self.include
         newCell.ignoreList = self.ignoreList
         newCell.ignoreFld = self.ignoreFld
+        newCell.parentType = self.parentType
 
         # if the key is an embedded type, users, groups, etc...
         if key in constants.VALID_TRANSFORM_TYPES:
             newCell.ignoreList = transConf.getIgnoreList(key)
             newCell.ignoreFld = transConf.getUniqueField(key)
-
-        # if the key is equal to the name of the ignore field
-        if (newCell.ignoreFld) and key == newCell.ignoreFld:
-            # example key is 'name' and the ignore field is name
-            # now check to see if the value is in the ignore list
-            if newCell.struct in newCell.ignoreList:
-                # continue with example.. now the value for the key name
-                # is in the ignore list.  Set the enclosing object... self
-                # to not be included.
-                self.include = False
+            newCell.parentType = key
+        
+        if newCell.parentType is not None:
+            # if the key is equal to the name of the ignore field
+            if (newCell.ignoreFld) and key == newCell.ignoreFld:
+                # example key is 'name' and the ignore field is name
+                # now check to see if the value is in the ignore list
+                if newCell.struct in newCell.ignoreList:
+                    # continue with example.. now the value for the key name
+                    # is in the ignore list.  Set the enclosing object... self
+                    # to not be included.
+                    self.include = False
         return newCell
-
-    def setParent(self, oldCell):
-        """The cell properties:
-          * include
-          * ignoreList
-          * ignoreFld
-          * assess 
-
-        should be passed on to child cells, this method will copy these properties
-        from a oldCell to the current cell
-        
-        :param oldCell: a parent datacell
-        :type oldCell: 
-        """
-        self.parent = oldCell
-        self.include = self.parent.include
-        self.ignoreList = self.parent.ignoreList
-        self.ignoreFld = self.parent.ignoreFld
-
-
-        
-
 
 class CKANUserRecord(CKANRecord):
 

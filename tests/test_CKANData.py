@@ -97,4 +97,11 @@ def test_OrgDataDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
 
 
 def test_OrgRecord(CKAN_Cached_Test_Org_Record):
-    CKAN_Cached_Test_Org_Record.getComparableStruct()
+    LOGGER.debug("testing removal of members of embedded data types ")
+    # monkey patching...
+    CKAN_Cached_Test_Org_Record.transConf.transConf['users']['ignore_list'].append('bkelsey')
+    CKAN_Cached_Test_Org_Record.transConf.transConf['users']['ignore_list'].append('dkelsey')
+    comparable = CKAN_Cached_Test_Org_Record.getComparableStruct()
+    dataCell = CKANData.DataCell(comparable)
+    dataCell = CKAN_Cached_Test_Org_Record.removeEmbeddedIgnores(dataCell)
+    LOGGER.debug(f"final modified struct: {dataCell.struct}")

@@ -55,7 +55,7 @@ class RunUpdate:
         LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
         orgDataTest = self.testWrapper.getOrganizations(includeData=True)
         LOGGER.debug(f"first orgDataTest record: {orgDataTest[0]}")
-
+        '''
         # -------  TEMP: used for dev....  Move to tests.
         # to speed up dev dumping to json
         import json
@@ -68,8 +68,7 @@ class RunUpdate:
             json.dump(orgDataProd, outfile)
         with open(testJsonPath, 'w') as outfile:
             json.dump(testJsonPath, outfile)
-
-        """
+        '''
 
         prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataProd)
         testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataTest)
@@ -80,7 +79,6 @@ class RunUpdate:
             #updater = CKANUpdate.CKANOrganizationUpdate(self.testWrapper)
             #updater.update(deltaObj)
 
-        """
         pass
 
     def updatePackages(self):
