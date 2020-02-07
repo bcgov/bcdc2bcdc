@@ -9,6 +9,7 @@ import CKANTransform
 import CKANData
 import pprint
 import copy
+import tests.helpers.CKANDataHelpers
 
 
 # pylint: disable=logging-format-interpolation
@@ -70,6 +71,23 @@ def test_UserData_Dataset_eq_ne(CKANData_User_Data_Raw):
     ckanUserDataSet_diffRec = CKANData.CKANUsersDataSet(CKANData_User_Data_Raw2)
     assert ckanUserDataSet_diffRec != ckanUserDataSet1
 
+def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_Set):
+    """Gets User Dataset objects for TEST and PROD.
+    
+    :param CKAN_Cached_Test_Org_Data: [description]
+    :type CKAN_Cached_Test_Org_Data: [type]
+    :param CKAN_Cached_Prod_Org_Data: [description]
+    :type CKAN_Cached_Prod_Org_Data: [type]
+    """
+    delta = CKAN_Cached_Prod_User_Data_Set.getDelta(CKAN_Cached_Test_User_Data_Set)
+    LOGGER.info("total users in PROD: %s", len(CKAN_Cached_Prod_User_Data_Set.jsonData))
+    LOGGER.info("total users in TEST: %s", len(CKAN_Cached_Test_User_Data_Set.jsonData))
+    LOGGER.info("delta between prod / test users: %s", delta)
+    LOGGER.info("DELETES: %s", delta.getDeleteData())
+
+def test_user_delete(CKANWrapperTest):
+
+    pass
 
 def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     """tests retrieval of data
@@ -89,14 +107,59 @@ def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     assert len(CKAN_Cached_Test_Org_Data) > 100
 
 def test_OrgDataDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
+    '''
+    test the getDelta method that identifies differences between two 
+    datasets
+    '''
     prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Prod_Org_Data)
     testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Test_Org_Data)
 
     deltaObj = prodOrgCKANDataSet.getDelta(testOrgCKANDataSet)
+    diffs = []
+    # print the updates:
+    for updtId in deltaObj.updates:
+        LOGGER.debug("update: %s", updtId)
+        srcRec = prodOrgCKANDataSet.getRecordByUniqueId(updtId)
+        destRec = testOrgCKANDataSet.getRecordByUniqueId(updtId)
+        diff = srcRec.getDiff(destRec)
+        diffs.append(diff)
+        LOGGER.debug("update: %s", updtId)
+        LOGGER.debug("diff: %s", pprint.pformat(diffs))
+
     LOGGER.info(f"delta obj: {deltaObj}")
 
 
-def test_OrgRecord(CKAN_Cached_Test_Org_Record):
+
+def test_OrgDataRecordDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
+    srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Prod_Org_Data)
+    destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Test_Org_Data)
+
+    #dstUniqueIds = set(destOrgCKANDataSet.getUniqueIdentifiers())
+    #srcUniqueIds = set(srcOrgCKANDataSet.getUniqueIdentifiers())
+
+    # check the first record in the dataset
+    srcRecord = srcOrgCKANDataSet.next()
+    srcRecordId = srcRecord.getUniqueIdentifier()
+    destRecord = destOrgCKANDataSet.getRecordByUniqueId(srcRecordId)
+
+    if srcRecord == destRecord:
+        LOGGER.debug("records are equal")
+    else:
+        LOGGER.debug("not equal")
+
+        
+
+def test_OrgRecord_removeEmbedded(CKAN_Cached_Test_Org_Record, TransformationConfig):
+    """ CKAN can have embedded data structures.  Example a org can have
+    users embedded in it.  The ETL script wants to ignores some users. 
+    removal of embedded structs will detect embedded structs by their 
+    properties and remove them from datasets that are being compared.
+    
+    
+    :param CKAN_Cached_Test_Org_Record: a ckan record that can be used to test
+        removal of embedded data
+    :type CKAN_Cached_Test_Org_Record: CKANData.CKANRecord
+    """
     LOGGER.debug("testing removal of members of embedded data types ")
     # monkey patching...
     CKAN_Cached_Test_Org_Record.transConf.transConf['users']['ignore_list'].append('bkelsey')
@@ -105,3 +168,27 @@ def test_OrgRecord(CKAN_Cached_Test_Org_Record):
     dataCell = CKANData.DataCell(comparable)
     dataCell = CKAN_Cached_Test_Org_Record.removeEmbeddedIgnores(dataCell)
     LOGGER.debug(f"final modified struct: {dataCell.struct}")
+
+    # now dataCell.struct should contain a different data structure where 
+    # the embedded data that should be ignored has been removed.
+    usersIgnore = TransformationConfig.getIgnoreList(constants.TRANSFORM_TYPE_USERS)
+    for ignoreUser in usersIgnore:
+        for userObj in dataCell.struct[constants.TRANSFORM_TYPE_USERS]:
+            assert userObj['name'] != ignoreUser
+
+def test_Org_Dataset_EmbedScrub(CKAN_Cached_Test_Org_Data_Set):
+    """Will use a cached data set, and iterate over each record verifying that
+    the ignore data does not exist after it has been removed
+    """
+    for CKANOrgRecord in CKAN_Cached_Test_Org_Data_Set:
+        LOGGER.debug(f"Org record: {CKANOrgRecord}")
+        compStruct = CKANOrgRecord.getComparableStruct()
+        dataCell = CKANData.DataCell(compStruct)
+        dataCellNoIgnores = CKANOrgRecord.removeEmbeddedIgnores(dataCell)
+        # now use the helper to make sure that all embeds have been removed.
+        ignoreChecker = tests.helpers.CKANDataHelpers.CheckForIgnores(dataCellNoIgnores.struct)
+        hasIgnores = ignoreChecker.hasIgnoreUsers()
+        LOGGER.debug(f"HAS IGNORES: {hasIgnores}")
+        if hasIgnores:
+            LOGGER.error(f"ignores not removed: {dataCellNoIgnores.struct}")
+        assert not hasIgnores

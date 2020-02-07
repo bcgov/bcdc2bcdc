@@ -20,6 +20,23 @@ def TestJunkDir():
     dataDir = os.path.abspath(dataDir)
     yield dataDir
 
+@pytest.fixture(scope="session")
+def TestProdUserCacheJsonfile(TestJunkDir):
+    """The cached version of the user data.
+    
+    :param TestJunkDir: junk directory where caches are located
+    :type TestJunkDir: str
+    """
+    yield(os.path.join(TestJunkDir, 'prod_users.json'))
+
+@pytest.fixture(scope="session")
+def TestTestUserCacheJsonfile(TestJunkDir):
+    """The cached version of the user data.
+    
+    :param TestJunkDir: junk directory where caches are located
+    :type TestJunkDir: str
+    """
+    yield(os.path.join(TestJunkDir, 'test_users.json'))
 
 @pytest.fixture(scope="session")
 def TestUserJsonFile(TestDataDir):
@@ -34,6 +51,4 @@ def TestProdOrgCacheJsonFile(TestJunkDir):
 def TestTestOrgCacheJsonFile(TestJunkDir):
     orgCacheFile = os.path.join(TestJunkDir, 'test_org.json')
     yield orgCacheFile
-
-
 

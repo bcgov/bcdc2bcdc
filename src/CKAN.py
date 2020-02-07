@@ -209,7 +209,6 @@ class CKANWrapper:
         retVal = self.remoteapi.action.group_list(**groupConfig)
         return retVal
 
-
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
@@ -249,3 +248,28 @@ class CKANWrapper:
             orgConfig['offset'] = currentPosition
             pageCnt += 1
         return organizations
+
+    def deleteOrganization(self, organizationIdentifier=None):
+        """Deletes the organization that matches the provided identifying information.
+        organizationIdentifier can be either the organization id or name
+
+        :param organizationIdentifier: The unique identifier for the organization that
+            is to be deleted.  Either 'name' or 'id'
+        :type organizationIdentifier: str 
+        """
+        LOGGER.info(f"trying to delete the organization: {orgIdentifier}")
+        orgParams = {'id': organizationIdentifier}
+        retVal = self.remoteapi.action.organization_delete(**orgParams)
+        LOGGER.debug("org delete return val: %s", retVal)
+
+    def addOrganization(self, organizationData):
+        """[summary]
+        
+        :param organizationData: [description]
+        :type organizationData: [type]
+        """
+        LOGGER.debug(f"creating a new user with the data: {userData}")
+        retVal = self.remoteapi.action.user_create(data_dict=userData)
+        LOGGER.debug(f"User Created: {retVal}")
+
+        

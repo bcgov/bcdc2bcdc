@@ -18,6 +18,7 @@ import logging
 import constants
 import CKANTransform
 import deepdiff
+import pprint
 
 LOGGER = logging.getLogger(__name__)
 
@@ -89,9 +90,7 @@ class CKANRecord:
             struct = self.jsonData
             flds2Include = self.userPopulatedFields
 
-        LOGGER.debug(f"struct: {struct}")
-        LOGGER.debug(f"flds2Include: {flds2Include}")
-
+        #LOGGER.debug(f"struct: {struct}, flds2Include: {flds2Include}")
         newStruct = None
 
         # only fields defined in this struct should be included in the output
@@ -116,7 +115,7 @@ class CKANRecord:
                 #        include the data.
                 # thinking this is part of a post process that should be run
                 # after the comparable struct is generated.
-                LOGGER.debug(f'----key: {key}')
+                #LOGGER.debug(f'----key: {key}')
                 #LOGGER.debug(f'flds2Include: {flds2Include}')
                 #LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
                 #LOGGER.debug(f'struct: {struct}')
@@ -124,10 +123,10 @@ class CKANRecord:
                 #LOGGER.debug(f'struct[key]: {struct[key]}')
                
                 newStruct[key] = self.getComparableStruct(struct[key], flds2Include[key])
-            LOGGER.debug(f"newStruct: {newStruct}")
+            #LOGGER.debug(f"newStruct: {newStruct}")
             return newStruct
         elif isinstance(flds2Include, bool):
-            LOGGER.debug(f"-----------{struct} is {flds2Include}")
+            #LOGGER.debug(f"-----------{struct} is {flds2Include}")
             return struct
         return newStruct
 
@@ -157,23 +156,26 @@ class CKANRecord:
         :param struct: [description]
         :type struct: [type]
         """
-        LOGGER.debug("---------  REMOVE EMBED IGNORES ---------")
+        # need to figure out how to remove non
+
+
+        #LOGGER.debug("---------  REMOVE EMBED IGNORES ---------")
         if isinstance(dataCell.struct, dict):
             for objProperty in dataCell.struct:
-                LOGGER.debug(f"objProperty: {objProperty}")
+                #LOGGER.debug(f"objProperty: {objProperty}")
                 newCell = dataCell.generateNewCell(objProperty, self.transConf)
                 newCell = self.removeEmbeddedIgnores(newCell)
                 dataCell.copyChanges(newCell)
         elif isinstance(dataCell.struct, list):
             positions2Remove = []
             for listPos in range(0, len(dataCell.struct)):
-                LOGGER.debug(f"listPos: {listPos} - {dataCell.struct[listPos]}")
+                #LOGGER.debug(f"listPos: {listPos} - {dataCell.struct[listPos]}")
                 newCell = dataCell.generateNewCell(listPos, self.transConf)
                 newCell = self.removeEmbeddedIgnores(newCell)
                 if not newCell.include:
                     positions2Remove.append(listPos)
-                    LOGGER.debug("adding value: {listPos} to remove")
-                LOGGER.debug(f"include value: {dataCell.include}")
+                    #LOGGER.debug("adding value: {listPos} to remove")
+                #LOGGER.debug(f"include value: {dataCell.include}")
             LOGGER.debug(f"removing positions: {positions2Remove}")
             dataCell.deleteIndexes(positions2Remove)
         #LOGGER.debug(f'returning... {dataCell.struct}, {dataCell.include}')
@@ -182,18 +184,56 @@ class CKANRecord:
 
     def __eq__(self, inputRecord):
         LOGGER.debug("_________ EQ CALLED")
+        diff = self.getDiff(inputRecord)
         retVal = True
-        thisComparable = self.getComparableStruct()
-        dataCell = DataCell(thisComparable)
-        dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
-        inputComparable = inputRecord.getComparableStruct()
-        diff = deepdiff.DeepDiff(thisComparable, 
-                                 inputComparable, 
-                                 ignore_order=True)
-        LOGGER.debug(f'diff value: {diff}')
         if diff:
             retVal = False
         return retVal
+
+    def isIgnore(self, inputRecord):
+        """evaluates the current record to determine if it is defined in the 
+        transformation config as one that should be ignored
+        
+        :param inputRecord: a data struct (dict) for the current record type
+        :type inputRecord: dict
+        """
+        retVal = False
+        ignoreField = self.transConf.getUniqueField(self.dataType)
+        ignoreList = self.transConf.getIgnoreList(self.dataType)
+        if ignoreField in inputRecord.jsonData:
+            if inputRecord.jsonData[ignoreField] in ignoreList:
+                retVal = True
+        return retVal
+    def getDiff(self, inputRecord):
+        # retrieve a comparable structure, and remove embedded data types
+        # that have been labelled as ignores
+
+        # TODO: before do anything check to see if this record is an
+        diff = None
+        # don't even go any further if the records unique id, usually name is in 
+        # the ignore list
+        if not self.isIgnore(inputRecord):
+            thisComparable = self.getComparableStruct()
+            dataCell = DataCell(thisComparable)
+            dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            thisComparable = dataCellNoIgnores.struct
+
+            # do the same thing for the input data structure
+            inputComparable = inputRecord.getComparableStruct()
+            dataCell = DataCell(inputComparable)
+            dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            inputComparable = dataCell.struct
+
+            diff = deepdiff.DeepDiff(thisComparable, 
+                                    inputComparable, 
+                                    ignore_order=True)
+
+            if diff:
+                pp = pprint.PrettyPrinter(indent=4)
+                pp.pformat(inputComparable)
+                LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
+                LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
+        return diff
 
     def __ne__(self, inputRecord):
         LOGGER.debug(f"__________ NE record CALLED: {type(inputRecord)}, {type(self)}")
@@ -311,6 +351,14 @@ class CKANDataSetDeltas:
         self.updates = {}
 
     def setAddDataset(self, addDataObj):
+        """Adds a object to the list of objects that are identified as adds
+
+        Adds are objects that exist in the source but not the destination
+        
+        :param addDataObj: data that is to be added
+        :type addDataObj: dict
+        :raises TypeError: raised if the input data is not type dict
+        """
         if not isinstance(addDataObj, dict):
             msg = "addDataObj parameter needs to be type dict.  You passed " + \
                   f"{type(addDataObj)}"
@@ -318,6 +366,15 @@ class CKANDataSetDeltas:
         self.adds.append(addDataObj)
 
     def setDeleteDataset(self, deleteName):
+        """Adds an object to the list of data that has been identified as a 
+        Delete.
+
+        Deletes are records that exist in the destination but not the source.
+        
+        :param deleteName: [description]
+        :type deleteName: [type]
+        :raises TypeError: [description]
+        """
         if not isinstance(deleteName, str):
             msg = "deleteName parameter needs to be type str.  You passed " + \
                   f"{type(deleteName)}"
@@ -325,6 +382,18 @@ class CKANDataSetDeltas:
         self.deletes.append(deleteName)
 
     def setUpdateDataSet(self, updateObj):
+        """Adds a new dataset that is to be updated.  When comparison of two 
+        objects identifies that there is a difference, the object that passed to 
+        this method is the src object with the data that should be copied to dest.
+
+        Updates are datasets that exist in source and destination however not all
+        the data is the same between them.  
+        
+        :param updateObj: the data that is to be updated
+        :type updateObj: dict
+        :raises TypeError: object must be type 'dict', raise if it is not.
+        :raises ValueError: object must have a 'name' property
+        """
         if not isinstance(updateObj, dict):
             msg = "updateObj parameter needs to be type dict.  You passed " + \
                   f"{type(updateObj)}"
@@ -488,6 +557,8 @@ class CKANDataSet:
             LOGGER.debug(f"unique ids dont align")
             retVal = False
         return retVal
+
+
 
     def next(self):
         return self.__next__()

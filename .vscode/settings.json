@@ -27,5 +27,6 @@
         "rtype",
         "veryhigh"
     ],
-    "python.formatting.provider": "black"
+    "python.formatting.provider": "black",
+    "workbench.editor.enablePreview": false
 }

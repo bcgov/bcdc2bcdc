@@ -110,7 +110,7 @@ class TransformationConfig:
         :rtype: dict or list
         """
         # TODO: could potentially implement using map. instead of if
-        LOGGER.debug(f"data: {data}, boolVal: {boolVal}, parsedData: {parsedData}")
+        #LOGGER.debug(f"data: {data}, boolVal: {boolVal}, parsedData: {parsedData}")
         if isinstance(data, dict):
             if parsedData is None:
                 parsedData = {}
@@ -118,7 +118,7 @@ class TransformationConfig:
             for key, value in data.items():
                 if isinstance(value, bool):
                     if value == boolVal:
-                        LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
+                        #LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
                         parsedData[key] = value
                 elif isinstance(value, dict) or isinstance(value, list):
                     parsedData[key] = self.__parseNestForBools(value, boolVal)
@@ -166,7 +166,7 @@ class TransformationConfig:
         if datatype in self.transConf:
             if section in self.transConf[datatype]:
                 properties = self.transConf[datatype][section]
-                LOGGER.debug(f"properties: {properties}")
+                #LOGGER.debug(f"properties: {properties}")
                 retData = self.__parseNestForBools(properties, sectionValue)
         
         return retData
