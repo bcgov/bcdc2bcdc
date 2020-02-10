@@ -71,7 +71,7 @@ def test_UserData_Dataset_eq_ne(CKANData_User_Data_Raw):
     ckanUserDataSet_diffRec = CKANData.CKANUsersDataSet(CKANData_User_Data_Raw2)
     assert ckanUserDataSet_diffRec != ckanUserDataSet1
 
-def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_Set):
+def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_Set, TransformationConfig):
     """Gets User Dataset objects for TEST and PROD.
     
     :param CKAN_Cached_Test_Org_Data: [description]
@@ -80,12 +80,33 @@ def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_S
     :type CKAN_Cached_Prod_Org_Data: [type]
     """
     delta = CKAN_Cached_Prod_User_Data_Set.getDelta(CKAN_Cached_Test_User_Data_Set)
+    
+    ignoreList = TransformationConfig.getIgnoreList(CKAN_Cached_Prod_User_Data_Set.dataType)
     LOGGER.info("total users in PROD: %s", len(CKAN_Cached_Prod_User_Data_Set.jsonData))
     LOGGER.info("total users in TEST: %s", len(CKAN_Cached_Test_User_Data_Set.jsonData))
     LOGGER.info("delta between prod / test users: %s", delta)
-    LOGGER.info("DELETES: %s", delta.getDeleteData())
 
-def test_user_delete(CKANWrapperTest):
+    deleteNames = delta.getDeleteData()
+    LOGGER.info("DELETES: %s", deleteNames)
+
+    addNames = [i['name'] for i in delta.getAddData()]
+    LOGGER.info("ADDS: %s", addNames)
+    
+    updateNames = [i for i in delta.getUpdateData().keys()]
+    LOGGER.info("UPDATES: %s", updateNames)
+
+    # make sure none of the adds are in the ignore list
+    for addName in addNames:
+        assert addName not in ignoreList
+
+    for deleteName in deleteNames:
+        assert deleteName not in ignoreList
+
+    for updateName in updateNames:
+        assert updateName not in ignoreList
+
+def test_user_delete(CKAN_Cached_Test_User_Data_Set, CKAN_Cached_Prod_User_Data_Set):
+    LOGGER.debug("type of CKAN_Cached_Test_User_Data_Set: %s", type(CKAN_Cached_Test_User_Data_Set))
 
     pass
 

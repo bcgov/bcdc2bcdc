@@ -498,24 +498,36 @@ class CKANDataSet:
         dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
         srcUniqueids = set(self.getUniqueIdentifiers())
 
+        # this is the list of id's that should be ignored when calculating the 
+        # differences between two datasets
+        ignoreList = self.transConf.getIgnoreList(self.dataType)
+
         # in dest but not in src, ie deletes
         deleteSet = dstUniqueIds.difference(srcUniqueids)
         for deleteUniqueName in deleteSet:
-            deltaObj.setDeleteDataset(deleteUniqueName)
+            #Check to see if the user is in the ignore list, only add if it is not
+            if deleteUniqueName not in ignoreList:
+                deltaObj.setDeleteDataset(deleteUniqueName)
 
         # in source but not in dest, ie adds
         addSet = srcUniqueids.difference(dstUniqueIds)
         for addRecordUniqueName in addSet:
-            LOGGER.debug(f"addRecord: {addRecordUniqueName}")
-            addDataSet = self.getRecordByUniqueId(addRecordUniqueName)
-            addDataStruct = addDataSet.getComparableStruct()
-            deltaObj.setAddDataset(addDataStruct)
+            #LOGGER.debug(f"addRecord: {addRecordUniqueName}")
+            if addRecordUniqueName not in ignoreList:
+                addDataSet = self.getRecordByUniqueId(addRecordUniqueName)
+                addDataStruct = addDataSet.getComparableStruct()
+                deltaObj.setAddDataset(addDataStruct)
 
         # deal with id of updates
+        ## iterate through unique ids that are common to both data sets
         chkForUpdateIds = srcUniqueids.intersection(dstUniqueIds)
         for chkForUpdateId in chkForUpdateIds:
             srcRecordForUpdate = self.getRecordByUniqueId(chkForUpdateId)
             destRecordForUpdate = destDataSet.getRecordByUniqueId(chkForUpdateId)
+            # if they are different then identify as an update.  The __eq__
+            # method for dataset is getting called here.  __eq__ will consider
+            # ignore lists.  If record is in ignore list it will return as 
+            # equal.
             if srcRecordForUpdate != destRecordForUpdate:
                 deltaObj.setUpdateDataSet(srcRecordForUpdate.jsonData)
         return deltaObj
@@ -557,8 +569,6 @@ class CKANDataSet:
             LOGGER.debug(f"unique ids dont align")
             retVal = False
         return retVal
-
-
 
     def next(self):
         return self.__next__()
