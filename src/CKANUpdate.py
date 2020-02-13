@@ -122,8 +122,7 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
             LOGGER.debug(f"adding dataset: {addData['name']}")
-            self.CKANWrap.addUser(addData)
-            raise Exception("stopping here")
+            #self.CKANWrap.addUser(addData)
 
     def doDeletes(self, delStruct):
         #TODO: Thinking again deletes are likely something we do not want to do 
@@ -133,16 +132,14 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
 
         for deleteUser in delStruct:
             LOGGER.info(f"removing the user: {deleteUser} from the destination")
-            # self.CKANWrap.deleteUser(addData)
-
-        # TODO: add logic here to perform the deletes
+            # self.CKANWrap.deleteUser(deleteUser)
 
     def doUpdates(self, updates):
         updateNames = list(updates.keys())
         updateNames.sort()
         for updt in updateNames:
             LOGGER.info(f"updating the user : {updt}")
-            # self.CKANWrap.updateUser(addData)
+            self.CKANWrap.updateUser(updates[updt])
         LOGGER.debug("updates complete")
 
 # for subsequent types will define their own updates, or think about making a 

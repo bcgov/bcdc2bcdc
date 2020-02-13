@@ -10,20 +10,30 @@ import pytest
 import json
 import logging
 import CKANData
+import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
 
-# @pytest.fixture(scope="session")
-# def CKAN_Prod_data
-
 
 @pytest.fixture(scope="session")
-def CKANData_User_Data_Raw(TestUserJsonFile):
+def CKANData_User_Data_Raw():
     """returns a user dataset
     """
-    with open(TestUserJsonFile) as json_file:
-        CkanUserData = json.load(json_file)
-    yield CkanUserData
+    ckanDataHelper = CKANDataHelpers.CKAN_Test_Data()
+    ckanTestUserData = ckanDataHelper.getTestUserData()
+    yield ckanTestUserData
+
+@pytest.fixture(scope="session")
+def CKANData_Test_User_Data_Raw(CKANData_User_Data_Raw):
+    UserData = CKANData_User_Data_Raw[constants.TEST_USER_DATA_POSITION]
+    UserData['password'] = 'dummy'
+    del UserData['id']
+    del UserData['number_of_edits']
+    del UserData['email_hash']
+    del UserData['created']
+    del UserData['apikey']
+    LOGGER.debug("user: %s", UserData)
+    yield UserData
 
 @pytest.fixture(scope="session")
 def CKANData_User_Data_Set(CKANData_User_Data_Raw):

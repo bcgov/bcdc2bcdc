@@ -7,7 +7,8 @@ import logging.config
 import os
 import posixpath
 
-LOGGER = logging.getLogger(__name__)
+# set scope for the logger
+LOGGER = None
 
 
 class RunUpdate:
@@ -104,7 +105,8 @@ if __name__ == "__main__":
         constants.LOGGING_CONFIG_FILE_NAME,
     )
     logConfigFile = os.path.abspath(logConfigFile)
-    # output log file for roller if implemented
+
+    # output log file for roller if implemented... not implemented atm
     logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
     if not os.path.exists(logOutputsDir):
@@ -123,6 +125,6 @@ if __name__ == "__main__":
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
     # This is complete, commented out while work on group
-    #updater.updateUsers()
+    updater.updateUsers()
     #updater.updateGroups()
-    updater.updateOrganizations()
+    #updater.updateOrganizations()

@@ -161,8 +161,9 @@ class CKANWrapper:
         """
         #TODO: hasn't been tested... Waiting for proper access to prod.
         LOGGER.debug(f"creating a new user with the data: {userData}")
-        retVal = self.remoteapi.action.user_create(data_dict=userData)
+        retVal = self.remoteapi.action.user_create(**userData)
         LOGGER.debug(f"User Created: {retVal}")
+        return retVal
 
     def updateUser(self, userData):
         """receives a dictionary that it can use to update the data.
@@ -171,18 +172,50 @@ class CKANWrapper:
             ckan user
         :type userData: dict
         """
+
+        # wants the id to be the user or the name
+        if 'id' not in userData and 'name' in userData:
+            userData['id'] = userData['name']
+            del userData['name']
         LOGGER.debug(f"trying to update a user using the data: {userData}")
-        retVal = self.remoteapi.action.user_update(data_dict=userData)
+        # data_dict=userData
+        retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Updated: {retVal}")
 
-    def deleteUser(self, userName):
+    def getUser(self, userId):
+        LOGGER.debug(f"Getting the information associated with user: {userId}")
+        userData = {"id": userId}
+        retVal = self.remoteapi.action.user_show(**userData)
+        return retVal
+
+    def userExists(self, userId):
+        exists = True
+        userData = {"id": userId}
+        try:
+            retVal = self.remoteapi.action.user_show(**userData)
+        except ckanapi.errors.NotFound:
+            retVal = False
+        return retVal
+
+    def userIsDeleted(self, userId):
+        retVal = False
+        try:
+            user = self.getUser(userId)
+            if user['state'] == 'deleted':
+                retVal = True
+        except ckanapi.errors.NotFound:
+            LOGGER.info("user %s was not found", userId)
+            pass
+        return retVal
+
+    def deleteUser(self, userId):
         """Deletes a user
         
-        :param userName: [description]
-        :type userName: [type]
+        :param userId: either the user 'id' or 'name'
+        :type userId: str
         """
-        LOGGER.debug(f"trying to delete the user: {userName}")
-        userParams = {'name': userName}
+        LOGGER.debug(f"trying to delete the user: {userId}")
+        userParams = {'id': userId}
         retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 

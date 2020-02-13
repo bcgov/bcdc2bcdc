@@ -91,7 +91,7 @@ def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_S
 
     addNames = [i['name'] for i in delta.getAddData()]
     LOGGER.info("ADDS: %s", addNames)
-    
+
     updateNames = [i for i in delta.getUpdateData().keys()]
     LOGGER.info("UPDATES: %s", updateNames)
 
@@ -105,10 +105,6 @@ def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_S
     for updateName in updateNames:
         assert updateName not in ignoreList
 
-def test_user_delete(CKAN_Cached_Test_User_Data_Set, CKAN_Cached_Prod_User_Data_Set):
-    LOGGER.debug("type of CKAN_Cached_Test_User_Data_Set: %s", type(CKAN_Cached_Test_User_Data_Set))
-
-    pass
 
 def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     """tests retrieval of data

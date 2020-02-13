@@ -30,3 +30,11 @@ VALID_TRANSFORM_TYPES = [TRANSFORM_TYPE_USERS, TRANSFORM_TYPE_GROUPS,
 LOGGING_CONFIG_FILE_NAME = 'logger.config'
 LOGGING_OUTPUT_DIR = 'logs'
 LOGGING_OUTPUT_FILE_NAME = 'bcdc2bcdc.log'
+
+CACHE_PROD_USERS_FILE = 'prod_users.json'
+CACHE_TEST_USERS_FILE = 'test_users.json'
+CACHE_PROD_ORG_FILE = 'prod_org.json'
+CACHE_TEST_ORG_FILE = 'test_org.json'
+
+TEST_USER_DATA_FILE = "users_src.json" # defines dummy users that are used in testing
+TEST_USER_DATA_POSITION = 0 # when a single user is required this is the one used.

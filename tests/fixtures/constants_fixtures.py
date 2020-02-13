@@ -5,50 +5,60 @@ Defined constants that are used by the tests
 import pytest
 import logging
 import os.path
+import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def TestDataDir():
-    dataDir = os.path.join(os.path.dirname(__file__), '..', 'data')
-    dataDir = os.path.abspath(dataDir)
-    yield dataDir
+    #dataDir = os.path.join(os.path.dirname(__file__), '..', 'data')
+    #dataDir = os.path.abspath(dataDir)
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    yield helper.getDataDirFullPath()
 
 @pytest.fixture(scope="session")
 def TestJunkDir():
-    dataDir = os.path.join(os.path.dirname(__file__), '..', 'junk')
-    dataDir = os.path.abspath(dataDir)
-    yield dataDir
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    datadir = helper.getJunkDirFullPath()
+    yield datadir
 
 @pytest.fixture(scope="session")
-def TestProdUserCacheJsonfile(TestJunkDir):
+def TestProdUserCacheJsonfile():
     """The cached version of the user data.
     
     :param TestJunkDir: junk directory where caches are located
     :type TestJunkDir: str
     """
-    yield(os.path.join(TestJunkDir, 'prod_users.json'))
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    prodJson = helper.getProdUsersCacheJsonFile()
+    yield prodJson
 
 @pytest.fixture(scope="session")
-def TestTestUserCacheJsonfile(TestJunkDir):
+def TestTestUserCacheJsonfile():
     """The cached version of the user data.
     
     :param TestJunkDir: junk directory where caches are located
     :type TestJunkDir: str
     """
-    yield(os.path.join(TestJunkDir, 'test_users.json'))
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    testJson = helper.getTestUsersCacheJsonFile()
+    yield testJson
+    
+@pytest.fixture(scope="session")
+def TestUserJsonFile():
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    testUserDataFilePath = helper.getTestUsersDataFilePath()
+    LOGGER.debug("testUserDataFilePath: %s", testUserDataFilePath)
+    yield testUserDataFilePath
 
 @pytest.fixture(scope="session")
-def TestUserJsonFile(TestDataDir):
-    yield os.path.join(TestDataDir, 'users_src.json')
+def TestProdOrgCacheJsonFile():
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    prodOrgCacheFilePath = helper.getProdOrgsCacheJsonFile()
+    yield prodOrgCacheFilePath
 
 @pytest.fixture(scope="session")
-def TestProdOrgCacheJsonFile(TestJunkDir):
-    orgCacheFile = os.path.join(TestJunkDir, 'prod_org.json')
-    yield orgCacheFile
-
-@pytest.fixture(scope="session")
-def TestTestOrgCacheJsonFile(TestJunkDir):
-    orgCacheFile = os.path.join(TestJunkDir, 'test_org.json')
-    yield orgCacheFile
-
+def TestTestOrgCacheJsonFile():
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    testOrgCacheFilePath = helper.getTestOrgsCacheJsonFile
+    yield testOrgCacheFilePath
