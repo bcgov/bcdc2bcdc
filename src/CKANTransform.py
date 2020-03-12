@@ -9,6 +9,8 @@ import os.path
 
 import constants
 
+# pylint: disable=logging-format-interpolation, logging-not-lazy
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -29,6 +31,7 @@ def validateType(dataType):
         )
         raise InValidTransformationTypeError(msg)
 
+
 def getTransformationConfig(transformConfigFile=None):
     """Loads the transformation configuration information from the config file
     
@@ -47,6 +50,7 @@ def getTransformationConfig(transformConfigFile=None):
         transConfData = json.load(json_file)
     return transConfData
 
+
 # TODO: Idea of transform data set is going to be moved to its own module
 class TransformDataSet:
     """Ties together a transform config with the data allowing you to apply
@@ -56,24 +60,28 @@ class TransformDataSet:
     
     :raises InValidTransformationData: [description]
     """
+
     def __init__(self, dataType, transformData, transformConfigFile=None):
         self.validateType(dataType)
         self.dataType = dataType
         self.transformData = transformData
 
         if not isinstance(self.transformData, list):
-            msg = "transformation data needs to be a list data type, " + \
-                  f"transformData provided is type: {type(transformData)}"
+            msg = (
+                "transformation data needs to be a list data type, "
+                + f"transformData provided is type: {type(transformData)}"
+            )
             raise InValidTransformationData(msg)
 
-    def getComparisonData(self):
-        """removed machine generated data from the data allowing for comparison
-        between two instances.
-        """
-        comparisonData = []
-        for datasetItem in self.transformData:
-            # TODO: Logic that goes here
-            pass
+    # def getComparisonData(self):
+    #     """removed machine generated data from the data allowing for comparison
+    #     between two instances.
+    #     """
+    #     comparisonData = []
+    #     for datasetItem in self.transformData:
+    #         # TODO: Logic that goes here
+    #         pass
+
 
 class TransformationConfig:
     """Reads the transformation config file and provides methods to help 
@@ -110,7 +118,7 @@ class TransformationConfig:
         :rtype: dict or list
         """
         # TODO: could potentially implement using map. instead of if
-        #LOGGER.debug(f"data: {data}, boolVal: {boolVal}, parsedData: {parsedData}")
+        # LOGGER.debug(f"data: {data}, boolVal: {boolVal}, parsedData: {parsedData}")
         if isinstance(data, dict):
             if parsedData is None:
                 parsedData = {}
@@ -118,15 +126,17 @@ class TransformationConfig:
             for key, value in data.items():
                 if isinstance(value, bool):
                     if value == boolVal:
-                        #LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
+                        # LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
                         parsedData[key] = value
-                elif isinstance(value, dict) or isinstance(value, list):
+                elif isinstance(value, (dict, list)):
                     parsedData[key] = self.__parseNestForBools(value, boolVal)
                 else:
                     # a type that shouldn't be, raise error.
-                    msg = f"The type associated with the key {key} is not a " + \
-                        "dict / list or bool, fix the config file and rerun" + \
-                        f"type is: {type(value)} value is {value}"
+                    msg = (
+                        f"The type associated with the key {key} is not a "
+                        + "dict / list or bool, fix the config file and rerun"
+                        + f"type is: {type(value)} value is {value}"
+                    )
                     raise ValueError(msg)
 
         elif isinstance(data, list):
@@ -136,11 +146,13 @@ class TransformationConfig:
             for item in data:
                 if isinstance(item, bool):
                     parsedData.append(item)
-                elif isinstance(item, dict) or isinstance(val, list):
+                elif isinstance(item, (dict, list)):
                     parsedData.append(self.__parseNestForBools(item, boolVal))
                 else:
-                    msg = f"The type associated with the item {item} is not a " + \
-                        "dict / list or bool, fix the config file and rerun"
+                    msg = (
+                        f"The type associated with the item {item} is not a "
+                        + "dict / list or bool, fix the config file and rerun"
+                    )
                     raise ValueError(msg)
         return parsedData
 
@@ -166,9 +178,9 @@ class TransformationConfig:
         if datatype in self.transConf:
             if section in self.transConf[datatype]:
                 properties = self.transConf[datatype][section]
-                #LOGGER.debug(f"properties: {properties}")
+                # LOGGER.debug(f"properties: {properties}")
                 retData = self.__parseNestForBools(properties, sectionValue)
-        
+
         return retData
 
     def getUserPopulatedProperties(self, datatype):
@@ -221,9 +233,11 @@ class TransformationConfig:
         validateType(datatype)
         section = constants.TRANSFORM_PARAM_UNIQUE_ID_PROPERTY
         if section not in self.transConf[datatype]:
-            msg = "The transformation configuration file does for type " + \
-                  f"{datatype} does not include a key for the section " + \
-                  f"{section}.  This is a mandatory field"
+            msg = (
+                "The transformation configuration file does for type "
+                + f"{datatype} does not include a key for the section "
+                + f"{section}.  This is a mandatory field"
+            )
             raise InvalidTransformationConfiguration(msg)
         return self.transConf[datatype][section]
 
@@ -239,27 +253,30 @@ class TransformationConfig:
         retVal = []
         if section in self.transConf[datatype]:
             retVal = self.transConf[datatype][section]
-            LOGGER.debug(f"found ignore list for the datatype {datatype}," + \
-                f"ignore values: {retVal}")
+            LOGGER.debug(
+                f"found ignore list for the datatype {datatype},"
+                + f"ignore values: {retVal}"
+            )
         else:
             LOGGER.info(f"no ignore values found for type: {datatype}")
         return retVal
 
+# TODO: think this isn't actually being used, look into if this is the case and delete
 class TransformRecord:
-
     def __init__(self, datatype, record, transformationConfig):
         self.validateType(datatype)
         self.record = record
         self.transformationConfig = transformationConfig
-
+        self.dataType = datatype
 
     def getComparisonRecord(self):
-        usrFields = self.transformationConfig.getUserPopulatedProperties(datatype)
+        usrFields = self.transformationConfig.getUserPopulatedProperties(self.dataType)
         compRecord = {}
         # for usrFields:
         #     #TODO: need to add this logic
         #     pass
-    
+
+
 class InvalidTransformationConfiguration(AttributeError):
     """Raised when values cannot be found or incorrect values are found in the 
     transformation configuration.
@@ -267,14 +284,16 @@ class InvalidTransformationConfiguration(AttributeError):
     :param AttributeError: [description]
     :type AttributeError: [type]
     """
+
     def __init__(self, message):
         self.message = message
+
 
 class InValidTransformationTypeError(AttributeError):
     def __init__(self, message):
         self.message = message
 
+
 class InValidTransformationData(AttributeError):
     def __init__(self, message):
         self.message = message
-

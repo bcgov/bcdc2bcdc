@@ -7,39 +7,48 @@ import logging.config
 import os
 import posixpath
 
+# pylint: disable=logging-format-interpolation
+
+
 # set scope for the logger
 LOGGER = None
 
 
 class RunUpdate:
     def __init__(self):
-        self.prodWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_SRC], os.environ[constants.CKAN_APIKEY_SRC]
+        self.srcCKANWrapper = CKAN.CKANWrapper(
+            os.environ[constants.CKAN_URL_SRC], 
+            os.environ[constants.CKAN_APIKEY_SRC]
         )
-        self.testWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_DEST], os.environ[constants.CKAN_APIKEY_DEST]
+
+        self.destCKANWrapper = CKAN.CKANWrapper(
+            os.environ[constants.CKAN_URL_DEST], 
+            os.environ[constants.CKAN_APIKEY_DEST]
         )
 
     def updateUsers(self):
         # get the raw json data from the api
-        userDataProd = self.prodWrapper.getUsers(includeData=True)
-        userDataTest = self.testWrapper.getUsers(includeData=True)
+        userDataSrc = self.srcCKANWrapper.getUsers(includeData=True)
+        userDataDest = self.destCKANWrapper.getUsers(includeData=True)
 
         # wrap the data with CKANDataset class
-        prodUserCKANDataSet = CKANData.CKANUsersDataSet(userDataProd)
-        testUserCKANDataSet = CKANData.CKANUsersDataSet(userDataTest)
+        srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc)
+        destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest)
 
         # use CKANDataset functionality to determine if differences
-        if prodUserCKANDataSet != testUserCKANDataSet:
+        if srcUserCKANDataSet != destUserCKANDataSet:
             # perform the update
             LOGGER.info("found differences between users defined in prod and test")
-            deltaObj = prodUserCKANDataSet.getDelta(testUserCKANDataSet)
-            updater = CKANUpdate.CKANUserUpdate(self.testWrapper)
+            deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
+            updater = CKANUpdate.CKANUserUpdate(self.destCKANWrapper)
             updater.update(deltaObj)
 
     def updateGroups(self):
-        groupDataProd = self.prodWrapper.getGroups(includeData=True)
-        groupDataTest = self.testWrapper.getGroups(includeData=True)
+        """Based on descriptions of SRC / DEST CKAN instances in environment 
+        variables performes the update, reading from SRC, writing to DEST.
+        """
+        groupDataProd = self.srcCKANWrapper.getGroups(includeData=True)
+        groupDataTest = self.destCKANWrapper.getGroups(includeData=True)
         #LOGGER.debug(f"Groupdata is: {groupDataProd}")
 
         prodGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataProd)
@@ -49,13 +58,28 @@ class RunUpdate:
             LOGGER.info('found differences between group data in src an dest')
             deltaObj = prodGroupCKANDataSet.getDelta(testGroupCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            # TODO: create update methods
+            updater = CKANUpdate.CKANGroupUpdate(self.destCKANWrapper)
+            updater.update(deltaObj)
 
     def updateOrganizations(self):
-        orgDataProd = self.prodWrapper.getOrganizations(includeData=True)
-        LOGGER.debug(f"first orgDataProd record: {orgDataProd[0]}")
-        orgDataTest = self.testWrapper.getOrganizations(includeData=True)
-        LOGGER.debug(f"first orgDataTest record: {orgDataTest[0]}")
+        orgDataSrc = self.srcCKANWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataProd record: {orgDataSrc[0]}")
+        orgDataDest = self.destCKANWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
+
+        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc)
+        destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataDest)
+
+        if srcOrgCKANDataSet != destOrgCKANDataSet:
+            LOGGER.info('found differences between group data in src an dest')
+            deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
+            LOGGER.info(f"Delta obj for orgs: {deltaObj}")
+            updater = CKANUpdate.CKANOrganizationUpdate(self.destCKANWrapper)
+            updater.update(deltaObj)
+
+
+
+
         '''
         # -------  TEMP: used for dev....  Move to tests.
         # to speed up dev dumping to json
@@ -71,27 +95,12 @@ class RunUpdate:
             json.dump(testJsonPath, outfile)
         '''
 
-        prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataProd)
-        testOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataTest)
-        if prodOrgCKANDataSet != testOrgCKANDataSet:
-            LOGGER.info("found differences between orgs defined in prod and test")
-            deltaObj = prodOrgCKANDataSet.getDelta(testOrgCKANDataSet)
-            LOGGER.info(f"delta object: {deltaObj}")
-            #updater = CKANUpdate.CKANOrganizationUpdate(self.testWrapper)
-            #updater.update(deltaObj)
-
-        pass
 
     def updatePackages(self):
         # TODO: need to complete this method... ... left incomplete while work on
         #       org compare and update instead.  NEEDS TO BE COMPLETED
-        prodPkgList = self.prodWrapper.getPackageNames()
-        testPkgList = self.testWrapper.getPackageNames()
-
-
-
-
-
+        prodPkgList = self.srcCKANWrapper.getPackageNames()
+        testPkgList = self.destCKANWrapper.getPackageNames()
 
 if __name__ == "__main__":
 
@@ -125,6 +134,7 @@ if __name__ == "__main__":
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
     # This is complete, commented out while work on group
-    updater.updateUsers()
+    #updater.updateUsers()
+
     #updater.updateGroups()
-    #updater.updateOrganizations()
+    updater.updateOrganizations()

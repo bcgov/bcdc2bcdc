@@ -5,7 +5,7 @@ Functionality that can:
     * Using the CKAN module, update one or the other.
 """
 
-# pylint: disable=logging-format-interpolation
+# pylint: disable=logging-format-interpolation, logging-not-lazy
 
 import abc
 import logging
@@ -101,7 +101,17 @@ class UpdateMixin:
         return filteredData
 
 class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
-
+    """implements the abstract base class CKANUpdate_abc to allow user data to 
+    be updated easily
+    
+    :param UpdateMixin:  This mixin allows the the base class update 
+        method to be glued to the implementing classes update methods.
+    :type UpdateMixin: class
+    :param CKANUpdate_abc: defined the interface that this class needs to 
+        implement
+    :type CKANUpdate_abc: abstract base class
+    """
+    
     def __init__(self, ckanWrapper=None):
         CKANUpdate_abc.__init__(self, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_USERS
@@ -118,6 +128,11 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     #     LOGGER.info("USER UPDATE COMPLETE")
 
     def doAdds(self, addStruct):
+        """List of user data to be added to a ckan instance
+        
+        :param addStruct: list of user struct
+        :type addStruct: list
+        """
         LOGGER.info(f"{len(addStruct)} to be added to destination instance")
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
@@ -125,6 +140,11 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
             #self.CKANWrap.addUser(addData)
 
     def doDeletes(self, delStruct):
+        """list of usernames or ids to delete
+        
+        :param delStruct: list of user names or ids to delete
+        :type delStruct: list
+        """
         #TODO: Thinking again deletes are likely something we do not want to do 
         #      for some accounts.  Example demo accounts set up for testing.
         LOGGER.info(f"{len(delStruct)} to be deleted to destination instance")
@@ -134,14 +154,103 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.info(f"removing the user: {deleteUser} from the destination")
             # self.CKANWrap.deleteUser(deleteUser)
 
-    def doUpdates(self, updates):
-        updateNames = list(updates.keys())
+    def doUpdates(self, updtStruct):
+        """Gets a list of user data that is used to updated a CKAN instance
+        with.
+        
+        :param updtStruct: list of user data to be used to update users
+        :type updtStruct: list
+        """
+        updateNames = list(updtStruct.keys())
         updateNames.sort()
         for updt in updateNames:
             LOGGER.info(f"updating the user : {updt}")
-            self.CKANWrap.updateUser(updates[updt])
+            self.CKANWrap.updateUser(updtStruct[updt])
         LOGGER.debug("updates complete")
 
 # for subsequent types will define their own updates, or think about making a 
 # mapping between different types and equivalent methods in CKAN.ckanWrapper 
 # class 
+
+
+class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
+
+    def __init__(self, ckanWrapper=None):
+        """Gets a list of updates
+        
+        :param ckanWrapper: [description], defaults to None
+        :type ckanWrapper: [type], optional
+        """
+        CKANUpdate_abc.__init__(self, ckanWrapper)
+        self.dataType = constants.TRANSFORM_TYPE_GROUPS
+        self.CKANTranformConfig = CKANTransform.TransformationConfig()
+        self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
+
+    def doAdds(self, addStruct):
+        """gets a list of group structs that describe groups that are to be added
+        to a CKAN instance
+        
+        :param addStruct: list of group data structs
+        :type addStruct: list
+        """
+        LOGGER.info(f"{len(addStruct)} to be added to destination instance")
+        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
+        for addData in sortedList:
+            LOGGER.debug(f"adding group: {addData['name']}")
+            # todo, this is working but am commenting out
+            #self.CKANWrap.addGroup(addData)
+
+    def doDeletes(self, delStruct):
+        """Gets a list of group names or ids that are to be deleted
+        
+        :param delStruct: list of group names or ids that are to be deleted
+        :type delStruct: list
+        """
+        LOGGER.error("still need to implement this {delStruct}")
+        LOGGER.info(f"number of groups: {len(delStruct)} to be deleted to " + \
+                    "destination instance")
+        delStruct.sort()
+
+        for deleteGroup in delStruct:
+            LOGGER.info(f"removing the user: {deleteGroup} from the destination")
+            # self.CKANWrap.deleteGroup(deleteGroup)
+
+
+    def doUpdates(self, updtStruct):
+        """Gets a list of group data that needs to be updated
+        
+        :param updates: list of dictionaries with the data to be used to update a group
+        :type updates: list of dict
+        """
+        LOGGER.error("still need to implement this {updtStruct}")
+        updateNames = list(updtStruct.keys())
+        updateNames.sort()
+        for updt in updateNames:
+            LOGGER.info(f"updating the group : {updt}")
+            #self.CKANWrap.updateGroup(updates[updt])
+        LOGGER.debug("updates complete")
+
+class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
+
+    def __init__(self, ckanWrapper=None):
+        CKANUpdate_abc.__init__(self, ckanWrapper)
+        self.dataType = constants.TRANSFORM_TYPE_ORGS
+        self.CKANTransformConfig = CKANTransform.TransformationConfig()
+        self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
+
+    def doAdds(self, addStruct):
+        LOGGER.debug(f"adds: {addStruct}")
+        LOGGER.info(f"{len(addStruct)}: number of orgs to be added to destination instance")
+        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
+        for addData in sortedList:
+            LOGGER.debug(f"adding organization: {addData['name']}")
+            # todo, this is working but am commenting out
+            #self.CKANWrap.addOrganization(addData)
+
+
+
+    def doDeletes(self, delStruct):
+        LOGGER.debug(f"deletes: {delStruct}")
+
+    def doUpdates(self, updtStruct):
+        LOGGER.debug(f"deletes: {updtStruct}")

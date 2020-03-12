@@ -150,7 +150,7 @@ class CKANWrapper:
         """
         params = {"all_fields": includeData}
         users = self.remoteapi.action.user_list(data_dict=params)
-        LOGGER.info(f"retreived {len(users)} users")
+        LOGGER.info(f"retrieved {len(users)} users")
         return users
         
     def addUser(self, userData):
@@ -189,13 +189,20 @@ class CKANWrapper:
         return retVal
 
     def userExists(self, userId):
+        """identify if a specific user exists in a CKAN instance
+        
+        :param userId: name or id of the user who's existence is to be tested
+        :type userId: str
+        :return: boolean indicating if the user exists
+        :rtype: bool
+        """
         exists = True
         userData = {"id": userId}
         try:
-            retVal = self.remoteapi.action.user_show(**userData)
+            exists = self.remoteapi.action.user_show(**userData)
         except ckanapi.errors.NotFound:
-            retVal = False
-        return retVal
+            exists = False
+        return exists
 
     def userIsDeleted(self, userId):
         retVal = False
@@ -205,7 +212,6 @@ class CKANWrapper:
                 retVal = True
         except ckanapi.errors.NotFound:
             LOGGER.info("user %s was not found", userId)
-            pass
         return retVal
 
     def deleteUser(self, userId):
@@ -241,6 +247,47 @@ class CKANWrapper:
         LOGGER.debug(f"groupconfig is {groupConfig}")
         retVal = self.remoteapi.action.group_list(**groupConfig)
         return retVal
+
+    def addGroup(self, groupData):
+        """makes an api call to CKAN to create the group described in groupData
+        
+        :param groupData: [description]
+        :type groupData: [type]
+        """
+        LOGGER.debug(f'groupData: {groupData}')
+        LOGGER.debug(f"creating a new Group with the data: {groupData}")
+        retVal = self.remoteapi.action.group_create(**groupData)
+        LOGGER.debug(f"Group Created: {retVal}")
+        return retVal
+
+    def deleteGroup(self, groupIdentifier=None):
+        """Deletes the groups that matches the provided identifying information.
+        groupIdentifier can be either the group id or name
+
+        :param groupIdentifier: The unique identifier for the group that
+            is to be deleted.  Either 'name' or 'id'
+        :type groupIdentifier: str 
+        """
+        LOGGER.info(f"trying to delete the group: {groupIdentifier}")
+        orgParams = {'id': groupIdentifier}
+        retVal = self.remoteapi.action.group_delete(**orgParams)
+        LOGGER.debug("group delete return val: %s", retVal)
+
+    def updateGroup(self, groupData):
+        """receives a dictionary that it can use to update the data.
+        
+        :param userData: a dictionary with the data to use to update an existing
+            ckan user
+        :type userData: dict
+        """
+        # wants the id to be the group name
+        if 'id' not in groupData and 'name' in groupData:
+            groupData['id'] = groupData['name']
+            del groupData['name']
+        LOGGER.debug(f"trying to update a group using the data: {groupData}")
+        # data_dict=groupData
+        retVal = self.remoteapi.action.group_update(**groupData)
+        LOGGER.debug(f"User Updated: {retVal}")
 
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
@@ -290,19 +337,17 @@ class CKANWrapper:
             is to be deleted.  Either 'name' or 'id'
         :type organizationIdentifier: str 
         """
-        LOGGER.info(f"trying to delete the organization: {orgIdentifier}")
+        LOGGER.info(f"trying to delete the organization: {organizationIdentifier}")
         orgParams = {'id': organizationIdentifier}
         retVal = self.remoteapi.action.organization_delete(**orgParams)
         LOGGER.debug("org delete return val: %s", retVal)
 
     def addOrganization(self, organizationData):
-        """[summary]
+        """creates a new organization
         
-        :param organizationData: [description]
-        :type organizationData: [type]
+        :param organizationData: creates a new organization 
+        :type organizationData: struct
         """
-        LOGGER.debug(f"creating a new user with the data: {userData}")
-        retVal = self.remoteapi.action.user_create(data_dict=userData)
-        LOGGER.debug(f"User Created: {retVal}")
-
-        
+        LOGGER.debug(f"creating a new organization with the data: {organizationData}")
+        retVal = self.remoteapi.action.user_create(data_dict=organizationData)
+        LOGGER.debug(f"Organization Created: {retVal}")

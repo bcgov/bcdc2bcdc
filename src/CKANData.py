@@ -627,11 +627,3 @@ class IncompatibleTypesException(Exception):
     def __init__(self, message):
         LOGGER.debug(f"error message: {message}")
         self.message = message
-
-
-
-
-
-
-
-
