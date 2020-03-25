@@ -4,3 +4,4 @@ __pycache__
 junk.py
 junk.json
 junk*.json
+junk/

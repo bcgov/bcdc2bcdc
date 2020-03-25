@@ -7,41 +7,104 @@ import logging.config
 import os
 import posixpath
 
-LOGGER = logging.getLogger(__name__)
+# pylint: disable=logging-format-interpolation
+
+
+# set scope for the logger
+LOGGER = None
 
 
 class RunUpdate:
     def __init__(self):
-        self.prodWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_SRC], os.environ[constants.CKAN_APIKEY_SRC]
+        self.srcCKANWrapper = CKAN.CKANWrapper(
+            os.environ[constants.CKAN_URL_SRC],
+            os.environ[constants.CKAN_APIKEY_SRC]
         )
-        self.testWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_DEST], os.environ[constants.CKAN_APIKEY_DEST]
+
+        self.destCKANWrapper = CKAN.CKANWrapper(
+            os.environ[constants.CKAN_URL_DEST],
+            os.environ[constants.CKAN_APIKEY_DEST]
         )
 
     def updateUsers(self):
         # get the raw json data from the api
-        userDataProd = self.prodWrapper.getUsers(includeData=True)
-        userDataTest = self.testWrapper.getUsers(includeData=True)
+        userDataSrc = self.srcCKANWrapper.getUsers(includeData=True)
+        userDataDest = self.destCKANWrapper.getUsers(includeData=True)
 
         # wrap the data with CKANDataset class
-        prodUserCKANDataSet = CKANData.CKANUsersDataSet(userDataProd)
-        testUserCKANDataSet = CKANData.CKANUsersDataSet(userDataTest)
+        srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc)
+        destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest)
 
         # use CKANDataset functionality to determine if differences
-        if prodUserCKANDataSet != testUserCKANDataSet:
+        if srcUserCKANDataSet != destUserCKANDataSet:
             # perform the update
             LOGGER.info("found differences between users defined in prod and test")
-            deltaObj = prodUserCKANDataSet.getDelta(testUserCKANDataSet)
-            updater = CKANUpdate.CKANUserUpdate(self.testWrapper)
+
+            deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
+            LOGGER.info(f"Delta obj for groups: {deltaObj}")
+            updater = CKANUpdate.CKANUserUpdate(self.destCKANWrapper)
             updater.update(deltaObj)
+
+    def updateGroups(self):
+        """Based on descriptions of SRC / DEST CKAN instances in environment
+        variables performes the update, reading from SRC, writing to DEST.
+        """
+        groupDataProd = self.srcCKANWrapper.getGroups(includeData=True)
+        groupDataTest = self.destCKANWrapper.getGroups(includeData=True)
+        #LOGGER.debug(f"Groupdata is: {groupDataProd}")
+
+        prodGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataProd)
+        testGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataTest)
+
+        if prodGroupCKANDataSet != testGroupCKANDataSet:
+            LOGGER.info('found differences between group data in src an dest')
+            deltaObj = prodGroupCKANDataSet.getDelta(testGroupCKANDataSet)
+            LOGGER.info(f"Delta obj for groups: {deltaObj}")
+            updater = CKANUpdate.CKANGroupUpdate(self.destCKANWrapper)
+            updater.update(deltaObj)
+        else:
+            LOGGER.info("no differences found for groups between src and dest")
+
+    def updateOrganizations(self):
+        orgDataSrc = self.srcCKANWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataProd record: {orgDataSrc[0]}")
+        orgDataDest = self.destCKANWrapper.getOrganizations(includeData=True)
+        LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
+
+        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc)
+        destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataDest)
+
+        if srcOrgCKANDataSet != destOrgCKANDataSet:
+            LOGGER.info('found differences between group data in src an dest')
+            deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
+            LOGGER.info(f"Delta obj for orgs: {deltaObj}")
+            updater = CKANUpdate.CKANOrganizationUpdate(self.destCKANWrapper)
+            updater.update(deltaObj)
+
+
+
+
+        '''
+        # -------  TEMP: used for dev....  Move to tests.
+        # to speed up dev dumping to json
+        import json
+        junkDir = os.path.join(os.path.dirname(__file__), '..', 'junk')
+        if not os.path.exists(junkDir):
+            os.mkdir(junkDir)
+        prodJsonPath = os.path.join(junkDir, 'prod_org.json')
+        testJsonPath = os.path.join(junkDir, 'test_org.json')
+        with open(prodJsonPath, 'w') as outfile:
+            json.dump(orgDataProd, outfile)
+        with open(testJsonPath, 'w') as outfile:
+            json.dump(testJsonPath, outfile)
+        '''
+
 
     def updatePackages(self):
         # TODO: need to complete this method... ... left incomplete while work on
         #       org compare and update instead.  NEEDS TO BE COMPLETED
-        prodPkgList = self.prodWrapper.getPackageNames()
-        testPkgList = self.testWrapper.getPackageNames()
-
+        prodPkgList = self.srcCKANWrapper.getPackageNames()
+        testPkgList = self.destCKANWrapper.getPackageNames()
 
 if __name__ == "__main__":
 
@@ -55,7 +118,8 @@ if __name__ == "__main__":
         constants.LOGGING_CONFIG_FILE_NAME,
     )
     logConfigFile = os.path.abspath(logConfigFile)
-    # output log file for roller if implemented
+
+    # output log file for roller if implemented... not implemented atm
     logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
     if not os.path.exists(logOutputsDir):
@@ -65,7 +129,7 @@ if __name__ == "__main__":
     logOutputsFilePath = logOutputsFilePath.replace(os.path.sep, posixpath.sep)
     print(f"log config file: {logConfigFile}")
     logging.config.fileConfig(
-        logConfigFile, 
+        logConfigFile,
         defaults={"logfilename": logOutputsFilePath}
     )
     LOGGER = logging.getLogger('main')
@@ -73,4 +137,7 @@ if __name__ == "__main__":
 
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
-    updater.updateUsers()
+    # This is complete, commented out while work on group
+    #updater.updateUsers()
+    #updater.updateGroups()
+    updater.updateOrganizations()

@@ -8,16 +8,16 @@ import ckanapi
 @pytest.fixture(scope="session")
 def CKANParamsProd():
     obj = {}
-    obj["ckanUrl"] = os.environ[constants.CKAN_URL_PROD]
-    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_PROD]
+    obj["ckanUrl"] = os.environ[constants.CKAN_URL_SRC]
+    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_SRC]
     yield obj
 
 
 @pytest.fixture(scope="session")
 def CKANParamsTest():
     obj = {}
-    obj["ckanUrl"] = os.environ[constants.CKAN_URL_TEST]
-    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_TEST]
+    obj["ckanUrl"] = os.environ[constants.CKAN_URL_DEST]
+    obj["ckanAPIKey"] = os.environ[constants.CKAN_APIKEY_DEST]
     yield obj
 
 

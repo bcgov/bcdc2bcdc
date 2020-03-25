@@ -1,11 +1,13 @@
 {
     "users": {
         "unique_id_field": "name",
-        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat", 
-            "idir-jchurchi", "bcdc-test-cati", "crigdon", "kjnether"],
+        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat",
+            "idir-jchurchi", "bcdc-test-cati", "bcdc-test-cadi", "crigdon", "kjnether",
+            "jhutniak", "idir-stchapma", "idir-yusotoza", "cadi", "brandon",
+            "dbc_user2", "dwelf", "idir-jerho", "idir-loneil", "knetherton"],
         "user_populated_properties" : {
             "name": true,
-            "email": false,
+            "email": true,
             "fullname": true,
             "about": true,
             "display_name": true,
@@ -20,19 +22,18 @@
             "id": false,
             "number_created_packages": false
         }
-    }, 
-    "organizations": {
+    },
+    "groups": {
         "unique_id_field": "name",
         "user_populated_properties": {
-            "sector": true,
             "approval_status": true,
             "image_display_url": false,
             "title": true,
             "name": true,
             "is_organization": true,
-            "state": true,
+            "state": false,
             "image_url": false,
-            "groups": [ 
+            "groups": [
                 {
                     "capacity": true,
                     "name": true
@@ -48,6 +49,37 @@
             "id": false,
             "tags": false,
             "description": true
-        }
+        },
+        "update_fields_to_include": ["id"]
+    },
+    "organizations": {
+        "unique_id_field": "name",
+        "user_populated_properties": {
+            "sector": true,
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": true,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "update_fields_to_include": ["id"]
     }
 }

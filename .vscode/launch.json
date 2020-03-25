@@ -1,7 +1,36 @@
 {
-    "name": "Python: Test",
-    "type": "python",
-    "request": "test",
-    "console": "integratedTerminal",
-    "envFile": "${workspaceFolder}/.env"
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        }, 
+        {
+            "name": "Python: test_CKANData: test",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            "module": "pytest",
+            "args": [
+                "tests/test_CKANData.py::test_user_diffs"
+            ],
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env",
+            "rootdir": "${workspaceFolder}/tests"
+        },
+        {
+            "name": "Python: Test",
+            "type": "python",
+            "request": "test",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
 }
