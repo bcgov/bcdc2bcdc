@@ -13,7 +13,6 @@ import pprint
 import ckanapi
 import requests
 import constants
-import urllib3
 
 # pylint: disable=logging-format-interpolation
 
@@ -288,11 +287,11 @@ class CKANWrapper:
         LOGGER.debug("group delete return val: %s", retVal)
 
     def updateGroup(self, groupData):
-        """receives a dictionary that it can use to update the data.
+        """receives a dictionary that it can use to update the Group data.
 
-        :param userData: a dictionary with the data to use to update an existing
+        :param groupData: a dictionary with the data to use to update an existing
             ckan user
-        :type userData: dict
+        :type groupData: dict
         """
         # wants the id to be the group name
         if 'id' not in groupData and 'name' in groupData:
@@ -300,9 +299,8 @@ class CKANWrapper:
             #del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
-        # data_dict=groupData
         retVal = self.remoteapi.action.group_update(**groupData)
-        LOGGER.debug(f"User Updated: {retVal}")
+        LOGGER.debug(f"Group Updated: {retVal}")
 
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
@@ -364,5 +362,17 @@ class CKANWrapper:
         :type organizationData: struct
         """
         LOGGER.debug(f"creating a new organization with the data: {organizationData}")
-        retVal = self.remoteapi.action.user_create(data_dict=organizationData)
+        retVal = self.remoteapi.action.organization_create(**organizationData)
         LOGGER.debug(f"Organization Created: {retVal}")
+
+
+    def updateOrganization(self, organizationData):
+        """receives a dictionary that it can use to update the organizations data.
+
+        :param organizationData: a dictionary with the data to use to update an existing
+            ckan organization
+        :type organizationData: dict
+        """
+        LOGGER.debug(f"trying to update a organization using the data: {organizationData}")
+        retVal = self.remoteapi.action.organization_update(**organizationData)
+        LOGGER.debug(f"Organization Updated: {retVal}")

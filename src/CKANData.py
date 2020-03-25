@@ -42,7 +42,6 @@ def validateTypeIsComparable(dataObj1, dataObj2):
             f'dataObj2 is type: with an object of type, {dataType2}'
         raise IncompatibleTypesException(msg)
 
-
 # ------------- Data Record defs -------------
 
 class CKANRecord:
@@ -55,7 +54,6 @@ class CKANRecord:
 
     def getFieldValue(self, fieldName):
         return self.jsonData[fieldName]
-
 
     def getUniqueIdentifier(self):
         """returns the value in the field described in the transformation

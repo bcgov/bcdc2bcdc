@@ -79,6 +79,7 @@
             "id": false,
             "tags": false,
             "description": true
-        }
+        },
+        "update_fields_to_include": ["id"]
     }
 }

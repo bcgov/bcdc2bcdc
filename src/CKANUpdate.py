@@ -249,6 +249,13 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.debug("updates complete")
 
 class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
+    '''
+    implements the interface defined by CKANUpdate_abc, the actual update
+    method comes from the mixin.
+
+    Used to provide a uniform interface that is used by the script to update
+    the orgs from one ckan instance to another.
+    '''
 
     def __init__(self, ckanWrapper=None):
         CKANUpdate_abc.__init__(self, ckanWrapper)
@@ -257,16 +264,40 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
 
     def doAdds(self, addStruct):
-        LOGGER.debug(f"adds: {addStruct}")
+        """adds the orgs described in the param addStruct
+
+        :param addStruct: dictionary where the key is the name of the org to be added
+            and the value is the struct that can be passed directly to the ckan api
+            to add this org
+        :type addStruct: dict
+        """
+        #LOGGER.debug(f"adds: {addStruct}")
         LOGGER.info(f"{len(addStruct)}: number of orgs to be added to destination instance")
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
             LOGGER.debug(f"adding organization: {addData['name']}")
             # todo, this is working but am commenting out
-            #self.CKANWrap.addOrganization(addData)
+            self.CKANWrap.addOrganization(addData)
 
     def doDeletes(self, delStruct):
-        LOGGER.debug(f"deletes: {delStruct}")
+        """does deletes of all the orgs described in the delStruct
+
+        :param delStruct: a list of org names that should be deleted
+        :type delStruct: str
+        """
+        LOGGER.debug(f"number of deletes: {len(delStruct)}")
+        for org2Del in delStruct:
+            LOGGER.debug(f"    deleting the org: {org2Del}")
+            self.CKANWrap.deleteOrganization(org2Del)
 
     def doUpdates(self, updtStruct):
-        LOGGER.debug(f"deletes: {updtStruct}")
+        """Does the org updates
+
+        :param updtStruct: dictionary where the key is the name of the org and the
+            value is a dict that can be passed to the CKAN api to update the org
+        :type updtStruct: dict
+        """
+        LOGGER.debug(f"number of updates: {len(updtStruct)}")
+        for updateName in updtStruct:
+            LOGGER.debug(f"updating the org: {updateName}")
+            self.CKANWrap.updateOrganization(updtStruct[updateName])
