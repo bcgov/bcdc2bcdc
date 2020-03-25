@@ -17,12 +17,12 @@ LOGGER = None
 class RunUpdate:
     def __init__(self):
         self.srcCKANWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_SRC], 
+            os.environ[constants.CKAN_URL_SRC],
             os.environ[constants.CKAN_APIKEY_SRC]
         )
 
         self.destCKANWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_DEST], 
+            os.environ[constants.CKAN_URL_DEST],
             os.environ[constants.CKAN_APIKEY_DEST]
         )
 
@@ -39,12 +39,14 @@ class RunUpdate:
         if srcUserCKANDataSet != destUserCKANDataSet:
             # perform the update
             LOGGER.info("found differences between users defined in prod and test")
+
             deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
+            LOGGER.info(f"Delta obj for groups: {deltaObj}")
             updater = CKANUpdate.CKANUserUpdate(self.destCKANWrapper)
             updater.update(deltaObj)
 
     def updateGroups(self):
-        """Based on descriptions of SRC / DEST CKAN instances in environment 
+        """Based on descriptions of SRC / DEST CKAN instances in environment
         variables performes the update, reading from SRC, writing to DEST.
         """
         groupDataProd = self.srcCKANWrapper.getGroups(includeData=True)
@@ -60,6 +62,8 @@ class RunUpdate:
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
             updater = CKANUpdate.CKANGroupUpdate(self.destCKANWrapper)
             updater.update(deltaObj)
+        else:
+            LOGGER.info("no differences found for groups between src and dest")
 
     def updateOrganizations(self):
         orgDataSrc = self.srcCKANWrapper.getOrganizations(includeData=True)
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     logOutputsFilePath = logOutputsFilePath.replace(os.path.sep, posixpath.sep)
     print(f"log config file: {logConfigFile}")
     logging.config.fileConfig(
-        logConfigFile, 
+        logConfigFile,
         defaults={"logfilename": logOutputsFilePath}
     )
     LOGGER = logging.getLogger('main')
@@ -135,6 +139,5 @@ if __name__ == "__main__":
     updater = RunUpdate()
     # This is complete, commented out while work on group
     #updater.updateUsers()
-
     #updater.updateGroups()
     updater.updateOrganizations()

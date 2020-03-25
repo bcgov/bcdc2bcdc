@@ -23,10 +23,14 @@
         "ckanapi",
         "datastruct",
         "dels",
+        "flds",
         "fullname",
+        "ints",
+        "ivar",
         "mccabe",
         "openid",
         "orgs",
+        "pformat",
         "posixpath",
         "pycache",
         "pylint",
@@ -36,10 +40,12 @@
         "rtype",
         "structs",
         "transformtion",
+        "uniqueid",
         "updt",
         "updts",
         "veryhigh"
     ],
     "python.formatting.provider": "black",
-    "workbench.editor.enablePreview": false
+    "workbench.editor.enablePreview": false,
+    "files.trimTrailingWhitespace": true
 }

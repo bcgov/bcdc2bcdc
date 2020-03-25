@@ -1,9 +1,10 @@
 {
     "users": {
         "unique_id_field": "name",
-        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat", 
-            "idir-jchurchi", "bcdc-test-cati", "crigdon", "kjnether",
-            "jhutniak", "idir-stchapma", "idir-yusotoza"],
+        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat",
+            "idir-jchurchi", "bcdc-test-cati", "bcdc-test-cadi", "crigdon", "kjnether",
+            "jhutniak", "idir-stchapma", "idir-yusotoza", "cadi", "brandon",
+            "dbc_user2", "dwelf", "idir-jerho", "idir-loneil", "knetherton"],
         "user_populated_properties" : {
             "name": true,
             "email": true,
@@ -32,7 +33,7 @@
             "is_organization": true,
             "state": false,
             "image_url": false,
-            "groups": [ 
+            "groups": [
                 {
                     "capacity": true,
                     "name": true
@@ -48,7 +49,8 @@
             "id": false,
             "tags": false,
             "description": true
-        }
+        },
+        "update_fields_to_include": ["id"]
     },
     "organizations": {
         "unique_id_field": "name",
@@ -61,7 +63,7 @@
             "is_organization": true,
             "state": true,
             "image_url": false,
-            "groups": [ 
+            "groups": [
                 {
                     "capacity": true,
                     "name": true

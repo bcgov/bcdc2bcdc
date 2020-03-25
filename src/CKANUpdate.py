@@ -1,6 +1,6 @@
 """
 Functionality that can:
-    * identify two CKANData.CKANDataSet ( or subclasses of these ) and identify 
+    * identify two CKANData.CKANDataSet ( or subclasses of these ) and identify
       differences between the two
     * Using the CKAN module, update one or the other.
 """
@@ -14,12 +14,17 @@ import operator
 import constants
 import CKAN
 import CKANTransform
+import os
 
 LOGGER = logging.getLogger(__name__)
 
 
 class CKANUpdate_abc(abc.ABC):
     """
+    abstract base class used to define the interface for CKANUpdate objects.
+
+    Each different object type in ckan should implement its own version of this
+    class.
     """
     def __init__(self, ckanWrapper=None):
         self.CKANWrap = ckanWrapper
@@ -43,7 +48,7 @@ class CKANUpdate_abc(abc.ABC):
         pass
 
 class UpdateMixin:
-    """mixin method that can be re-used by all classes that are inheriting 
+    """mixin method that can be re-used by all classes that are inheriting
     from the abstract method.
     """
     def update(self, deltaObj):
@@ -57,18 +62,18 @@ class UpdateMixin:
         self.doAdds(adds)
         self.doDeletes(dels)
         self.doUpdates(updts)
-        LOGGER.info("USER UPDATE COMPLETE")
+        LOGGER.info("UPDATE COMPLETE")
 
     def removeIgnored(self, inputData):
-        """Receives an input data structure, either list or dict.  If list its the 
-        list of unique identifiers that should be excluded from any update.  If 
+        """Receives an input data structure, either list or dict.  If list its the
+        list of unique identifiers that should be excluded from any update.  If
         inputData is a dict then the keys that for the dict are the unique
         identifiers.
 
-        Method iterates through all the values in the input data determines if 
-        they are defined as a record that should be ignored.  If so they are 
-        removed from the update list / dict 
-        
+        Method iterates through all the values in the input data determines if
+        they are defined as a record that should be ignored.  If so they are
+        removed from the update list / dict
+
         :param inputData: The input data needs to be filtered based on the contents
             of the ignore list
         :type inputData: dict/list
@@ -84,16 +89,16 @@ class UpdateMixin:
                 if inputVal not in self.ignoreList:
                     filteredData.append(inputVal)
                 else:
-                    LOGGER.debug(f"found filter value, {inputVal} removing from" + 
+                    LOGGER.debug(f"found filter value, {inputVal} removing from" +
                         "update list")
         elif isinstance(inputData, dict):
             filteredData = {}
             for inputVal in inputData:
-                LOGGER.debug(f"input value: {inputVal}")
+                #LOGGER.debug(f"input value: {inputVal}")
                 if inputVal not in self.ignoreList:
                     filteredData[inputVal] = inputData[inputVal]
                 else:
-                    LOGGER.debug(f"found filter value, {inputVal} removing from" + 
+                    LOGGER.debug(f"found filter value, {inputVal} removing from" +
                         "update list")
         else:
             msg = f"received type  {type(inputData)}.  Must be a list or dict"
@@ -101,17 +106,17 @@ class UpdateMixin:
         return filteredData
 
 class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
-    """implements the abstract base class CKANUpdate_abc to allow user data to 
+    """implements the abstract base class CKANUpdate_abc to allow user data to
     be updated easily
-    
-    :param UpdateMixin:  This mixin allows the the base class update 
+
+    :param UpdateMixin:  This mixin allows the the base class update
         method to be glued to the implementing classes update methods.
     :type UpdateMixin: class
-    :param CKANUpdate_abc: defined the interface that this class needs to 
+    :param CKANUpdate_abc: defined the interface that this class needs to
         implement
     :type CKANUpdate_abc: abstract base class
     """
-    
+
     def __init__(self, ckanWrapper=None):
         CKANUpdate_abc.__init__(self, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_USERS
@@ -128,8 +133,8 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     #     LOGGER.info("USER UPDATE COMPLETE")
 
     def doAdds(self, addStruct):
-        """List of user data to be added to a ckan instance
-        
+        """List of user data to be added to a ckan instance,
+
         :param addStruct: list of user struct
         :type addStruct: list
         """
@@ -137,27 +142,31 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
             LOGGER.debug(f"adding dataset: {addData['name']}")
-            #self.CKANWrap.addUser(addData)
+            LOGGER.debug(f"dataset data: {addData}")
+
+            # user add specific.. generate and populate a password field
+            addData['password'] = os.environ[constants.CKAN_ONETIME_PASSWORD]
+            self.CKANWrap.addUser(addData)
 
     def doDeletes(self, delStruct):
         """list of usernames or ids to delete
-        
+
         :param delStruct: list of user names or ids to delete
         :type delStruct: list
         """
-        #TODO: Thinking again deletes are likely something we do not want to do 
+        #TODO: Thinking again deletes are likely something we do not want to do
         #      for some accounts.  Example demo accounts set up for testing.
         LOGGER.info(f"{len(delStruct)} to be deleted to destination instance")
         delStruct.sort()
 
         for deleteUser in delStruct:
             LOGGER.info(f"removing the user: {deleteUser} from the destination")
-            # self.CKANWrap.deleteUser(deleteUser)
+            self.CKANWrap.deleteUser(deleteUser)
 
     def doUpdates(self, updtStruct):
         """Gets a list of user data that is used to updated a CKAN instance
         with.
-        
+
         :param updtStruct: list of user data to be used to update users
         :type updtStruct: list
         """
@@ -165,19 +174,29 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         updateNames.sort()
         for updt in updateNames:
             LOGGER.info(f"updating the user : {updt}")
-            self.CKANWrap.updateUser(updtStruct[updt])
+            # updtStruct is comming from a delta obj
+            # delta obj is used to keep track of:
+            #   - adds
+            #   - deletes
+            #   - updates
+            if updtStruct[updt]['email'] is not None:
+
+                self.CKANWrap.updateUser(updtStruct[updt])
+            else:
+                LOGGER.info(f"skipping this record as email is null: {updtStruct}")
+
         LOGGER.debug("updates complete")
 
-# for subsequent types will define their own updates, or think about making a 
-# mapping between different types and equivalent methods in CKAN.ckanWrapper 
-# class 
+# for subsequent types will define their own updates, or think about making a
+# mapping between different types and equivalent methods in CKAN.ckanWrapper
+# class
 
 
 class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
 
     def __init__(self, ckanWrapper=None):
         """Gets a list of updates
-        
+
         :param ckanWrapper: [description], defaults to None
         :type ckanWrapper: [type], optional
         """
@@ -189,7 +208,7 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
     def doAdds(self, addStruct):
         """gets a list of group structs that describe groups that are to be added
         to a CKAN instance
-        
+
         :param addStruct: list of group data structs
         :type addStruct: list
         """
@@ -198,11 +217,11 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         for addData in sortedList:
             LOGGER.debug(f"adding group: {addData['name']}")
             # todo, this is working but am commenting out
-            #self.CKANWrap.addGroup(addData)
+            self.CKANWrap.addGroup(addData)
 
     def doDeletes(self, delStruct):
         """Gets a list of group names or ids that are to be deleted
-        
+
         :param delStruct: list of group names or ids that are to be deleted
         :type delStruct: list
         """
@@ -212,22 +231,21 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         delStruct.sort()
 
         for deleteGroup in delStruct:
-            LOGGER.info(f"removing the user: {deleteGroup} from the destination")
-            # self.CKANWrap.deleteGroup(deleteGroup)
-
+            LOGGER.info(f"removing the group: {deleteGroup} from the destination")
+            self.CKANWrap.deleteGroup(deleteGroup)
 
     def doUpdates(self, updtStruct):
         """Gets a list of group data that needs to be updated
-        
+
         :param updates: list of dictionaries with the data to be used to update a group
         :type updates: list of dict
         """
-        LOGGER.error("still need to implement this {updtStruct}")
+        #LOGGER.error(f"still need to implement this {updtStruct}")
         updateNames = list(updtStruct.keys())
         updateNames.sort()
         for updt in updateNames:
-            LOGGER.info(f"updating the group : {updt}")
-            #self.CKANWrap.updateGroup(updates[updt])
+            LOGGER.info(f"updating the group : {updtStruct[updt]}")
+            self.CKANWrap.updateGroup(updtStruct[updt])
         LOGGER.debug("updates complete")
 
 class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
@@ -246,8 +264,6 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.debug(f"adding organization: {addData['name']}")
             # todo, this is working but am commenting out
             #self.CKANWrap.addOrganization(addData)
-
-
 
     def doDeletes(self, delStruct):
         LOGGER.debug(f"deletes: {delStruct}")

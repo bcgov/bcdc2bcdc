@@ -13,6 +13,7 @@ import pprint
 import ckanapi
 import requests
 import constants
+import urllib3
 
 # pylint: disable=logging-format-interpolation
 
@@ -75,10 +76,10 @@ class CKANWrapper:
         return packageList
 
     def getPackageNames(self):
-        """Gets a list of package names from the API works through 
+        """Gets a list of package names from the API works through
         multiple 500 element pages until the call returns empty
         list
-        
+
         :return: a list of package names
         :rtype: list
         """
@@ -130,9 +131,9 @@ class CKANWrapper:
         return packageList
 
     def getOrganizationNames(self):
-        """retrieves a list of the organizations from CKAN and 
+        """retrieves a list of the organizations from CKAN and
         returns them.
-        
+
         :return: [description]
         :rtype: [type]
         """
@@ -141,21 +142,34 @@ class CKANWrapper:
 
     def getUsers(self, includeData=False):
         """gets a list of users in the ckan instance
-        
-        :param includeData: when set to true returns the full user objects 
+
+        :param includeData: when set to true returns the full user objects
             otherwise will only return a list of user names, defaults to False
         :type includeData: bool, optional
         :return: a list of usernames or userdata
         :rtype: list
         """
+        LOGGER.debug("getting users")
         params = {"all_fields": includeData}
-        users = self.remoteapi.action.user_list(data_dict=params)
+        try:
+            users = self.remoteapi.action.user_list(data_dict=params)
+        except requests.exceptions.ConnectionError:
+            # try manually using the api end point
+            LOGGER.warning('caught error with ckanapi module call, trying directly')
+            userListendPoint = 'api/3/action/user_list'
+            userListUrl = f"{self.CKANUrl}{userListendPoint}"
+            LOGGER.debug(f"userlist url: {userListUrl}")
+
+            resp = requests.get(userListUrl, headers=self.CKANHeader)
+            LOGGER.debug(f'status_code: {resp.status_code}')
+            userResp = resp.json()
+            users = userResp['result']
         LOGGER.info(f"retrieved {len(users)} users")
         return users
-        
+
     def addUser(self, userData):
         """makes api call to ckan to create a new user
-        
+
         :param userData: data used to create the user
         :type userData: dict
         """
@@ -167,7 +181,7 @@ class CKANWrapper:
 
     def updateUser(self, userData):
         """receives a dictionary that it can use to update the data.
-        
+
         :param userData: a dictionary with the data to use to update an existing
             ckan user
         :type userData: dict
@@ -190,7 +204,7 @@ class CKANWrapper:
 
     def userExists(self, userId):
         """identify if a specific user exists in a CKAN instance
-        
+
         :param userId: name or id of the user who's existence is to be tested
         :type userId: str
         :return: boolean indicating if the user exists
@@ -216,7 +230,7 @@ class CKANWrapper:
 
     def deleteUser(self, userId):
         """Deletes a user
-        
+
         :param userId: either the user 'id' or 'name'
         :type userId: str
         """
@@ -227,8 +241,8 @@ class CKANWrapper:
 
     def getGroups(self, includeData=False):
         """Retrieves groups from ckan api
-        
-        :param includeData: if set to True will return all the properties of 
+
+        :param includeData: if set to True will return all the properties of
             groups, otherwise will return only the names
         :type includeData: bool, optional
         :return: list of groups
@@ -237,7 +251,7 @@ class CKANWrapper:
         groupConfig = {}
         if includeData:
             groupConfig = {
-                'order_by': 'name', 
+                'order_by': 'name',
                 'all_fields': True,
                 'include_extras': True,
                 'include_tags': True,
@@ -250,7 +264,7 @@ class CKANWrapper:
 
     def addGroup(self, groupData):
         """makes an api call to CKAN to create the group described in groupData
-        
+
         :param groupData: [description]
         :type groupData: [type]
         """
@@ -266,7 +280,7 @@ class CKANWrapper:
 
         :param groupIdentifier: The unique identifier for the group that
             is to be deleted.  Either 'name' or 'id'
-        :type groupIdentifier: str 
+        :type groupIdentifier: str
         """
         LOGGER.info(f"trying to delete the group: {groupIdentifier}")
         orgParams = {'id': groupIdentifier}
@@ -275,15 +289,16 @@ class CKANWrapper:
 
     def updateGroup(self, groupData):
         """receives a dictionary that it can use to update the data.
-        
+
         :param userData: a dictionary with the data to use to update an existing
             ckan user
         :type userData: dict
         """
         # wants the id to be the group name
         if 'id' not in groupData and 'name' in groupData:
-            groupData['id'] = groupData['name']
-            del groupData['name']
+            #groupData['id'] = groupData['name']
+            #del groupData['name']
+            pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
         # data_dict=groupData
         retVal = self.remoteapi.action.group_update(**groupData)
@@ -292,11 +307,11 @@ class CKANWrapper:
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
-        
+
         :param includeData: [description], defaults to False
         :type includeData: bool, optional
         """
-        # TODO: call as it is seems to crash with 502 error. breaking it up into 
+        # TODO: call as it is seems to crash with 502 error. breaking it up into
         #       a paged call
         orgConfig = {}
         organizations = []
@@ -305,13 +320,13 @@ class CKANWrapper:
         pageCnt = 1
         if includeData:
             orgConfig = {
-                'order_by': 'name', 
+                'order_by': 'name',
                 'all_fields': True,
                 'include_extras': True,
                 'include_tags': True,
                 'include_groups': True,
                 'include_users': True,
-                'limit': pageSize, 
+                'limit': pageSize,
                 'offset': currentPosition
             }
         while True:
@@ -335,7 +350,7 @@ class CKANWrapper:
 
         :param organizationIdentifier: The unique identifier for the organization that
             is to be deleted.  Either 'name' or 'id'
-        :type organizationIdentifier: str 
+        :type organizationIdentifier: str
         """
         LOGGER.info(f"trying to delete the organization: {organizationIdentifier}")
         orgParams = {'id': organizationIdentifier}
@@ -344,8 +359,8 @@ class CKANWrapper:
 
     def addOrganization(self, organizationData):
         """creates a new organization
-        
-        :param organizationData: creates a new organization 
+
+        :param organizationData: creates a new organization
         :type organizationData: struct
         """
         LOGGER.debug(f"creating a new organization with the data: {organizationData}")
