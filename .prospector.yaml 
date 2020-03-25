@@ -1,0 +1,27 @@
+output-format: json
+
+strictness: high
+test-warnings: true
+doc-warnings: true
+
+ignore-paths:
+  - docs
+  - .vscode
+  - __pycache__
+  - ve
+  - .pytest_cache
+  .prospector.yaml
+
+ignore-patterns:
+  - (^|/)skip(this)?(/|$)
+
+pep8:
+  disable:
+    - logging-format-interpolation
+  enable:
+    - W601
+  options:
+    max-line-length: 80
+
+mccabe:
+  run: true

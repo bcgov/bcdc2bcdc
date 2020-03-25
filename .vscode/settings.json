@@ -1,3 +1,56 @@
 {
-    "python.pythonPath": "/usr/bin/python3"
+    "python.pythonPath": "./ve/wsl_ve/bin/python3",
+    "autoDocstring.docstringFormat": "sphinx",
+    "editor.rulers": [
+        80,
+        120
+    ],
+    "editor.hover.enabled": false,
+    "python.linting.prospectorEnabled": true,
+    "python.linting.enabled": true,
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "cSpell.words": [
+        "Bools",
+        "CKAN",
+        "Struct",
+        "aeliving",
+        "apikey",
+        "boolval",
+        "bsharrat",
+        "cati",
+        "ckanapi",
+        "datastruct",
+        "dels",
+        "flds",
+        "fullname",
+        "idir",
+        "ints",
+        "ivar",
+        "jchurchi",
+        "mccabe",
+        "openid",
+        "orgs",
+        "pformat",
+        "posixpath",
+        "pycache",
+        "pylint",
+        "pytest",
+        "recursed",
+        "recusion",
+        "rtype",
+        "structs",
+        "transformtion",
+        "uniqueid",
+        "updt",
+        "updts",
+        "veryhigh"
+    ],
+    "python.formatting.provider": "black",
+    "workbench.editor.enablePreview": false,
+    "files.trimTrailingWhitespace": true
 }
