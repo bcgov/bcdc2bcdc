@@ -13,6 +13,14 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
+            "name": "main.py",
+            "type": "python",
+            "request": "launch",
+            "program": "src/main.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
             "name": "Python: test_CKANData: test",
             "type": "python",
             "request": "launch",

@@ -344,7 +344,6 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         for org2Del in delStruct:
             LOGGER.debug(f"    deleting the package: {org2Del}")
 
-
     def doUpdates(self, updtStruct):
         """Does the package updates
 

@@ -123,7 +123,11 @@ class CKANRecord:
                 #LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
                 #LOGGER.debug(f'struct: {struct}')
                 #LOGGER.debug(f'newStruct: {newStruct}')
-                #LOGGER.debug(f'struct[key]: {struct[key]}')
+                if key not in struct:
+                    # field is defined as being required but is not in the object
+                    # that was returned.  Setting it equal to None
+                    struct[key] = None
+                #LOGGER.debug(f'struct[{key}]: {struct[key]}')
 
                 newStruct[key] = self.getComparableStruct(struct[key], flds2Include[key])
             #LOGGER.debug(f"newStruct: {newStruct}")
