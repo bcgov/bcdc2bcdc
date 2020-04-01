@@ -5,13 +5,16 @@ Connection api keys are specified in environment variables defined in:
 constants.py
 """
 
-
+import json
 import logging
 import os
 import pprint
+import time
+import sys
 
 import ckanapi
 import requests
+
 import constants
 
 # pylint: disable=logging-format-interpolation
@@ -58,9 +61,10 @@ class CKANWrapper:
         package_list_cnt = 0
         while True:
             LOGGER.debug("offset: %s", params["offset"])
-            resp = requests.get(
-                package_list_call, headers=self.CKANHeader, params=params
-            )
+            # resp = requests.get(
+            #     package_list_call, headers=self.CKANHeader, params=params
+            # )
+            resp = self.__getWithRetries(package_list_call, params)
             LOGGER.debug("status: %s", resp.status_code)
             pkg_list = resp.json()
             package_list_cnt = package_list_cnt + len(pkg_list["result"])
@@ -73,6 +77,26 @@ class CKANWrapper:
                 break
             params["offset"] = params["limit"] + params["offset"]
         return packageList
+
+    def __getWithRetries(self, endpoint, payload, retries=0):
+        maxRetries = 5
+        waitTime = 3
+        LOGGER.debug(f'end point: {endpoint}')
+        resp = requests.get(
+            endpoint, headers=self.CKANHeader, params=payload
+        )
+        LOGGER.debug(f"status_code: {resp.status_code}")
+        if resp.status_code != 200:
+            LOGGER.warning(f"package_get received non 200 status code: {resp.status_code}")
+            if retries < maxRetries:
+                retries += 1
+                time.sleep(waitTime)
+                resp = self.__getWithRetries(endpoint, payload, retries)
+            else:
+                msg = f'made {retries} attempts to retrieve package data, getting ' + \
+                    f'status code: {resp.status_code}.  Unable to complete request'
+                raise CKANPackagesGetError(msg)
+        return resp
 
     def getPackageNames(self):
         """Gets a list of package names from the API works through
@@ -126,6 +150,66 @@ class CKANWrapper:
 
         if not success:
             packageList = self.__packageListPaging()
+
+        return packageList
+
+    def getPackagesAndData_cached(self, cacheFileName):
+        """Used for debugging, re-uses a cached version of the package data
+        instead of retrieving it from the api.
+        """
+        dataDir = constants.getCachedDir()
+        cachedPackagesFileName = os.path.join(dataDir, cacheFileName)
+        if not os.path.exists(cachedPackagesFileName):
+            pkgs = self.getPackagesAndData()
+            with open(cachedPackagesFileName, 'w') as fh:
+                json.dump(pkgs, fh)
+        else:
+            with open(cachedPackagesFileName) as fh:
+                pkgs = json.load(fh)
+        return pkgs
+
+    def getPackagesAndData(self):
+        LOGGER.debug(f"url: {self.CKANUrl}")
+        packageList = []
+        elemCnt = 500
+        #elemCnt = 2
+
+        pageCnt = 0
+        LOGGER.info("Getting packages with data:")
+
+        packageSearchEndPoint = "api/3/action/package_search"
+        package_list_call = f"{self.CKANUrl}{packageSearchEndPoint}"
+        LOGGER.debug(f'package_list_call: {package_list_call}')
+
+        packageList = []
+        params = {"rows": elemCnt, "start": 1}
+        package_list_cnt = 0
+
+        while True:
+
+            offset = pageCnt * elemCnt
+            LOGGER.info(f"    - page: {pageCnt} {offset} {elemCnt}")
+
+            params = {"rows": elemCnt, "start": offset}
+            resp = self.__getWithRetries(package_list_call, params)
+            data = resp.json()
+            # also avail is resp['success']
+            #LOGGER.debug(f"resp: {data['result']}")
+            LOGGER.debug(f"data type: {type(data)}, {len(data['result'])}")
+            packageList.extend(data['result']['results'])
+            LOGGER.debug(f"number of packages retrieved: {len(packageList)}")
+
+
+            # import json
+            # with open("/mnt/c/Kevin/proj/bcdc_2_bcdc/junk/pkgs_demo.json", 'w') as fh:
+            #     json.dump(data, fh)
+            # raise
+            if len(data["result"]['results']) < params["rows"]:
+                LOGGER.debug("end of pages, breaking out")
+                break
+
+
+            pageCnt += 1
 
         return packageList
 
@@ -365,7 +449,6 @@ class CKANWrapper:
         retVal = self.remoteapi.action.organization_create(**organizationData)
         LOGGER.debug(f"Organization Created: {retVal}")
 
-
     def updateOrganization(self, organizationData):
         """receives a dictionary that it can use to update the organizations data.
 
@@ -376,3 +459,15 @@ class CKANWrapper:
         LOGGER.debug(f"trying to update a organization using the data: {organizationData}")
         retVal = self.remoteapi.action.organization_update(**organizationData)
         LOGGER.debug(f"Organization Updated: {retVal}")
+
+
+
+# ----------------- EXCEPTIONS
+class CKANPackagesGetError(Exception):
+    """CKAN instances seem to randomely go offline when in the middle of paging
+    through packages.  Logic implemented to wait and try again.  When the wait
+    and try again logic fails this error is raised.
+    """
+    def __init__(self, message):
+        LOGGER.error(f"error message: {message}")
+        self.message = message

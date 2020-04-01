@@ -18,12 +18,12 @@ def CKAN_Src_fixture(CKANParamsProd):
 @pytest.fixture(scope="function")
 def CKANDeleteTestUser(CKANParamsTest):
     """makes sure at  the start of every test that uses this fixture the test
-    user state is set to 'deleted'.  
+    user state is set to 'deleted'.
 
     Method will ensure the state is 'deleted' before and after yield statement.
     """
     ckan = CKAN.CKANWrapper(CKANParamsTest['ckanUrl'], CKANParamsTest['ckanAPIKey'])
-    
+
     dataHelper = CKANDataHelpers.CKAN_Test_Data()
     dummyUserData = dataHelper.getTestUserData()
 
@@ -40,7 +40,7 @@ def CKANDeleteTestUser(CKANParamsTest):
 
 @pytest.fixture(scope="function")
 def CKANAddTestUser(CKANParamsTest):
-    """Some methods need the demo user to exist.  This fixture makes sure the 
+    """Some methods need the demo user to exist.  This fixture makes sure the
     demo user exists, and that its state is set to 'active'
 
                 "state": "active"
@@ -77,4 +77,4 @@ def CKANAddTestUser(CKANParamsTest):
 
 
 
-    
+

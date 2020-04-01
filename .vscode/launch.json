@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env"
-        }, 
+        },
         {
             "name": "Python: test_CKANData: test",
             "type": "python",
@@ -22,8 +22,7 @@
                 "tests/test_CKANData.py::test_user_diffs"
             ],
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env",
-            "rootdir": "${workspaceFolder}/tests"
+            "envFile": "${workspaceFolder}/.env"
         },
         {
             "name": "Python: Test",

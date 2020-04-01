@@ -1,3 +1,6 @@
+import os.path
+
+
 # Environment variable names used to retrieve urls and api keys
 CKAN_APIKEY_DEST = "CKAN_API_KEY_DEST"
 CKAN_URL_DEST = "CKAN_URL_DEST"
@@ -35,10 +38,26 @@ LOGGING_CONFIG_FILE_NAME = 'logger.config'
 LOGGING_OUTPUT_DIR = 'logs'
 LOGGING_OUTPUT_FILE_NAME = 'bcdc2bcdc.log'
 
+# cached versions of data used by tests
+CACHE_DATA_DIR = 'data'
 CACHE_PROD_USERS_FILE = 'prod_users.json'
 CACHE_TEST_USERS_FILE = 'test_users.json'
 CACHE_PROD_ORG_FILE = 'prod_org.json'
 CACHE_TEST_ORG_FILE = 'test_org.json'
+CACHE_DEST_PKGS_FILE = 'dest_pkgs.json'
+CACHE_SRC_PKGS_FILE = 'src_pkgs.json'
+
 
 TEST_USER_DATA_FILE = "users_src.json" # defines dummy users that are used in testing
 TEST_USER_DATA_POSITION = 0 # when a single user is required this is the one used.
+
+
+def getCachedDir():
+    """calculates the directory to use for cached data and returns the path
+    :return: the path to the directory where cached data is to be located
+    :rtype: str, path
+    """
+    curDir = os.path.dirname(__file__)
+    cacheDirRelative = os.path.join(curDir, '..', CACHE_DATA_DIR)
+    cacheDir = os.path.normpath(cacheDirRelative)
+    return cacheDir

@@ -50,7 +50,7 @@ def CKANData_User_Data_Record(CKANData_User_Data_Set):
 
 @pytest.fixture(scope="session")
 def CKAN_Cached_Prod_User_Data(TestProdUserCacheJsonfile, CKANWrapperProd):
-    """Checks to see if a cache file exists in the junk directory.  If it does 
+    """Checks to see if a cache file exists in the junk directory.  If it does
     load the data from there otherwise will make an api call, cache the data for
     next time and then return the org data
 
@@ -67,7 +67,7 @@ def CKAN_Cached_Prod_User_Data(TestProdUserCacheJsonfile, CKANWrapperProd):
 
 @pytest.fixture(scope="session")
 def CKAN_Cached_Test_User_Data(TestTestUserCacheJsonfile, CKANWrapperTest):
-    """Checks to see if a cache file exists in the junk directory.  If it does 
+    """Checks to see if a cache file exists in the junk directory.  If it does
     load the data from there otherwise will make an api call, cache the data for
     next time and then return the org data
 
@@ -83,6 +83,29 @@ def CKAN_Cached_Test_User_Data(TestTestUserCacheJsonfile, CKANWrapperTest):
     yield userDataTest
 
 @pytest.fixture(scope="session")
+def CKAN_Cached_Src_Package_Data(TestSrcPackageCacheJsonfile, CKAN_Src_fixture):
+    if not os.path.exists(TestSrcPackageCacheJsonfile):
+        pkgDataSrc = CKANWrapperSrc.getPackagesAndData()
+        with open(TestSrcPackageCacheJsonfile, 'w') as outfile:
+            json.dump(pkgDataSrc, outfile)
+    else:
+        with open(TestSrcPackageCacheJsonfile) as json_file:
+            pkgDataSrc = json.load(json_file)
+    yield pkgDataSrc
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Dest_Package_Data(TestDestPackageCacheJsonfile, CKAN_Dest_fixture):
+    if not os.path.exists(TestDestPackageCacheJsonfile):
+        pkgDataDest = CKANWrapperDest.getPackagesAndData()
+        with open(TestDestPackageCacheJsonfile, 'w') as outfile:
+            json.dump(pkgDataDest, outfile)
+    else:
+        with open(TestDestPackageCacheJsonfile) as json_file:
+            pkgDataDest = json.load(json_file)
+    yield pkgDataDest
+
+
+@pytest.fixture(scope="session")
 def CKAN_Cached_Test_User_Data_Set(CKAN_Cached_Test_User_Data):
     ds = CKANData.CKANUsersDataSet(CKAN_Cached_Test_User_Data)
     yield ds
@@ -94,7 +117,7 @@ def CKAN_Cached_Prod_User_Data_Set(CKAN_Cached_Prod_User_Data):
 
 @pytest.fixture(scope="session")
 def CKAN_Cached_Prod_Org_Data(TestProdOrgCacheJsonFile, CKANWrapperProd):
-    """Checks to see if a cache file exists in the junk directory.  If it does 
+    """Checks to see if a cache file exists in the junk directory.  If it does
     load the data from there otherwise will make an api call, cache the data for
     next time and then return the org data
 
@@ -112,7 +135,7 @@ def CKAN_Cached_Prod_Org_Data(TestProdOrgCacheJsonFile, CKANWrapperProd):
 
 @pytest.fixture(scope="session")
 def CKAN_Cached_Test_Org_Data(TestTestOrgCacheJsonFile, CKANWrapperTest):
-    """Checks to see if a cache file exists in the junk directory.  If it does 
+    """Checks to see if a cache file exists in the junk directory.  If it does
     load the data from there otherwise will make an api call, cache the data for
     next time and then return the org data
 

@@ -19,6 +19,7 @@ import constants
 import CKANTransform
 import deepdiff
 import pprint
+import json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -236,6 +237,7 @@ class CKANRecord:
                 pp.pformat(inputComparable)
                 LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
                 LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
+                LOGGER.debug(f"diffs are: {diff}")
         return diff
 
     def __ne__(self, inputRecord):
@@ -245,6 +247,15 @@ class CKANRecord:
             retVal = False
         LOGGER.debug(f"retval from __ne__: {retVal}")
         return retVal
+
+    def __str__(self):
+        """string representation of obj
+
+        :return: the json rep of self.jsonData property
+        :rtype: str
+        """
+        return json.dumps(self.jsonData)
+
 
 class DataCell:
     """an object that can be used to wrap a data value and other meta data
@@ -331,6 +342,11 @@ class CKANOrganizationRecord(CKANRecord):
         recordType = constants.TRANSFORM_TYPE_ORGS
         CKANRecord.__init__(self, jsonData, recordType)
 
+class CKANPackageRecord(CKANRecord):
+
+    def __init__(self, jsonData):
+        recordType = constants.TRANSFORM_TYPE_PACKAGES
+        CKANRecord.__init__(self, jsonData, recordType)
 
 
 # -------------------- DATASET DELTA ------------------
@@ -758,6 +774,9 @@ class CKANDataSet:
         LOGGER.debug(f"inputUniqueIds: {inputUniqueIds}")
         LOGGER.debug(f"thisUniqueIds: {thisUniqueIds}")
 
+        LOGGER.debug(f"this unique ids count: {len(thisUniqueIds)}")
+        LOGGER.debug(f"input data sets unique id count: {len(inputUniqueIds)}")
+
         if set(inputUniqueIds) == set(thisUniqueIds):
             # has all the unique ids, now need to look at the differences
             # in the data
@@ -821,6 +840,11 @@ class CKANOrganizationDataSet(CKANDataSet):
     def __init__(self, jsonData):
         CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_ORGS)
         self.recordConstructor = CKANGroupRecord
+
+class CKANPackageDataSet(CKANDataSet):
+    def __init__(self, jsonData):
+        CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_PACKAGES)
+        self.recordConstructor = CKANPackageRecord
 
 # ----------------- EXCEPTIONS
 

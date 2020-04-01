@@ -81,30 +81,26 @@ class RunUpdate:
             updater = CKANUpdate.CKANOrganizationUpdate(self.destCKANWrapper)
             updater.update(deltaObj)
 
-
-
-
-        '''
-        # -------  TEMP: used for dev....  Move to tests.
-        # to speed up dev dumping to json
-        import json
-        junkDir = os.path.join(os.path.dirname(__file__), '..', 'junk')
-        if not os.path.exists(junkDir):
-            os.mkdir(junkDir)
-        prodJsonPath = os.path.join(junkDir, 'prod_org.json')
-        testJsonPath = os.path.join(junkDir, 'test_org.json')
-        with open(prodJsonPath, 'w') as outfile:
-            json.dump(orgDataProd, outfile)
-        with open(testJsonPath, 'w') as outfile:
-            json.dump(testJsonPath, outfile)
-        '''
-
-
     def updatePackages(self):
         # TODO: need to complete this method... ... left incomplete while work on
         #       org compare and update instead.  NEEDS TO BE COMPLETED
-        prodPkgList = self.srcCKANWrapper.getPackageNames()
-        testPkgList = self.destCKANWrapper.getPackageNames()
+
+        # TODO: once debug is complete remove the canned part
+        #srcPkgList = self.srcCKANWrapper.getPackagesAndData()
+        #destPkgList = self.destCKANWrapper.getPackagesAndData()
+        srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
+        destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
+
+        srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList)
+        destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList)
+        if srcPkgDataSet != destPkgDataSet:
+            LOGGER.debug("packages are not the same")
+
+            deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
+            LOGGER.info(f"Delta obj for orgs: {deltaObj}")
+            updater = CKANUpdate.CKANPackagesUpdate(self.destCKANWrapper)
+            updater.update(deltaObj)
+
 
 if __name__ == "__main__":
 
@@ -140,4 +136,5 @@ if __name__ == "__main__":
     # This is complete, commented out while work on group
     #updater.updateUsers()
     #updater.updateGroups()
-    updater.updateOrganizations()
+    #updater.updateOrganizations()
+    updater.updatePackages()

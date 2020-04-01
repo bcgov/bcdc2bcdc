@@ -81,5 +81,73 @@
             "description": true
         },
         "update_fields_to_include": ["id"]
+    },
+    "packages": {
+        "unique_id_field": "name",
+        "user_populated_properties": {
+            "license_title": true,
+            "maintainer": true,
+            "publish_state": false,
+            "relationships_as_object": true,
+            "view_audience": true,
+            "private": true,
+            "maintainer_email": true,
+            "num_tags": true,
+            "id": false,
+            "metadata_created": false,
+            "metadata_modified": false,
+            "author": false,
+            "author_email": true,
+            "state": true,
+            "version": true,
+            "license_id": true,
+            "type": true,
+            "resources": false,
+            "more_info": true,
+            "num_resources": false,
+            "tags": [
+                {
+                    "vocabulary_id": false,
+                    "state": true,
+                    "display_name": true,
+                    "id": false,
+                    "name": true
+                }
+            ],
+            "contacts": false,
+            "resource_status": true,
+            "purpose": true,
+            "groups": true,
+            "creator_user_id": false,
+            "download_audience": true,
+            "replacement_record": true,
+            "relationships_as_subject": true,
+            "security_class": true,
+            "dates": false,
+            "organization": {
+                "description": true,
+                "created": false,
+                "title": true,
+                "name": true,
+                "is_organization": true,
+                "state": true,
+                "image_url": true,
+                "revision_id": false,
+                "type": true,
+                "id": false,
+                "approval_status": true
+            },
+            "name": true,
+            "isopen": true,
+            "url": true,
+            "source_data_path": true,
+            "notes": true,
+            "owner_org": false,
+            "extras": false,
+            "license_url": true,
+            "metadata_visibility": true,
+            "title": true,
+            "revision_id": false
+        }
     }
 }

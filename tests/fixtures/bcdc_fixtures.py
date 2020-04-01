@@ -53,6 +53,29 @@ def CKANWrapperTest(CKANParamsTest):
         url=CKANParamsTest["ckanUrl"], apiKey=CKANParamsTest["ckanAPIKey"]
     )
 
+def CKANWrapperDest(CKANWrapperTest):
+    """just returning TEST as slowly try to move to SRC / DEST naming
+
+    :param CKANWrapperTest: the CKAN test data wrapper object
+    :type CKANWrapperTest: CKAN.CKANWrapper
+    :yield: a ckan api wrapper object that is configured for the Destination
+        ckan instance
+    :rtype: CKAN.CKANWrapper
+    """
+    yield CKANWrapperTest
+
+def CKANWrapperSrc(CKANWrapperProd):
+    """just returning PROD CKAN api wrapper,
+    as slowly try to move to SRC / DEST naming
+
+    :param CKANWrapperTest: the CKAN test data wrapper object
+    :type CKANWrapperTest: CKAN.CKANWrapper
+    :yield: a ckan api wrapper object that is configured for the Destination
+        ckan instance
+    :rtype: CKAN.CKANWrapper
+    """
+    yield CKANWrapperProd
+
 
 @pytest.fixture(scope="session")
 def CKANWrapperProd(CKANParamsProd):

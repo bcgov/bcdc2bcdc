@@ -45,7 +45,7 @@ def test_UserData_Dataset_eq_ne(CKANData_User_Data_Raw):
     LOGGER.debug(f"isEqual: {isEqual}")
     assert isEqual
 
-    # # remove one of the records 
+    # # remove one of the records
     CKANData_User_Data_Raw_less_one = copy.deepcopy(CKANData_User_Data_Raw)
     CKANData_User_Data_Raw_less_one =  CKANData_User_Data_Raw_less_one[1:]
     ckanUserDataSet_ne = CKANData.CKANUsersDataSet(CKANData_User_Data_Raw_less_one)
@@ -73,14 +73,14 @@ def test_UserData_Dataset_eq_ne(CKANData_User_Data_Raw):
 
 def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_Set, TransformationConfig):
     """Gets User Dataset objects for TEST and PROD.
-    
+
     :param CKAN_Cached_Test_Org_Data: [description]
     :type CKAN_Cached_Test_Org_Data: [type]
     :param CKAN_Cached_Prod_Org_Data: [description]
     :type CKAN_Cached_Prod_Org_Data: [type]
     """
     delta = CKAN_Cached_Prod_User_Data_Set.getDelta(CKAN_Cached_Test_User_Data_Set)
-    
+
     ignoreList = TransformationConfig.getIgnoreList(CKAN_Cached_Prod_User_Data_Set.dataType)
     LOGGER.info("total users in PROD: %s", len(CKAN_Cached_Prod_User_Data_Set.jsonData))
     LOGGER.info("total users in TEST: %s", len(CKAN_Cached_Test_User_Data_Set.jsonData))
@@ -91,7 +91,6 @@ def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_S
 
     addNames = [i['name'] for i in delta.getAddData()]
     LOGGER.info("ADDS: %s", addNames)
-
     updateNames = [i for i in delta.getUpdateData().keys()]
     LOGGER.info("UPDATES: %s", updateNames)
 
@@ -104,7 +103,6 @@ def test_user_diffs(CKAN_Cached_Prod_User_Data_Set, CKAN_Cached_Test_User_Data_S
 
     for updateName in updateNames:
         assert updateName not in ignoreList
-
 
 def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     """tests retrieval of data
@@ -119,13 +117,13 @@ def test_OrgData_Dataset(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     LOGGER.debug(f"first record CKAN_Cached_Test_Org_Data: {CKAN_Cached_Test_Org_Data[0]}")
     assert isinstance(CKAN_Cached_Test_Org_Data, list)
 
-    # just a sanity check here.. should be around 200+ orgs 
+    # just a sanity check here.. should be around 200+ orgs
     assert len(CKAN_Cached_Prod_Org_Data) > 100
     assert len(CKAN_Cached_Test_Org_Data) > 100
 
 def test_OrgDataDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     '''
-    test the getDelta method that identifies differences between two 
+    test the getDelta method that identifies differences between two
     datasets
     '''
     prodOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Prod_Org_Data)
@@ -145,8 +143,6 @@ def test_OrgDataDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
 
     LOGGER.info(f"delta obj: {deltaObj}")
 
-
-
 def test_OrgDataRecordDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data):
     srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Prod_Org_Data)
     destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(CKAN_Cached_Test_Org_Data)
@@ -164,15 +160,13 @@ def test_OrgDataRecordDelta(CKAN_Cached_Prod_Org_Data, CKAN_Cached_Test_Org_Data
     else:
         LOGGER.debug("not equal")
 
-        
-
 def test_OrgRecord_removeEmbedded(CKAN_Cached_Test_Org_Record, TransformationConfig):
     """ CKAN can have embedded data structures.  Example a org can have
-    users embedded in it.  The ETL script wants to ignores some users. 
-    removal of embedded structs will detect embedded structs by their 
+    users embedded in it.  The ETL script wants to ignores some users.
+    removal of embedded structs will detect embedded structs by their
     properties and remove them from datasets that are being compared.
-    
-    
+
+
     :param CKAN_Cached_Test_Org_Record: a ckan record that can be used to test
         removal of embedded data
     :type CKAN_Cached_Test_Org_Record: CKANData.CKANRecord
@@ -186,7 +180,7 @@ def test_OrgRecord_removeEmbedded(CKAN_Cached_Test_Org_Record, TransformationCon
     dataCell = CKAN_Cached_Test_Org_Record.removeEmbeddedIgnores(dataCell)
     LOGGER.debug(f"final modified struct: {dataCell.struct}")
 
-    # now dataCell.struct should contain a different data structure where 
+    # now dataCell.struct should contain a different data structure where
     # the embedded data that should be ignored has been removed.
     usersIgnore = TransformationConfig.getIgnoreList(constants.TRANSFORM_TYPE_USERS)
     for ignoreUser in usersIgnore:
@@ -209,3 +203,43 @@ def test_Org_Dataset_EmbedScrub(CKAN_Cached_Test_Org_Data_Set):
         if hasIgnores:
             LOGGER.error(f"ignores not removed: {dataCellNoIgnores.struct}")
         assert not hasIgnores
+
+def test_Package_DataSet(CKAN_Cached_Src_Package_Data, CKAN_Cached_Dest_Package_Data):
+    """used as a verification that the cached data retrieval is working
+
+    :param CKAN_Cached_Src_Package_Data: a struct containing the data from the source
+        ckan instance
+    :type CKAN_Cached_Src_Package_Data: list
+    :param CKAN_Cached_Dest_Package_Data: a list of dicts representing the package
+        data that comes from the  destination ckan instance
+    :type CKAN_Cached_Dest_Package_Data: list of dicts
+    """
+    LOGGER.debug(f"first record SRC: {CKAN_Cached_Src_Package_Data[0]['name']}")
+    LOGGER.debug(f"first record DEST: {CKAN_Cached_Dest_Package_Data[0]['name']}")
+
+def test_Package_Delta(CKAN_Cached_Src_Package_Data, CKAN_Cached_Dest_Package_Data):
+    #LOGGER.debug(f"{CKAN_Cached_Src_Package_Data[0]}")
+    #LOGGER.debug(f"{CKAN_Cached_Dest_Package_Data[0]}")
+
+    srcPkgCKANDataSet = CKANData.CKANPackageDataSet(CKAN_Cached_Src_Package_Data)
+    destPkgCKANDataSet = CKANData.CKANPackageDataSet(CKAN_Cached_Dest_Package_Data)
+
+    srcRecord = srcPkgCKANDataSet.next()
+    srcRecordId = srcRecord.getUniqueIdentifier()
+    # keep iterating over the source record until one is found that
+    # exists in the destination
+    destRecord = destPkgCKANDataSet.getRecordByUniqueId(srcRecordId)
+    while destRecord is None:
+        LOGGER.debug("getting anther record...")
+        srcRecord = srcPkgCKANDataSet.next()
+        srcRecordId = srcRecord.getUniqueIdentifier()
+        LOGGER.debug(f"src record id: {srcRecordId}")
+        destRecord = destPkgCKANDataSet.getRecordByUniqueId(srcRecordId)
+
+    LOGGER.debug(f'srcRecord: {srcRecord}')
+    LOGGER.debug(f'destRecord: {destRecord}')
+    LOGGER.debug("have source and dest record")
+    if srcRecord == destRecord:
+        LOGGER.debug("records are equal")
+    else:
+        LOGGER.debug("not equal")
