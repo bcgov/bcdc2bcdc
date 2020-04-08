@@ -85,10 +85,6 @@ class CKANRecord:
         :return: The new data structure with only user generated fields
         :rtype: dict or list
         """
-        # TODO: ckan obj can have embedded objects.  Example orgs contain users.
-        # when looking at users should consider the users: ignore values
-        # need to figure out how to implement this.
-
         if struct is None and flds2Include is None:
             struct = self.jsonData
             flds2Include = self.userPopulatedFields
@@ -183,7 +179,8 @@ class CKANRecord:
                     positions2Remove.append(listPos)
                     #LOGGER.debug("adding value: {listPos} to remove")
                 #LOGGER.debug(f"include value: {dataCell.include}")
-            LOGGER.debug(f"removing positions: {positions2Remove}")
+            if positions2Remove:
+                LOGGER.debug(f"removing positions: {positions2Remove}")
             dataCell.deleteIndexes(positions2Remove)
         #LOGGER.debug(f'returning... {dataCell.struct}, {dataCell.include}')
         #LOGGER.debug(f"ignore struct: {self.transConf.transConf['users']['ignore_list']}")
@@ -239,9 +236,9 @@ class CKANRecord:
             if diff:
                 pp = pprint.PrettyPrinter(indent=4)
                 pp.pformat(inputComparable)
-                LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
-                LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
-                LOGGER.debug(f"diffs are: {diff}")
+                #LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
+                #LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
+                #LOGGER.debug(f"diffs are: {diff}")
         return diff
 
     def __ne__(self, inputRecord):
@@ -259,7 +256,6 @@ class CKANRecord:
         :rtype: str
         """
         return json.dumps(self.jsonData)
-
 
 class DataCell:
     """an object that can be used to wrap a data value and other meta data
@@ -284,15 +280,15 @@ class DataCell:
             are to be removed.
         :type positions: list of ints
         """
-        LOGGER.debug(f"remove positions: {positions}")
+        #LOGGER.debug(f"remove positions: {positions}")
         newStruct = []
         for pos in range(0, len(self.struct)):
             if pos not in positions:
                 newStruct.append(self.struct[pos])
             else:
                 LOGGER.debug(f"removing: {pos} {self.struct[pos]}")
-        LOGGER.debug(f"old struct: {self.struct}")
-        LOGGER.debug(f"new struct: {newStruct}")
+        #LOGGER.debug(f"old struct: {self.struct}")
+        #LOGGER.debug(f"new struct: {newStruct}")
         self.struct = newStruct
         # transfer changes to the parent
 
@@ -351,7 +347,6 @@ class CKANPackageRecord(CKANRecord):
     def __init__(self, jsonData):
         recordType = constants.TRANSFORM_TYPE_PACKAGES
         CKANRecord.__init__(self, jsonData, recordType)
-
 
 # -------------------- DATASET DELTA ------------------
 
@@ -528,6 +523,10 @@ class CKANDataSetDeltas:
             #LOGGER.debug(f"uniqueId: {uniqueId}")
             ckanRec = self.srcCKANDataset.getRecordByUniqueId(uniqueId)
             compStruct = ckanRec.getComparableStruct()
+
+            # Adding this code in to accomodate resources in packages.  When
+            # updating resources
+
             if isinstance(ckanDataSet, dict):
                 filteredData[uniqueId] = compStruct
             elif isinstance(ckanDataSet, list):
@@ -537,6 +536,21 @@ class CKANDataSetDeltas:
     def getAddData(self):
         LOGGER.debug(f'add data: {type(self.adds)} {len(self.adds)}')
         adds = self.filterNonUserGeneratedFields(self.adds)
+
+        # these are fields that are defined as autogen, but should include these
+        # fields from the source when defining new data on the dest.
+        addFields = self.transConf.getFieldsToIncludeOnAdd(
+            self.destCKANDataset.dataType)
+        defaultFields = self.transConf.getRequiredFieldDefaultValues(
+            self.destCKANDataset.dataType)
+
+        if addFields:
+            LOGGER.debug("adding destination autogen fields")
+            adds = self.addAutoGenFields(adds, addFields, constants.DATA_SOURCE.SRC)
+        if defaultFields:
+            LOGGER.debug("adding required Fields")
+            adds = self.addRequiredDefaultValues(adds, defaultFields)
+
         return adds
 
     def getDeleteData(self):
@@ -559,14 +573,110 @@ class CKANDataSetDeltas:
         if updateFields:
             # need to add these onto each record from the destination
             # instances data
-            updates = self.addUpdateAutoGenFields(updates, updateFields)
+            updates = self.addAutoGenFields(updates, updateFields, constants.DATA_SOURCE.DEST)
         return updates
 
-    def addUpdateAutoGenFields(self, dataDict, autoGenFieldList):
+    def addRequiredDefaultValues(self, inputDataStruct, defaultFields):
+        """
+
+        """
+        if isinstance(inputDataStruct, list):
+            iterObj = range(0, len(inputDataStruct))
+        else:
+            iterObj = inputDataStruct
+        for iterVal in iterObj:
+            # iterobj either a list of dict of data sets
+            LOGGER.debug(f"iterVal:  {iterVal}")
+            currentDataset = inputDataStruct[iterVal]
+            LOGGER.debug(f"currentDataset:  {currentDataset}")
+            for fieldName in defaultFields:
+                LOGGER.debug(f"fieldName:  {fieldName}")
+                # fieldName will be the index to the current data set.
+                fieldValue = defaultFields[fieldName]
+                self.__populateField(currentDataset, fieldName, fieldValue)
+                # this line should not be necessary, instead should
+                # be a double check
+                if fieldName not in currentDataset:
+                    currentDataset[fieldName] = defaultFields[fieldName]
+        return inputDataStruct
+
+    def __populateField(self, inputData, key, valueStruct):
+        """
+        inputData is an input data struct, key refers to either an element in a
+        list or an element in a dictionary that should exist.
+
+        valueStruct is the value that the key should be equal to.  ValueStruct
+        can be any native python type.  If its a list it identifies values that
+        should exist in that list
+
+        If valueStruct is a dict it identifies key value pairs, keys are keys
+        that must be in the corresponding dict in inputData.
+
+        :param inputData: The input data structure
+        :type inputData: list or dict
+        :param key: if the inputdata is expected to be a list then this will be
+            populated to 0 by default, however if the input is a dict it will
+            be a key that should exist in the dictionary
+        :type key: int, str
+        :param valueStruct: a structure that should be represented in the inpuData
+            the structure defined keys that must exist if its a dict, and the
+            value to set the keys equal to if they do NOT exist in the inputData.
+        :type valueStruct: any
+        :raises ValueError: raised when an unexpected type is encountered.
+        :return: the inputData struct with modifications
+        :rtype: any
+        """
+        #LOGGER.debug(f"inputData: {inputData}")
+        #LOGGER.debug(f"key: {key}")
+        #LOGGER.debug(f"valueStruct: {valueStruct}")
+
+        # test if valueStruct is a primitive
+        if isinstance(valueStruct, (str, bool, int, float, complex)):
+            if isinstance(inputData, dict):
+                if key not in inputData:
+                    inputData[key] = valueStruct
+            elif isinstance(inputData, list):
+                if valueStruct not in inputData:
+                    # example key would be a number, doesn't matter cause its not used
+                    # input data is a string that must be in the inputData list
+                    inputData.append(valueStruct)
+            else:
+                msg = 'expecting "inputData" to be a dict or a list, but its a ' + \
+                      f'{type(inputData)} type.  Don\'t know what to do! {inputData}'
+                raise ValueError(msg)
+        elif isinstance(valueStruct, list):
+            # inputData = package struct
+            # key = resources
+            # valueStruct = list of dict with keys for resources
+            #               [ { key:val...}]
+            # key always aligns with the data.  data and key = default values in valueStruct
+            if isinstance(inputData, dict):
+                if key not in inputData:
+                    inputData[key] = []
+                for nextKey in valueStruct:
+                    if isinstance(nextKey, dict) and not inputData[key]:
+                        inputData[key].append({})
+                    inputData[key] = self.__populateField(inputData[key], 0, nextKey)
+            elif isinstance(inputData, list) and valueStruct not in inputData:
+                inputData.append([])
+                for nextKey in valueStruct:
+                    inputData[-1] = self.__populateField(inputData[-1], 0, nextKey)
+        elif isinstance(valueStruct, dict):
+            for elemKey in valueStruct:
+                elemValue = valueStruct[elemKey]
+                if isinstance(inputData, list):
+                    for inputDataPosition in range(0, len(inputData)):
+                        inputData[inputDataPosition] = self.__populateField(inputData[inputDataPosition], elemKey, elemValue)
+                elif isinstance(inputData, dict):
+                    for inputKey in inputData:
+                        inputData[inputKey] =  self.__populateField(inputData[inputKey], elemKey, elemValue)
+        return inputData
+
+    def addAutoGenFields(self, inputDataStruct, autoGenFieldList, additionalFieldSource=constants.DATA_SOURCE.DEST):
         """dataDict contains the data that is to be used for the update that
         originates from the source ckan instance.  autoGenFieldList is a list of
-        field names that should be added to the struct from the destination
-        ckan instance
+        field names that should be added to the struct, additionalFieldSource
+        then identifies where the autoGenFieldList should be populated from.
 
         :param dataDict: The update data struct which is a dictionary where the
             keys are the unique identifier, in most cases the keys are the name
@@ -576,18 +686,60 @@ class CKANDataSetDeltas:
         :param autoGenFieldList: a list of field names that should be added to
             the struct from the destination ckan instance
         :type autoGenFieldList: list
+        :param additionalFieldSource: either DEST or SRC. Used to indicate WHERE
+            the extra fields should get populated from.  The source data or the
+            destination data
+        :type additionalFieldSource: constants.DATA_SOURCE (enum)
         :return: The values in the dataDict with the destination instance fields
             defined in autoGenFieldList appended to the dictionary
         :rtype: dict
         """
-        for uniqueId in dataDict:
-            record = self.destCKANDataset.getRecordByUniqueId(uniqueId)
-            for field2Add in autoGenFieldList:
-                fieldValue = record.getFieldValue(field2Add)
-                dataDict[uniqueId][field2Add] = fieldValue
-                LOGGER.debug(f"adding: {field2Add}:{fieldValue} to {uniqueId}")
-        return dataDict
+        # verify the correct type was received as additionalFieldSource
+        if not isinstance(additionalFieldSource, constants.DATA_SOURCE):
+            msg = f'arg: additionalFieldSource received a type ' + \
+                  f'{type(additionalFieldSource)} however it needs to be a ' + \
+                  f'constants.DATA_SOURCE type'
+            raise IllegalArgumentTypeError(msg)
 
+        # create a map to where the data should originate from
+        recordCalls = {
+            constants.DATA_SOURCE.DEST: self.destCKANDataset,
+            constants.DATA_SOURCE.SRC: self.srcCKANDataset
+        }
+
+        LOGGER.debug(f"type of dataDict: {type(inputDataStruct)}")
+        elemCnt = 0
+
+        if isinstance(inputDataStruct, list):
+            iterObj = range(0, len(inputDataStruct))
+            uniqueIdField = self.transConf.getUniqueField(recordCalls[additionalFieldSource].dataType)
+        else:
+            iterObj = inputDataStruct
+
+        for iterVal in iterObj:
+            #record = self.destCKANDataset.getRecordByUniqueId(uniqueId)
+            if isinstance(inputDataStruct, list):
+                uniqueId = inputDataStruct[iterVal][uniqueIdField]
+            else:
+                uniqueId = iterVal
+
+            # if isinstance(uniqueId, dict):
+            #     uniIdField = self.transConf.getUniqueField(recordCalls[additionalFieldSource].dataType)
+            #     lookup = uniqueId
+            #     uniqueId = lookup[uniIdField]
+            # else:
+            #     lookup = dataDict
+
+            LOGGER.debug(f"uniqueId: {uniqueId}")
+            record = recordCalls[additionalFieldSource].getRecordByUniqueId(uniqueId)
+            for field2Add in autoGenFieldList:
+                #if field2Add not in inputDataStruct[iterVal]:
+                fieldValue = record.getFieldValue(field2Add)
+                inputDataStruct[iterVal][field2Add] = fieldValue
+                #LOGGER.debug(f"adding: {field2Add}:{fieldValue} to {uniqueId}")
+
+            elemCnt += 1
+        return inputDataStruct
 
     def __str__(self):
         # addNames = []
@@ -598,7 +750,6 @@ class CKANDataSetDeltas:
             f"updates: {len(self.updates)}"
         return msg
 # -------------------- DATASETS --------------------
-
 
 class CKANDataSet:
     """This class wraps a collection of datasets.  Includes an iterator that
@@ -702,8 +853,8 @@ class CKANDataSet:
         for addRecordUniqueName in addSet:
             #LOGGER.debug(f"addRecord: {addRecordUniqueName}")
             if addRecordUniqueName not in ignoreList:
-                addDataSet = self.getRecordByUniqueId(addRecordUniqueName)
-                addDataStruct = addDataSet.getComparableStruct()
+                addRecord = self.getRecordByUniqueId(addRecordUniqueName)
+                addDataStruct = addRecord.getComparableStruct()
                 addList.append(addDataStruct)
         return addList
 
@@ -745,6 +896,7 @@ class CKANDataSet:
         :type ckanDataSet: CKANDataSet
         """
         deltaObj = CKANDataSetDeltas(self, destDataSet)
+
         dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
         srcUniqueids = set(self.getUniqueIdentifiers())
 
@@ -858,10 +1010,15 @@ class UserDefinedFieldDefinitionError(Exception):
 
     """
     def __init__(self, message):
-        LOGGER.debug(f"error message: {message}")
+        LOGGER.error(f"error message: {message}")
         self.message = message
 
 class IncompatibleTypesException(Exception):
     def __init__(self, message):
-        LOGGER.debug(f"error message: {message}")
+        LOGGER.error(f"error message: {message}")
+        self.message = message
+
+class IllegalArgumentTypeError(ValueError):
+    def __init__(self, message):
+        LOGGER.error(f"error message: {message}")
         self.message = message

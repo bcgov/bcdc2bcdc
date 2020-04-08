@@ -86,10 +86,10 @@ class RunUpdate:
         #       org compare and update instead.  NEEDS TO BE COMPLETED
 
         # TODO: once debug is complete remove the canned part
-        #srcPkgList = self.srcCKANWrapper.getPackagesAndData()
-        #destPkgList = self.destCKANWrapper.getPackagesAndData()
-        srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
-        destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
+        srcPkgList = self.srcCKANWrapper.getPackagesAndData()
+        destPkgList = self.destCKANWrapper.getPackagesAndData()
+        #srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
+        #destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
 
         srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList)
         destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList)

@@ -14,6 +14,7 @@ import sys
 
 import ckanapi
 import requests
+import urllib.parse
 
 import constants
 
@@ -183,7 +184,7 @@ class CKANWrapper:
 
         packageList = []
         params = {"rows": elemCnt, "start": 1}
-        package_list_cnt = 0
+        #package_list_cnt = 0
 
         while True:
 
@@ -250,15 +251,48 @@ class CKANWrapper:
         LOGGER.info(f"retrieved {len(users)} users")
         return users
 
+    def checkUrl(self):
+        """This method has been added to all the methods that perform an
+        update operation. Its another level of protection that has been
+        added in order to ensure that any updates are not run against the
+        prod instance of CKAN
+        """
+        doNotWriteEnvVarName = constants.CKAN_DO_NOT_WRITE_URL
+        if doNotWriteEnvVarName in os.environ:
+            doNotWriteInstance = os.environ[doNotWriteEnvVarName]
+            LOGGER.debug(f"Do not write instance: {doNotWriteInstance}")
+            prodHostFromEnvVar = urllib.parse.urlparse(doNotWriteInstance)
+            hostInDestUrl = urllib.parse.urlparse(self.CKANUrl)
+            if prodHostFromEnvVar == hostInDestUrl:
+                msg = (f"Attempting to perform an operation that writes to an "
+                    "instance that has specifically been defined as read only: "
+                    f"{constants.CKAN_DO_NOT_WRITE_URL}")
+                raise DoNotWriteToHostError(msg)
+            LOGGER.debug(f"safe instance: {self.CKANUrl}")
+
     def addUser(self, userData):
         """makes api call to ckan to create a new user
 
         :param userData: data used to create the user
         :type userData: dict
         """
+        self.checkUrl()
         #TODO: hasn't been tested... Waiting for proper access to prod.
         LOGGER.debug(f"creating a new user with the data: {userData}")
-        retVal = self.remoteapi.action.user_create(**userData)
+        try:
+            retVal = self.remoteapi.action.user_create(**userData)
+        except ckanapi.errors.ValidationError:
+            # usually because the user already exists but is in an deleted
+            # state.  To resolve retrieve the user, update the user defs
+            # with defs from this description, swap the deleted tag to
+            # false
+            #userData['state'] = 'active'
+            # LOGGER.debug(f"userdata: {userData}")
+            # userShow = {"id": userData['name']}
+            # retVal = self.remoteapi.action.user_show(**userShow)
+            # LOGGER.debug(f"retVal: {retVal}")
+            userData['id'] = userData['name']
+            retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
@@ -269,7 +303,7 @@ class CKANWrapper:
             ckan user
         :type userData: dict
         """
-
+        self.checkUrl()
         # wants the id to be the user or the name
         if 'id' not in userData and 'name' in userData:
             userData['id'] = userData['name']
@@ -317,6 +351,7 @@ class CKANWrapper:
         :param userId: either the user 'id' or 'name'
         :type userId: str
         """
+        self.checkUrl()
         LOGGER.debug(f"trying to delete the user: {userId}")
         userParams = {'id': userId}
         retVal = self.remoteapi.action.user_delete(**userParams)
@@ -351,9 +386,17 @@ class CKANWrapper:
         :param groupData: [description]
         :type groupData: [type]
         """
+        self.checkUrl()
         LOGGER.debug(f'groupData: {groupData}')
         LOGGER.debug(f"creating a new Group with the data: {groupData}")
-        retVal = self.remoteapi.action.group_create(**groupData)
+        try:
+            retVal = self.remoteapi.action.group_create(**groupData)
+        except ckanapi.errors.ValidationError:
+            # when this happens its likely because the package already exists
+            # but is in a deleted state, (state='deleted')
+            # going to try to update the data instead
+            retVal = self.remoteapi.action.group_update(**groupData)
+
         LOGGER.debug(f"Group Created: {retVal}")
         return retVal
 
@@ -365,6 +408,7 @@ class CKANWrapper:
             is to be deleted.  Either 'name' or 'id'
         :type groupIdentifier: str
         """
+        self.checkUrl()
         LOGGER.info(f"trying to delete the group: {groupIdentifier}")
         orgParams = {'id': groupIdentifier}
         retVal = self.remoteapi.action.group_delete(**orgParams)
@@ -434,6 +478,7 @@ class CKANWrapper:
             is to be deleted.  Either 'name' or 'id'
         :type organizationIdentifier: str
         """
+        self.checkUrl()
         LOGGER.info(f"trying to delete the organization: {organizationIdentifier}")
         orgParams = {'id': organizationIdentifier}
         retVal = self.remoteapi.action.organization_delete(**orgParams)
@@ -445,8 +490,14 @@ class CKANWrapper:
         :param organizationData: creates a new organization
         :type organizationData: struct
         """
+        self.checkUrl()
         LOGGER.debug(f"creating a new organization with the data: {organizationData}")
-        retVal = self.remoteapi.action.organization_create(**organizationData)
+        try:
+            retVal = self.remoteapi.action.organization_create(**organizationData)
+        except ckanapi.errors.ValidationError:
+            LOGGER.warning(f"org {organizationData['name']}, must already exist in deleted state... updating instead")
+            organizationData['id'] = organizationData['name']
+            retVal = self.remoteapi.action.organization_update(**organizationData)
         LOGGER.debug(f"Organization Created: {retVal}")
 
     def updateOrganization(self, organizationData):
@@ -456,11 +507,33 @@ class CKANWrapper:
             ckan organization
         :type organizationData: dict
         """
+        self.checkUrl()
         LOGGER.debug(f"trying to update a organization using the data: {organizationData}")
         retVal = self.remoteapi.action.organization_update(**organizationData)
         LOGGER.debug(f"Organization Updated: {retVal}")
 
+    def addPackage(self, packageData):
+        self.checkUrl()
 
+        LOGGER.debug("adding the package data")
+        with open('add_package.json', 'w') as fh:
+            json.dump(packageData, fh)
+            LOGGER.debug("wrote data to: add_package.json")
+        retVal = self.remoteapi.action.package_create(**packageData)
+        LOGGER.debug(f"retVal: {retVal}")
+        sys.exit()
+
+    def deletePackage(self, deletePckg):
+        """deleting the package: deletePckg
+
+        :param deletePckg: name or id of the package that is to be deleted
+        :type deletePckg: str
+        """
+        self.checkUrl()
+        packageParams = {'id': deletePckg}
+        LOGGER.debug(f"trying to delete the package: {deletePckg}")
+        retVal = self.remoteapi.action.package_delete(**packageParams)
+        LOGGER.debug(f"Package Deleted: {retVal}")
 
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
@@ -469,5 +542,13 @@ class CKANPackagesGetError(Exception):
     and try again logic fails this error is raised.
     """
     def __init__(self, message):
-        LOGGER.error(f"error message: {message}")
+        LOGGER.error(message)
+        self.message = message
+
+class DoNotWriteToHostError(Exception):
+    """This error is raised when the module detects that you are attempting to
+    write to a host that has explicity been markes as a read only host.
+    """
+    def __init__(self, message):
+        LOGGER.error(message)
         self.message = message

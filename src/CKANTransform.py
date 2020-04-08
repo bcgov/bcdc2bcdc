@@ -286,6 +286,35 @@ class TransformationConfig:
             LOGGER.info(f"no ignore values found for type: {datatype}")
         return retVal
 
+    def getRequiredFieldDefaultValues(self, datatype):
+        validateType(datatype)
+        section = constants.TRANSFORM_PARAM_REQUIRED_FLDS_VALS
+        retVal = []
+        if section in self.transConf[datatype]:
+            retVal = self.transConf[datatype][section]
+            LOGGER.debug(
+                f"found the fields to include for updates for the datatype {datatype},"
+                + f"include fields are: {retVal}"
+            )
+        else:
+            LOGGER.info(f"no ignore values found for type: {datatype}")
+        return retVal
+
+    def getFieldsToIncludeOnAdd(self, datatype):
+        validateType(datatype)
+        section = constants.TRANSFORM_PARAM_INCLUDE_FLDS_ADD
+        retVal = []
+        if section in self.transConf[datatype]:
+            retVal = self.transConf[datatype][section]
+            LOGGER.debug(
+                f"found the fields to include for updates for the datatype {datatype},"
+                + f"include fields are: {retVal}"
+            )
+        else:
+            LOGGER.info(f"no ignore values found for type: {datatype}")
+        return retVal
+
+
 # TODO: think this isn't actually being used, look into if this is the case and delete
 class TransformRecord:
     def __init__(self, datatype, record, transformationConfig):

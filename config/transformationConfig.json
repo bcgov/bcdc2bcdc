@@ -1,7 +1,7 @@
 {
     "users": {
         "unique_id_field": "name",
-        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat",
+        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat", "p1",
             "idir-jchurchi", "bcdc-test-cati", "bcdc-test-cadi", "crigdon", "kjnether",
             "jhutniak", "idir-stchapma", "idir-yusotoza", "cadi", "brandon",
             "dbc_user2", "dwelf", "idir-jerho", "idir-loneil", "knetherton"],
@@ -148,6 +148,22 @@
             "metadata_visibility": true,
             "title": true,
             "revision_id": false
+        },
+        "update_fields_to_include": ["resources", "owner_org", "tags"],
+        "add_fields_to_include": ["resources", "owner_org", "tags", "edc_state"],
+        "required_default_values":
+        {
+            "tag_string": "TEST",
+            "org": "databc",
+            "owner_org": "databc",
+            "resources": [
+                {
+                    "iso_topic_string": "TBD",
+                    "bcdc_type": "bcdc_dataset",
+                    "projection_name": "crap crap crap"
+                }
+            ],
+            "test": ["value", "someother", ["another list"]]
         }
     }
 }

@@ -18,7 +18,6 @@ import os
 
 LOGGER = logging.getLogger(__name__)
 
-
 class CKANUpdate_abc(abc.ABC):
     """
     abstract base class used to define the interface for CKANUpdate objects.
@@ -302,7 +301,6 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.debug(f"updating the org: {updateName}")
             self.CKANWrap.updateOrganization(updtStruct[updateName])
 
-
 class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
     '''
     implements the interface defined by CKANUpdate_abc, the actual update
@@ -330,9 +328,9 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.info(f"{len(addStruct)}: number of packages to be added to destination instance")
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
-            LOGGER.debug(f"adding organization: {addData['name']}")
+            LOGGER.debug(f"adding package: {addData['name']}")
             # todo, this is working but am commenting out
-            #self.CKANWrap.addOrganization(addData)
+            self.CKANWrap.addPackage(addData)
 
     def doDeletes(self, delStruct):
         """does deletes of all the orgs described in the delStruct
@@ -340,10 +338,10 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         :param delStruct: a list of org names that should be deleted
         :type delStruct: str
         """
-        LOGGER.debug(f"number of deletes: {len(delStruct)}")
-        for org2Del in delStruct:
-            LOGGER.debug(f"    deleting the package: {org2Del}")
-
+        LOGGER.debug(f"number of packages deletes: {len(delStruct)}")
+        for pkg2Del in delStruct:
+            LOGGER.debug(f"    deleting the package: {pkg2Del}")
+            self.CKANWrap.deletePackage(pkg2Del)
     def doUpdates(self, updtStruct):
         """Does the package updates
 
@@ -355,3 +353,18 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.debug(f"number of updates: {len(updtStruct)}")
         for updateName in updtStruct:
             LOGGER.debug(f"updating the package: {updateName}")
+
+    def update(self, deltaObj):
+        # TODO: delete this method and use mixin once complete
+        dels = deltaObj.getDeleteData()
+        adds = deltaObj.getAddData()
+
+        #updts = deltaObj.getUpdateData()
+
+        #dels = self.removeIgnored(dels)
+        #updts = self.removeIgnored(updts)
+        LOGGER.debug(f"deltaObj: {deltaObj}")
+        self.doDeletes(dels)
+        self.doAdds(adds)
+        #self.doUpdates(updts)
+        LOGGER.info("UPDATE COMPLETE")

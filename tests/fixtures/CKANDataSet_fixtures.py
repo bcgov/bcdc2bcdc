@@ -4,12 +4,17 @@
 :rtype: [type]
 """
 
-import os
-import constants
-import pytest
 import json
 import logging
+import os
+import pickle
+import random
+import sys
+
+import pytest
+
 import CKANData
+import constants
 import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
@@ -104,7 +109,6 @@ def CKAN_Cached_Dest_Package_Data(TestDestPackageCacheJsonfile, CKAN_Dest_fixtur
             pkgDataDest = json.load(json_file)
     yield pkgDataDest
 
-
 @pytest.fixture(scope="session")
 def CKAN_Cached_Test_User_Data_Set(CKAN_Cached_Test_User_Data):
     ds = CKANData.CKANUsersDataSet(CKAN_Cached_Test_User_Data)
@@ -159,5 +163,88 @@ def CKAN_Cached_Test_Org_Data_Set(CKAN_Cached_Test_Org_Data):
 def CKAN_Cached_Test_Org_Record(CKAN_Cached_Test_Org_Data_Set):
     rec = CKAN_Cached_Test_Org_Data_Set.next()
     yield rec
+
+@pytest.fixture(scope="session")
+def DestPkgCacheJsonFilePath(scope="session"):
+    pathHelper = CKANDataHelpers.CKAN_Test_Paths()
+    DESTPackageFilePath = pathHelper.getDestPackagesCacheJsonFile()
+    LOGGER.info(f"src package cached file: {DESTPackageFilePath}")
+    yield DESTPackageFilePath
+
+@pytest.fixture(scope="session")
+def SrcPkgCacheJsonFilePath(scope="session"):
+    pathHelper = CKANDataHelpers.CKAN_Test_Paths()
+    SrcPackageFilePath = pathHelper.getSrcPackagesCacheJsonFile()
+    LOGGER.info(f"src package cached file: {SrcPackageFilePath}")
+    yield SrcPackageFilePath
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Dest_Pkg_Data(DestPkgCacheJsonFilePath, CKANWrapperTest):
+
+    pkgData = CKANWrapperTest.getPackagesAndData_cached(DestPkgCacheJsonFilePath)
+    yield pkgData
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Dest_Package_Add_Dataset(CKAN_Cached_Dest_Pkg_Data):
+    # have the data now wrap with a dataset
+    #with open('junk_dest.json', 'w') as fh:
+    #    json.dump(CKAN_Cached_Dest_Pkg_Data, fh)
+    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Dest_Pkg_Data)
+    yield ds
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Src_Pkg_Data(SrcPkgCacheJsonFilePath, CKANWrapperProd):
+    pkgData = CKANWrapperProd.getPackagesAndData_cached(SrcPkgCacheJsonFilePath)
+    yield pkgData
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Src_Package_Add_Dataset(CKAN_Cached_Src_Pkg_Data):
+    # have the data now wrap with a dataset
+    LOGGER.debug("loading data...")
+    #with open('junk_src.json', 'w') as fh:
+    #    json.dump(CKAN_Cached_Src_Pkg_Data, fh)
+    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Src_Pkg_Data)
+    LOGGER.debug("loading complete!")
+    yield ds
+
+@pytest.fixture(scope="session")
+def CKAN_Cached_Pkg_DeltaObj_cached(CKAN_Cached_Dest_Package_Add_Dataset, CKAN_Cached_Src_Package_Add_Dataset):
+    # creates a dummy add dataset
+    # pkgDelta = CKANData.CKANDataSetDeltas(CKAN_Cached_Src_Package_Add_Dataset,
+    #                                       CKAN_Cached_Dest_Package_Add_Dataset)
+    cachedPickleFile = 'junk_pickle.p'
+    if os.path.exists(cachedPickleFile):
+        LOGGER.debug("loading cached data from pickle file")
+        deltaObj = pickle.load( open(cachedPickleFile, "rb"))
+    else:
+        LOGGER.debug("creating a new cached dataset")
+
+        destDataSet = CKAN_Cached_Dest_Package_Add_Dataset
+        srcDataSet = CKAN_Cached_Src_Package_Add_Dataset
+
+        deltaObj = CKANData.CKANDataSetDeltas(srcDataSet, destDataSet)
+
+        dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
+        srcUniqueids = set(srcDataSet.getUniqueIdentifiers())
+
+        addList = srcDataSet.getAddList(dstUniqueIds, srcUniqueids)
+        deltaObj.setAddDatasets(addList)
+        pickle.dump( deltaObj, open(cachedPickleFile, "wb" ) )
+
+    #delta = srcDataSet.getDelta(destDataSet)
+
+
+    # dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
+    # srcUniqueids = set(srcDataSet.getUniqueIdentifiers())
+
+    # addList = srcDataSet.getAddList(dstUniqueIds, srcUniqueids)
+    # pkgDelta.setAddDataset(addList)
+    yield deltaObj
+
+
+
+
+
+
 
 

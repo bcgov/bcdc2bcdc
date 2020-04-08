@@ -243,3 +243,18 @@ def test_Package_Delta(CKAN_Cached_Src_Package_Data, CKAN_Cached_Dest_Package_Da
         LOGGER.debug("records are equal")
     else:
         LOGGER.debug("not equal")
+
+def test_addAutoGenFields(CKAN_Cached_Pkg_DeltaObj_cached):
+    # CKAN_Cached_Dest_Pkg_AddData: contains an add dataset, can now use to
+    #    debug the add fields stuff.
+    # destDataSet = CKAN_Cached_Dest_Package_Add_Dataset
+    # srcDataSet = CKAN_Cached_Src_Package_Add_Dataset
+
+    # dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
+    # srcUniqueids = set(srcDataSet.getUniqueIdentifiers())
+
+    # addList = srcDataSet.getAddList(dstUniqueIds, srcUniqueids)
+
+
+    adds = CKAN_Cached_Pkg_DeltaObj_cached.getAddData()
+    pass
