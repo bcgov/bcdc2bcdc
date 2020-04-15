@@ -90,6 +90,7 @@ def getCachedDir():
     cacheDir = os.path.normpath(cacheDirRelative)
     return cacheDir
 
+# TODO: Search code for 'src' and 'dest' and replace with references to enum
 class DATA_SOURCE(enum.Enum):
     SRC = 1
     DEST = 2

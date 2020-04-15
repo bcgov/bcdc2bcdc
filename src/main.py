@@ -9,20 +9,15 @@ import posixpath
 
 # pylint: disable=logging-format-interpolation
 
-
 # set scope for the logger
 LOGGER = None
 
 
 class RunUpdate:
     def __init__(self):
-        self.srcCKANWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_SRC], os.environ[constants.CKAN_APIKEY_SRC]
-        )
-
-        self.destCKANWrapper = CKAN.CKANWrapper(
-            os.environ[constants.CKAN_URL_DEST], os.environ[constants.CKAN_APIKEY_DEST]
-        )
+        params = CKAN.CKANParams()
+        self.srcCKANWrapper = params.getSrcWrapper()
+        self.destCKANWrapper = params.getDestWrapper()
         self.dataCache = CKANData.DataCache()
 
     def updateUsers(self):
@@ -41,9 +36,7 @@ class RunUpdate:
 
             deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANUserUpdate(
-                ckanWrapper=self.destCKANWrapper
-            )
+            updater = CKANUpdate.CKANUserUpdate(ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
     def updateGroups(self):
@@ -57,14 +50,11 @@ class RunUpdate:
         srcGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataProd, self.dataCache)
         destGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataTest, self.dataCache)
 
-
         if srcGroupCKANDataSet != destGroupCKANDataSet:
             LOGGER.info("found differences between group data in src an dest")
             deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANGroupUpdate(
-                ckanWrapper=self.destCKANWrapper
-            )
+            updater = CKANUpdate.CKANGroupUpdate(ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
         else:
             LOGGER.info("no differences found for groups between src and dest")
@@ -76,7 +66,9 @@ class RunUpdate:
         LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
 
         srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc, self.dataCache)
-        destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataDest, self.dataCache)
+        destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
+            orgDataDest, self.dataCache
+        )
 
         if srcOrgCKANDataSet != destOrgCKANDataSet:
             LOGGER.info("found differences between group data in src an dest")
@@ -108,8 +100,7 @@ class RunUpdate:
 
             deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
             LOGGER.info(f"Delta obj for orgs: {deltaObj}")
-            updater = CKANUpdate.CKANPackagesUpdate(
-                ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANPackagesUpdate(ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
 

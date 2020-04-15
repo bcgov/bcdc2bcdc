@@ -22,6 +22,36 @@ import constants
 
 LOGGER = logging.getLogger(__name__)
 
+class CKANParams:
+
+    def __init__(self):
+        if constants.CKAN_URL_SRC not in os.environ:
+            msg = "The environment variable: CKAN_URL_SRC is not defined"
+            raise ValueError(msg)
+        self.srcUrl = os.environ[constants.CKAN_URL_SRC]
+
+        if constants.CKAN_APIKEY_SRC not in os.environ:
+            msg = "The environment variable: CKAN_APIKEY_SRC is not defined"
+            raise ValueError(msg)
+        self.srcAPIKey = os.environ[constants.CKAN_APIKEY_SRC]
+
+        if constants.CKAN_URL_DEST not in os.environ:
+            msg = "The environment variable: CKAN_URL_DEST is not defined"
+            raise ValueError(msg)
+        self.destUrl = os.environ[constants.CKAN_URL_DEST]
+
+        if constants.CKAN_APIKEY_DEST not in os.environ:
+            msg = "The environment variable: CKAN_APIKEY_DEST is not defined"
+            raise ValueError(msg)
+        self.destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
+
+    def getSrcWrapper(self):
+        srcCKANWrapper = CKANWrapper(self.srcUrl, self.srcAPIKey)
+        return srcCKANWrapper
+
+    def getDestWrapper(self):
+        destCKANWrapper = CKANWrapper(self.destUrl, self.destAPIKey)
+        return destCKANWrapper
 
 class CKANWrapper:
     def __init__(self, url=None, apiKey=None):
