@@ -24,7 +24,7 @@ CKAN_DO_NOT_WRITE_URL = "CKAN_DO_NOT_WRITE_URL"
 CKAN_ONETIME_PASSWORD = "CKAN_NEW_USER_PSWD"
 
 # name and expected location for the transformation configuration file.
-TRANSFORM_CONFIG_FILE_NAME = "transformationConfig.json"
+TRANSFORM_CONFIG_FILE_NAME = "transformationConfig_prod2cat.json"
 TRANSFORM_CONFIG_DIR = "config"
 
 # transformation config sections, each of these sections in the config
@@ -36,6 +36,20 @@ TRANSFORM_PARAM_IGNORE_IDS = 'ignore_list'
 TRANSFORM_PARAM_INCLUDE_FLDS_UPDATE = 'update_fields_to_include'
 TRANSFORM_PARAM_INCLUDE_FLDS_ADD = 'add_fields_to_include'
 TRANSFORM_PARAM_REQUIRED_FLDS_VALS = 'required_default_values'
+TRANSFORM_PARAM_TRANSFORMATIONS = 'transformations'
+TRANSFORM_PARAM_ID_FIELD_DEFS = 'id_fields'
+TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS = 'field_mapping'
+
+FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
+FIELD_MAPPING_USER_FIELD = 'user_populated_field'
+# TODO: field_remapping defined in the trans conf file but not coded yet
+
+# keywords used to define whether data is from a source CKAN instance
+# or a DESTINATION
+# use enum instead of this
+#SRC_ORIGIN = 'src'
+#DEST_ORIGIN = 'dest'
+#VALID_DATA_ORIGINS = [SRC_ORIGIN, DEST_ORIGIN]
 
 # Constants used to define different transformation types.  Refer to sections
 # in the TRANSFORM_CONFIG_FILE_NAME

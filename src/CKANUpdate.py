@@ -10,6 +10,7 @@ Functionality that can:
 import abc
 import logging
 import operator
+import json
 
 import constants
 import CKAN
@@ -121,15 +122,6 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         self.dataType = constants.TRANSFORM_TYPE_USERS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
-
-    # def update(self, deltaObj):
-    #     adds = deltaObj.getAddData()
-    #     self.doAdds(adds)
-    #     dels = deltaObj.getDeleteData()
-    #     self.doDeletes()
-    #     updts = deltaObj.getUpdateData()
-    #     self.doUpdates(updts)
-    #     LOGGER.info("USER UPDATE COMPLETE")
 
     def doAdds(self, addStruct):
         """List of user data to be added to a ckan instance,
@@ -328,7 +320,10 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.info(f"{len(addStruct)}: number of packages to be added to destination instance")
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
+            jsonStr = json.dumps(addData)
+            LOGGER.debug(f"pkg Struct: {jsonStr}")
             LOGGER.debug(f"adding package: {addData['name']}")
+
             # todo, this is working but am commenting out
             self.CKANWrap.addPackage(addData)
 
@@ -342,6 +337,7 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         for pkg2Del in delStruct:
             LOGGER.debug(f"    deleting the package: {pkg2Del}")
             self.CKANWrap.deletePackage(pkg2Del)
+
     def doUpdates(self, updtStruct):
         """Does the package updates
 
