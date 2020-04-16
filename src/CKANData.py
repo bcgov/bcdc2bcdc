@@ -584,7 +584,7 @@ class CKANDataSetDeltas:
                             value
         :type idFields: dict
         """
-        dataCache = self.srcCKANDataset.
+        dataCache = self.srcCKANDataset.dataCache
 
         if isinstance(inputDataStruct, list):
             iterObj = range(0, len(inputDataStruct))
@@ -595,10 +595,24 @@ class CKANDataSetDeltas:
             currentDataset = inputDataStruct[iterVal]
             LOGGER.debug(f"currentDataset:  {currentDataset}")
             for idRemapObj in idFields:
+                # properties of the idRemapObj, and some sample values
+                #  * property": "owner_org",
+                #  * obj_type": "organizations",
+                #  * obj_field : "id"
+                # get the value for owner_org
 
+                parentFieldName = idRemapObj[constants.IDFLD_RELATION_PROPERTY]
+                childObjType = idRemapObj[constants.IDFLD_RELATION_OBJ_TYPE]
+                childObjFieldName = idRemapObj[constants.IDFLD_RELATION_FLDNAME]
 
-
-        pass
+                parentFieldValue = currentDataset[parentFieldName]
+                destAutoGenId = dataCache.src2DestRemap(childObjFieldName,
+                    childObjType,
+                    parentFieldValue)
+                # last step is to write the value back to the data struct and
+                # return it
+                inputDataStruct[iterVal][parentFieldName] = destAutoGenId
+        return inputDataStruct
 
     def getDeleteData(self):
         return self.deletes

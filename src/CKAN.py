@@ -466,6 +466,8 @@ class CKANWrapper:
 
         :param includeData: [description], defaults to False
         :type includeData: bool, optional
+        :return: a list of organization dictionaries
+        :rtype: list
         """
         # TODO: call as it is seems to crash with 502 error. breaking it up into
         #       a paged call
@@ -565,6 +567,13 @@ class CKANWrapper:
         retVal = self.remoteapi.action.package_delete(**packageParams)
         LOGGER.debug(f"Package Deleted: {retVal}")
 
+    def getResources(self):
+        """makes call to the api and returns all the resources
+        """
+        # TODO: need to either define this or modify how resources are retrieved in the DataCache.CacheLoader.loadResources
+        return []
+
+
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
     """CKAN instances seem to randomely go offline when in the middle of paging
@@ -577,7 +586,7 @@ class CKANPackagesGetError(Exception):
 
 class DoNotWriteToHostError(Exception):
     """This error is raised when the module detects that you are attempting to
-    write to a host that has explicity been markes as a read only host.
+    write to a host that has explicitly been marked as a read only host.
     """
     def __init__(self, message):
         LOGGER.error(message)

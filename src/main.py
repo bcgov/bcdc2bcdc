@@ -26,6 +26,7 @@ class RunUpdate:
         userDataDest = self.destCKANWrapper.getUsers(includeData=True)
 
         # wrap the data with CKANDataset class
+        # cache is populated when delta obj is requested!
         srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache)
         destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache)
 

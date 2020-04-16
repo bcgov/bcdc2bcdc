@@ -40,8 +40,17 @@ TRANSFORM_PARAM_TRANSFORMATIONS = 'transformations'
 TRANSFORM_PARAM_ID_FIELD_DEFS = 'id_fields'
 TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS = 'field_mapping'
 
+# other misc property references
+# Propertys of field_mapping type
 FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
 FIELD_MAPPING_USER_FIELD = 'user_populated_field'
+
+# Properties of id_fields
+IDFLD_RELATION_PROPERTY = 'owner_org'
+IDFLD_RELATION_OBJ_TYPE = 'obj_type'
+IDFLD_RELATION_FLDNAME = 'obj_field'
+
+
 # TODO: field_remapping defined in the trans conf file but not coded yet
 
 # keywords used to define whether data is from a source CKAN instance
@@ -53,6 +62,7 @@ FIELD_MAPPING_USER_FIELD = 'user_populated_field'
 
 # Constants used to define different transformation types.  Refer to sections
 # in the TRANSFORM_CONFIG_FILE_NAME
+# TODO: could refactor these into enumerations.. bit of work
 TRANSFORM_TYPE_USERS = 'users'
 TRANSFORM_TYPE_GROUPS = 'groups'
 TRANSFORM_TYPE_ORGS = 'organizations'
