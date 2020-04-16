@@ -15,6 +15,7 @@ import pytest
 
 import CKANData
 import constants
+import DataCache
 import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
@@ -189,7 +190,8 @@ def CKAN_Cached_Dest_Package_Add_Dataset(CKAN_Cached_Dest_Pkg_Data):
     # have the data now wrap with a dataset
     #with open('junk_dest.json', 'w') as fh:
     #    json.dump(CKAN_Cached_Dest_Pkg_Data, fh)
-    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Dest_Pkg_Data)
+    cache = DataCache.DataCache()
+    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Dest_Pkg_Data, cache)
     yield ds
 
 @pytest.fixture(scope="session")
@@ -240,11 +242,4 @@ def CKAN_Cached_Pkg_DeltaObj_cached(CKAN_Cached_Dest_Package_Add_Dataset, CKAN_C
     # addList = srcDataSet.getAddList(dstUniqueIds, srcUniqueids)
     # pkgDelta.setAddDataset(addList)
     yield deltaObj
-
-
-
-
-
-
-
 
