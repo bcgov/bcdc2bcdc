@@ -1,8 +1,12 @@
-import CKAN
+import json
 import logging
-import pytest
-import constants
+import os.path
 import time
+
+import pytest
+
+import CKAN
+import constants
 import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
@@ -70,11 +74,27 @@ def CKANAddTestUser(CKANParamsTest):
     ckan.deleteUser(dummyUser['name'])
     return
 
+def getOrgData(CKANWrapper):
 
+    pathHelper = CKANDataHelpers.CKAN_Test_Paths()
+    orgCacheFile = pathHelper.getTestOrgsCacheJsonFile()
+    if os.path.exists(orgCacheFile):
+        with open(orgCacheFile) as fh:
+            orgs = json.load(fh)
+    else:
+        orgs = CKANWrapper.getOrganizations(includeData=True)
+        with open(orgCacheFile, 'w') as fh:
+            json.dump(orgs, fh)
+    return orgs
 
+@pytest.fixture(scope="session")
+def CKAN_Src_OrganizationsCached(CKAN_Src_fixture):
+    orgs = getOrgData(CKAN_Src_fixture)
+    yield orgs
 
-
-
-
+@pytest.fixture(scope="session")
+def CKAN_Dest_OrganizationsCached(CKAN_Dest_fixture):
+    orgs = getOrgData(CKAN_Dest_fixture)
+    yield orgs
 
 

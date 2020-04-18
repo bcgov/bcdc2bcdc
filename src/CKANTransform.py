@@ -46,6 +46,7 @@ def getTransformationConfig(transformConfigFile=None):
             constants.TRANSFORM_CONFIG_DIR,
             constants.TRANSFORM_CONFIG_FILE_NAME,
         )
+    LOGGER.info(f"tranform config file being read: {transformConfigFile}")
     with open(transformConfigFile) as json_file:
         transConfData = json.load(json_file)
     return transConfData
@@ -56,8 +57,6 @@ class TransformDataSet:
     """Ties together a transform config with the data allowing you to apply
     transformations to the dataset as a whole.  Includes a record iterator
     allowing you to iterate over each record in the dataset.
-
-
     :raises InValidTransformationData: [description]
     """
 
@@ -89,6 +88,7 @@ class TransformationConfig:
     """
 
     def __init__(self, transformationConfigFile=None):
+        #LOGGER.debug(f"trans conf file: {transformationConfigFile}")
         self.transConf = getTransformationConfig(transformationConfigFile)
 
     def __parseNestForBools(self, data, boolVal, parsedData=None):
@@ -154,6 +154,7 @@ class TransformationConfig:
                         + "dict / list or bool, fix the config file and rerun"
                     )
                     raise ValueError(msg)
+
         return parsedData
 
     def __getProperties(self, datatype, section, sectionValue):
@@ -180,7 +181,6 @@ class TransformationConfig:
                 properties = self.transConf[datatype][section]
                 # LOGGER.debug(f"properties: {properties}")
                 retData = self.__parseNestForBools(properties, sectionValue)
-
         return retData
 
     def getUserPopulatedProperties(self, datatype):
@@ -197,6 +197,7 @@ class TransformationConfig:
         validateType(datatype)
         section = constants.TRANSFORM_PARAM_USER_POPULATED_PROPERTIES
         userPopulated = self.__getProperties(datatype, section, True)
+
         return userPopulated
 
     def getAutoPopulatedProperties(self, datatype):
@@ -213,6 +214,7 @@ class TransformationConfig:
         :rtype: list, str
         """
         validateType(datatype)
+
         section = constants.TRANSFORM_PARAM_USER_POPULATED_PROPERTIES
         autoPopulated = self.__getProperties(datatype, section, False)
         return autoPopulated
@@ -302,6 +304,7 @@ class TransformationConfig:
 
     def getFieldsToIncludeOnAdd(self, datatype):
         validateType(datatype)
+
         section = constants.TRANSFORM_PARAM_INCLUDE_FLDS_ADD
         retVal = []
         if section in self.transConf[datatype]:
@@ -318,9 +321,14 @@ class TransformationConfig:
         transKey = constants.TRANSFORM_PARAM_TRANSFORMATIONS
         idFields = constants.TRANSFORM_PARAM_ID_FIELD_DEFS
         retVal = []
+        LOGGER.debug(f"transKey: {transKey}")
+        LOGGER.debug(f"datatype: {datatype}")
+        LOGGER.debug(f"transConf: {self.transConf[datatype]}")
+        LOGGER.debug(f"idFields: {idFields}")
         if transKey in self.transConf[datatype]:
             if idFields in self.transConf[datatype][transKey]:
                 retVal = self.transConf[datatype][transKey][idFields]
+                LOGGER.debug(f"id field remapping: {retVal}")
         return retVal
 
     def getFieldMappings(self, datatype):
@@ -336,6 +344,7 @@ class TransformationConfig:
             returned
         :type datatype: list of dict
         """
+
         retVal = None
         transKey = constants.TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS
         if transKey in self.transConf[datatype]:

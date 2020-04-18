@@ -22,10 +22,12 @@
             "idir-loneil",
             "knetherton"
         ],
-        "field_mapping": {
-            "user_populated_field": "name",
-            "auto_populated_field": "id"
-        },
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
         "user_populated_properties": {
             "name": true,
             "email": true,
@@ -235,7 +237,7 @@
                     "property": "object_name",
                     "remapped_property": {
                         "resources": {
-                            "object_name"
+                            "object_name": "some value"
                         }
                     },
                     "type": null

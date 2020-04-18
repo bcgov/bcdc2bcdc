@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import pickle
+import dill
 import random
 import sys
 
@@ -205,7 +206,8 @@ def CKAN_Cached_Src_Package_Add_Dataset(CKAN_Cached_Src_Pkg_Data):
     LOGGER.debug("loading data...")
     #with open('junk_src.json', 'w') as fh:
     #    json.dump(CKAN_Cached_Src_Pkg_Data, fh)
-    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Src_Pkg_Data)
+    cache = DataCache.DataCache()
+    ds = CKANData.CKANPackageDataSet(CKAN_Cached_Src_Pkg_Data, cache)
     LOGGER.debug("loading complete!")
     yield ds
 
@@ -218,6 +220,9 @@ def CKAN_Cached_Pkg_DeltaObj_cached(CKAN_Cached_Dest_Package_Add_Dataset, CKAN_C
     if os.path.exists(cachedPickleFile):
         LOGGER.debug("loading cached data from pickle file")
         deltaObj = pickle.load( open(cachedPickleFile, "rb"))
+        # overwrite the transformation config with a fresh set of data as it
+        # doesn't take very long to load this data.
+        deltaObj.transConf = CKAN_Cached_Dest_Package_Add_Dataset.transConf
     else:
         LOGGER.debug("creating a new cached dataset")
 
@@ -231,10 +236,13 @@ def CKAN_Cached_Pkg_DeltaObj_cached(CKAN_Cached_Dest_Package_Add_Dataset, CKAN_C
 
         addList = srcDataSet.getAddList(dstUniqueIds, srcUniqueids)
         deltaObj.setAddDatasets(addList)
-        pickle.dump( deltaObj, open(cachedPickleFile, "wb" ) )
+        # with open(cachedPickleFile, "wb") as fh:
+        #     #pickle.dump( deltaObj, fh)
+        #     dill.dump( deltaObj, fh)
+        LOGGER.debug('load is complete')
 
     #delta = srcDataSet.getDelta(destDataSet)
-
+    LOGGER.debug('data loaded')
 
     # dstUniqueIds = set(destDataSet.getUniqueIdentifiers())
     # srcUniqueids = set(srcDataSet.getUniqueIdentifiers())

@@ -12,15 +12,17 @@ LOGGER = logging.getLogger(__name__)
 def TransformConfigDir():
     pathHelper = CKANDataHelpers.CKAN_Test_Paths()
     transConfDir = pathHelper.getTransformConfigDir()
+    LOGGER.debug(f"transConfDir: {transConfDir}")
     yield transConfDir
 
 @pytest.fixture(scope="session")
 def TransformFile():
     pathHelper = CKANDataHelpers.CKAN_Test_Paths()
     transConfDir = pathHelper.getTransformConfigDir()
-    yield transConfDir
+    LOGGER.debug(f"transConfDir: {transConfDir}")
+    #yield transConfDir
 
-    transFile = os.path.join(DataDir, constants.TRANSFORM_CONFIG_FILE_NAME)
+    transFile = os.path.join(transConfDir, constants.TRANSFORM_CONFIG_FILE_NAME)
     yield transFile
 
 @pytest.fixture(scope="session")

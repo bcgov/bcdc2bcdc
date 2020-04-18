@@ -1,6 +1,7 @@
 import CKAN
 import CKANData
 import CKANUpdate
+import DataCache
 import constants
 import logging
 import logging.config
@@ -18,7 +19,7 @@ class RunUpdate:
         params = CKAN.CKANParams()
         self.srcCKANWrapper = params.getSrcWrapper()
         self.destCKANWrapper = params.getDestWrapper()
-        self.dataCache = CKANData.DataCache()
+        self.dataCache = DataCache.DataCache()
 
     def updateUsers(self):
         # get the raw json data from the api
@@ -93,8 +94,8 @@ class RunUpdate:
         srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList, self.dataCache)
         destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList, self.dataCache)
 
-        self.dataCache.addData(srcPkgDataSet, constants.SRC_ORIGIN)
-        self.dataCache.addData(destPkgDataSet, constants.DEST_ORIGIN)
+        self.dataCache.addData(srcPkgDataSet, constants.DATA_SOURCE.SRC)
+        self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
 
         if srcPkgDataSet != destPkgDataSet:
             LOGGER.debug("packages are not the same")
@@ -136,7 +137,7 @@ if __name__ == "__main__":
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
     # This is complete, commented out while work on group
-    # updater.updateUsers()
-    # updater.updateGroups()
-    # updater.updateOrganizations()
+    updater.updateUsers()
+    updater.updateGroups()
+    updater.updateOrganizations()
     updater.updatePackages()

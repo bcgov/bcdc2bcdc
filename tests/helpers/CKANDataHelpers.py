@@ -70,7 +70,7 @@ class CKAN_Test_Paths:
         :rtype: str, path
         """
         datadir = os.path.join(
-            os.path.basename(__file__), "..", "..", constants.TRANSFORM_CONFIG_DIR
+            os.path.basename(__file__), "..", constants.TRANSFORM_CONFIG_DIR
         )
         datadir = os.path.abspath(datadir)
         return datadir
@@ -141,6 +141,7 @@ class CKAN_Test_Paths:
         """
         transDir = self.getTransformConfigDir()
         transFile = os.path.join(transDir, constants.TRANSFORM_CONFIG_FILE_NAME)
+        LOGGER.debug(f"getting the trans config file: {transFile}")
         return transFile
 
     def getTestOrgsCacheJsonFile(self):

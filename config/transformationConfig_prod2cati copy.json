@@ -1,11 +1,28 @@
 {
     "users": {
         "unique_id_field": "name",
-        "ignore_list": ["cati", "idir-aeliving", "idir-bsharrat", "p1",
-            "idir-jchurchi", "bcdc-test-cati", "bcdc-test-cadi", "crigdon", "kjnether",
-            "jhutniak", "idir-stchapma", "idir-yusotoza", "cadi", "brandon",
-            "dbc_user2", "dwelf", "idir-jerho", "idir-loneil", "knetherton"],
-        "user_populated_properties" : {
+        "ignore_list": [
+            "cati",
+            "idir-aeliving",
+            "idir-bsharrat",
+            "p1",
+            "idir-jchurchi",
+            "bcdc-test-cati",
+            "bcdc-test-cadi",
+            "crigdon",
+            "kjnether",
+            "jhutniak",
+            "idir-stchapma",
+            "idir-yusotoza",
+            "cadi",
+            "brandon",
+            "dbc_user2",
+            "dwelf",
+            "idir-jerho",
+            "idir-loneil",
+            "knetherton"
+        ],
+        "user_populated_properties": {
             "name": true,
             "email": true,
             "fullname": true,
@@ -50,7 +67,9 @@
             "tags": false,
             "description": true
         },
-        "update_fields_to_include": ["id"]
+        "update_fields_to_include": [
+            "id"
+        ]
     },
     "organizations": {
         "unique_id_field": "name",
@@ -80,7 +99,9 @@
             "tags": false,
             "description": true
         },
-        "update_fields_to_include": ["id"]
+        "update_fields_to_include": [
+            "id"
+        ]
     },
     "packages": {
         "unique_id_field": "name",
@@ -149,10 +170,18 @@
             "title": true,
             "revision_id": false
         },
-        "update_fields_to_include": ["resources", "owner_org", "tags"],
-        "add_fields_to_include": ["resources", "owner_org", "tags", "edc_state"],
-        "required_default_values":
-        {
+        "update_fields_to_include": [
+            "resources",
+            "owner_org",
+            "tags"
+        ],
+        "add_fields_to_include": [
+            "resources",
+            "owner_org",
+            "tags",
+            "edc_state"
+        ],
+        "required_default_values": {
             "tag_string": "TEST",
             "org": "databc",
             "owner_org": "databc",
@@ -163,7 +192,13 @@
                     "projection_name": "crap crap crap"
                 }
             ],
-            "test": ["value", "someother", ["another list"]]
+            "test": [
+                "value",
+                "someother",
+                [
+                    "another list"
+                ]
+            ]
         }
     }
 }

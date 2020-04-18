@@ -46,10 +46,13 @@ FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
 FIELD_MAPPING_USER_FIELD = 'user_populated_field'
 
 # Properties of id_fields
-IDFLD_RELATION_PROPERTY = 'owner_org'
+IDFLD_RELATION_PROPERTY = 'property'
 IDFLD_RELATION_OBJ_TYPE = 'obj_type'
 IDFLD_RELATION_FLDNAME = 'obj_field'
 
+# all CKAN show methods use this parameter to identify a single record
+# regardless of whether the query string is 'name' or 'id'
+CKAN_SHOW_IDENTIFIER = 'id'
 
 # TODO: field_remapping defined in the trans conf file but not coded yet
 
@@ -79,13 +82,12 @@ LOGGING_OUTPUT_FILE_NAME = 'bcdc2bcdc.log'
 
 # cached versions of data used by tests
 CACHE_DATA_DIR = 'data'
-CACHE_PROD_USERS_FILE = 'prod_users.json'
-CACHE_TEST_USERS_FILE = 'test_users.json'
-CACHE_PROD_ORG_FILE = 'prod_org.json'
-CACHE_TEST_ORG_FILE = 'test_org.json'
+CACHE_PROD_USERS_FILE = 'src_users.json'
+CACHE_TEST_USERS_FILE = 'dest_users.json'
+CACHE_PROD_ORG_FILE = 'src_org.json'
+CACHE_TEST_ORG_FILE = 'dest_org.json'
 CACHE_DEST_PKGS_FILE = 'dest_pkgs.json'
 CACHE_SRC_PKGS_FILE = 'src_pkgs.json'
-
 
 TEST_USER_DATA_FILE = "users_src.json" # defines dummy users that are used in testing
 TEST_USER_DATA_POSITION = 0 # when a single user is required this is the one used.
