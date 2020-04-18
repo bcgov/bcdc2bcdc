@@ -595,7 +595,7 @@ class CKANWrapper:
             json.dump(packageData, fh)
             LOGGER.debug("wrote data to: add_package.json")
         retVal = self.remoteapi.action.package_create(**packageData)
-        LOGGER.debug(f"retVal: {retVal}")
+        LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg

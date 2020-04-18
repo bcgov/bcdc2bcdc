@@ -210,6 +210,7 @@
             "org": "databc",
             "owner_org": "databc",
             "iso_topic_string": "TBD",
+            "retention_expiry_date": "9999-12-12T00:00:00.00",
             "resources": [
                 {
                     "bcdc_type": "bcdc_dataset",
