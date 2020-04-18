@@ -5,3 +5,12 @@ junk.py
 junk.json
 junk*.json
 junk/
+junk*
+add_package.json
+dest_pkgs.json
+src_pkgs.json
+dest_org.json
+src_org.json
+dest_users.json
+src_users.json
+add_package.json

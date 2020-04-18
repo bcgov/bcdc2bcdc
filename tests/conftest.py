@@ -15,3 +15,6 @@ from tests.fixtures.Transformation_fixures import *
 from tests.fixtures.CKANDataSet_fixtures import *
 from tests.fixtures.Constants_fixtures import *
 from tests.fixtures.CKAN_fixtures import *
+from tests.fixtures.DataCache_fixtures import *
+
+#import tests.fixtures.DataCache_fixtures as DataCache_fixtures

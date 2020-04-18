@@ -10,6 +10,7 @@ Functionality that can:
 import abc
 import logging
 import operator
+import json
 
 import constants
 import CKAN
@@ -17,7 +18,6 @@ import CKANTransform
 import os
 
 LOGGER = logging.getLogger(__name__)
-
 
 class CKANUpdate_abc(abc.ABC):
     """
@@ -122,15 +122,6 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         self.dataType = constants.TRANSFORM_TYPE_USERS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
-
-    # def update(self, deltaObj):
-    #     adds = deltaObj.getAddData()
-    #     self.doAdds(adds)
-    #     dels = deltaObj.getDeleteData()
-    #     self.doDeletes()
-    #     updts = deltaObj.getUpdateData()
-    #     self.doUpdates(updts)
-    #     LOGGER.info("USER UPDATE COMPLETE")
 
     def doAdds(self, addStruct):
         """List of user data to be added to a ckan instance,
@@ -301,3 +292,75 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
         for updateName in updtStruct:
             LOGGER.debug(f"updating the org: {updateName}")
             self.CKANWrap.updateOrganization(updtStruct[updateName])
+
+class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
+    '''
+    implements the interface defined by CKANUpdate_abc, the actual update
+    method comes from the mixin.
+
+    Used to provide a uniform interface that is used by the script to update
+    the packages from one ckan instance to another.
+    '''
+
+    def __init__(self, ckanWrapper=None):
+        CKANUpdate_abc.__init__(self, ckanWrapper)
+        self.dataType = constants.TRANSFORM_TYPE_PACKAGES
+        self.CKANTransformConfig = CKANTransform.TransformationConfig()
+        self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
+
+    def doAdds(self, addStruct):
+        """adds the packages described in the param addStruct
+
+        :param addStruct: dictionary where the key is the name of the org to be added
+            and the value is the struct that can be passed directly to the ckan api
+            to add this org
+        :type addStruct: dict
+        """
+        #LOGGER.debug(f"adds: {addStruct}")
+        LOGGER.info(f"{len(addStruct)}: number of packages to be added to destination instance")
+        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
+        for addData in sortedList:
+            jsonStr = json.dumps(addData)
+            LOGGER.debug(f"pkg Struct: {jsonStr}")
+            LOGGER.debug(f"adding package: {addData['name']}")
+
+            # todo, this is working but am commenting out
+            self.CKANWrap.addPackage(addData)
+
+    def doDeletes(self, delStruct):
+        """does deletes of all the orgs described in the delStruct
+
+        :param delStruct: a list of org names that should be deleted
+        :type delStruct: str
+        """
+        LOGGER.debug(f"number of packages deletes: {len(delStruct)}")
+        for pkg2Del in delStruct:
+            LOGGER.debug(f"    deleting the package: {pkg2Del}")
+            self.CKANWrap.deletePackage(pkg2Del)
+
+    def doUpdates(self, updtStruct):
+        """Does the package updates
+
+        :param updtStruct: dictionary where the key is the name of the package
+            and the value is a dict that can be passed to the CKAN api to update
+            the org
+        :type updtStruct: dict
+        """
+        LOGGER.debug(f"number of updates: {len(updtStruct)}")
+        for updateName in updtStruct:
+            LOGGER.debug(f"updating the package: {updateName}")
+
+    def update(self, deltaObj):
+        # TODO: delete this method and use mixin once complete
+        dels = deltaObj.getDeleteData()
+        adds = deltaObj.getAddData()
+
+        #updts = deltaObj.getUpdateData()
+
+        #dels = self.removeIgnored(dels)
+        #updts = self.removeIgnored(updts)
+        LOGGER.debug(f"deltaObj: {deltaObj}")
+        self.doDeletes(dels)
+        self.doAdds(adds)
+        #self.doUpdates(updts)
+        LOGGER.info("UPDATE COMPLETE")

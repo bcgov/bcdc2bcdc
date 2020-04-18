@@ -1,8 +1,12 @@
-import CKAN
+import json
 import logging
-import pytest
-import constants
+import os.path
 import time
+
+import pytest
+
+import CKAN
+import constants
 import tests.helpers.CKANDataHelpers as CKANDataHelpers
 
 LOGGER = logging.getLogger(__name__)
@@ -18,12 +22,12 @@ def CKAN_Src_fixture(CKANParamsProd):
 @pytest.fixture(scope="function")
 def CKANDeleteTestUser(CKANParamsTest):
     """makes sure at  the start of every test that uses this fixture the test
-    user state is set to 'deleted'.  
+    user state is set to 'deleted'.
 
     Method will ensure the state is 'deleted' before and after yield statement.
     """
     ckan = CKAN.CKANWrapper(CKANParamsTest['ckanUrl'], CKANParamsTest['ckanAPIKey'])
-    
+
     dataHelper = CKANDataHelpers.CKAN_Test_Data()
     dummyUserData = dataHelper.getTestUserData()
 
@@ -40,7 +44,7 @@ def CKANDeleteTestUser(CKANParamsTest):
 
 @pytest.fixture(scope="function")
 def CKANAddTestUser(CKANParamsTest):
-    """Some methods need the demo user to exist.  This fixture makes sure the 
+    """Some methods need the demo user to exist.  This fixture makes sure the
     demo user exists, and that its state is set to 'active'
 
                 "state": "active"
@@ -70,11 +74,27 @@ def CKANAddTestUser(CKANParamsTest):
     ckan.deleteUser(dummyUser['name'])
     return
 
+def getOrgData(CKANWrapper):
+
+    pathHelper = CKANDataHelpers.CKAN_Test_Paths()
+    orgCacheFile = pathHelper.getTestOrgsCacheJsonFile()
+    if os.path.exists(orgCacheFile):
+        with open(orgCacheFile) as fh:
+            orgs = json.load(fh)
+    else:
+        orgs = CKANWrapper.getOrganizations(includeData=True)
+        with open(orgCacheFile, 'w') as fh:
+            json.dump(orgs, fh)
+    return orgs
+
+@pytest.fixture(scope="session")
+def CKAN_Src_OrganizationsCached(CKAN_Src_fixture):
+    orgs = getOrgData(CKAN_Src_fixture)
+    yield orgs
+
+@pytest.fixture(scope="session")
+def CKAN_Dest_OrganizationsCached(CKAN_Dest_fixture):
+    orgs = getOrgData(CKAN_Dest_fixture)
+    yield orgs
 
 
-
-
-
-
-
-    
