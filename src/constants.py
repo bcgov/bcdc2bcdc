@@ -41,6 +41,7 @@ TRANSFORM_PARAM_TRANSFORMATIONS = 'transformations'
 TRANSFORM_PARAM_ID_FIELD_DEFS = 'id_fields'
 TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS = 'field_mapping'
 TRANSFORM_PARAM_TYPE_ENFORCEMENT = 'data_type_enforcement'
+TRANSFORM_PARAM_STRINGIFIED_FIELD = 'stringified_fields'
 
 # other misc property references
 # Propertys of field_mapping type

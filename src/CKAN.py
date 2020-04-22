@@ -521,6 +521,14 @@ class CKANWrapper:
         retVal = self.remoteapi.action.group_update(**groupData)
         LOGGER.debug(f"Group Updated: {retVal}")
 
+    def updatePackage(self, packageData):
+
+        self.checkUrl()
+        packageJsonStr = json.dumps(packageData)
+        LOGGER.debug(f"trying to update a package using the data: {packageJsonStr[0:100]} ...")
+        retVal = self.remoteapi.action.package_update(**packageData)
+        LOGGER.debug(f"Package Updated: {retVal}")
+
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
@@ -573,7 +581,6 @@ class CKANWrapper:
                 orgs = json.load(fh)
         return orgs
 
-
     def deleteOrganization(self, organizationIdentifier=None):
         """Deletes the organization that matches the provided identifying information.
         organizationIdentifier can be either the organization id or name
@@ -625,9 +632,6 @@ class CKANWrapper:
         self.checkUrl()
 
         LOGGER.debug("adding the package data")
-        with open("add_package.json", "w") as fh:
-            json.dump(packageData, fh)
-            LOGGER.debug("wrote data to: add_package.json")
         retVal = self.remoteapi.action.package_create(**packageData)
         LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
 
