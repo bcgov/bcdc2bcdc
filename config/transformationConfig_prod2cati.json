@@ -22,6 +22,12 @@
             "idir-loneil",
             "knetherton"
         ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
         "user_populated_properties": {
             "name": true,
             "email": true,
@@ -42,6 +48,12 @@
     },
     "groups": {
         "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
         "user_populated_properties": {
             "approval_status": true,
             "image_display_url": false,
@@ -99,12 +111,24 @@
             "tags": false,
             "description": true
         },
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
         "update_fields_to_include": [
             "id"
         ]
     },
     "packages": {
         "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
         "user_populated_properties": {
             "license_title": true,
             "maintainer": true,
@@ -181,23 +205,48 @@
             "tags",
             "edc_state"
         ],
+        "data_type_enforcement": {
+            "more_info": [],
+            "resources": []
+        },
         "required_default_values": {
             "tag_string": "TEST",
             "org": "databc",
             "owner_org": "databc",
+            "iso_topic_string": "undefined",
             "resources": [
                 {
                     "iso_topic_string": "TBD",
                     "bcdc_type": "bcdc_dataset",
-                    "projection_name": "crap crap crap"
+                    "projection_name": "epsg3005",
+                    "format": "other",
+                    "url": "https://www.zoomquilt.org/",
+                    "resource_storage_format": "",
+                    "resource_update_cycle": "notPlanned",
+                    "resource_storage_access_method": "direct access",
+                    "resource_storage_location": "unspecified",
+                    "edc_resource_type": "Data"
+                }
+            ]
+        },
+        "transformations": {
+            "id_fields": [
+                {
+                    "property": "owner_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
                 }
             ],
-            "test": [
-                "value",
-                "someother",
-                [
-                    "another list"
-                ]
+            "field_remapping": [
+                {
+                    "property": "object_name",
+                    "remapped_property": {
+                        "resources": {
+                            "object_name": "some value"
+                        }
+                    },
+                    "type": null
+                }
             ]
         }
     }

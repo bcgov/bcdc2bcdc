@@ -5,6 +5,7 @@ junk.py
 junk.json
 junk*.json
 junk/
+temp/
 junk*
 add_package.json
 dest_pkgs.json

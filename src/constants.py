@@ -19,6 +19,7 @@ CKAN_URL_DEST = "CKAN_URL_DEST"
 CKAN_APIKEY_SRC = "CKAN_API_KEY_SRC"
 CKAN_URL_SRC = "CKAN_URL_SRC"
 CKAN_DO_NOT_WRITE_URL = "CKAN_DO_NOT_WRITE_URL"
+CKAN_TRANS_CONF_FILE = 'CKAN_TRANSFORMATION_CONFIG'
 
 # default password to assign to newly generated users
 CKAN_ONETIME_PASSWORD = "CKAN_NEW_USER_PSWD"
@@ -39,6 +40,7 @@ TRANSFORM_PARAM_REQUIRED_FLDS_VALS = 'required_default_values'
 TRANSFORM_PARAM_TRANSFORMATIONS = 'transformations'
 TRANSFORM_PARAM_ID_FIELD_DEFS = 'id_fields'
 TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS = 'field_mapping'
+TRANSFORM_PARAM_TYPE_ENFORCEMENT = 'data_type_enforcement'
 
 # other misc property references
 # Propertys of field_mapping type
@@ -82,10 +84,13 @@ LOGGING_OUTPUT_FILE_NAME = 'bcdc2bcdc.log'
 
 # cached versions of data used by tests
 CACHE_DATA_DIR = 'data'
-CACHE_PROD_USERS_FILE = 'src_users.json'
-CACHE_TEST_USERS_FILE = 'dest_users.json'
-CACHE_PROD_ORG_FILE = 'src_org.json'
-CACHE_TEST_ORG_FILE = 'dest_org.json'
+CACHE_TMP_DIR = 'temp'
+CACHE_SRC_USERS_FILE = 'src_users.json'
+CACHE_DEST_USERS_FILE = 'dest_users.json'
+CACHE_SRC_ORG_FILE = 'src_org.json'
+CACHE_DEST_ORG_FILE = 'dest_org.json'
+CACHE_SRC_GROUPS_FILE = 'src_groups.json'
+CACHE_DEST_GROUPS_FILE = 'dest_groups.json'
 CACHE_DEST_PKGS_FILE = 'dest_pkgs.json'
 CACHE_SRC_PKGS_FILE = 'src_pkgs.json'
 
@@ -101,6 +106,8 @@ def getCachedDir():
     cacheDirRelative = os.path.join(curDir, '..', CACHE_DATA_DIR)
     cacheDir = os.path.normpath(cacheDirRelative)
     return cacheDir
+
+
 
 # TODO: Search code for 'src' and 'dest' and replace with references to enum
 class DATA_SOURCE(enum.Enum):

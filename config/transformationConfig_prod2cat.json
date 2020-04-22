@@ -205,6 +205,10 @@
             "tags",
             "edc_state"
         ],
+        "data_type_enforcement": {
+            "more_info": [],
+            "resources": []
+        },
         "required_default_values": {
             "tag_string": "TEST",
             "org": "databc",
@@ -214,7 +218,9 @@
             "resources": [
                 {
                     "bcdc_type": "bcdc_dataset",
-                    "projection_name": "crap crap crap"
+                    "projection_name": "crap crap crap",
+                    "resource_storage_access_method": "Indirect Access",
+                    "resource_storage_location": "External"
                 }
             ],
             "test": [

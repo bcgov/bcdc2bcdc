@@ -188,7 +188,7 @@ class CKANRecord:
         return dataCell
 
     def __eq__(self, inputRecord):
-        LOGGER.debug("_________ EQ CALLED")
+        #LOGGER.debug("_________ EQ CALLED")
         diff = self.getDiff(inputRecord)
         retVal = True
         if diff:
@@ -243,11 +243,11 @@ class CKANRecord:
         return diff
 
     def __ne__(self, inputRecord):
-        LOGGER.debug(f"__________ NE record CALLED: {type(inputRecord)}, {type(self)}")
+        #LOGGER.debug(f"__________ NE record CALLED: {type(inputRecord)}, {type(self)}")
         retVal = True
         if self == inputRecord:
             retVal = False
-        LOGGER.debug(f"retval from __ne__: {retVal}")
+        #LOGGER.debug(f"retval from __ne__: {retVal}")
         return retVal
 
     def __str__(self):
@@ -550,6 +550,7 @@ class CKANDataSetDeltas:
         idFields = TRANSCONF.getIdFieldConfigs(
             self.destCKANDataset.dataType
         )
+        enforceTypes = TRANSCONF.getTypeEnforcement(self.destCKANDataset.dataType)
 
         if addFields:
             LOGGER.debug("adding destination autogen fields")
@@ -558,12 +559,67 @@ class CKANDataSetDeltas:
         if defaultFields:
             LOGGER.debug("adding required Fields")
             adds = self.addRequiredDefaultValues(adds, defaultFields)
-
         if idFields:
             LOGGER.debug("Addressing remapping of ID fields")
             adds = self.remapIdFields(adds, idFields)
 
+        if enforceTypes:
+            LOGGER.debug("Addressing property type enforcement")
+            adds = self.enforceTypes(adds, enforceTypes)
+
         return adds
+
+    def enforceTypes(self, inputDataStruct, enforceTypes):
+        """iterates through the data in the inputDataStruct, looking for
+        fields that are defined in the enforceTypes struct, if any are
+        found then checks to see if the expected types align, if they
+        don't and there is no data in them then the value will be modified
+        to match the expected type.
+
+        If there is data in the propertly and the expected type does not
+        align, will log an warning message.
+
+        :param inputDataStruct: The input data struct, can be a dict where the
+            values are the update data structs for individual CKAN objects, or
+            can be just a list of CKAN objects to be updates/added
+        :type inputDataStruct: list/dict
+        :param enforceTypes: a dict where the key is the property and the value
+            is an empty struct representing the type that is expected to be
+            associated with this property,
+                example: {'property_name' : [] }
+        :type enforceTypes: dict
+        :return: same inputDataStruct, but modified so that the types align.
+        :rtype: dict
+        """
+        LOGGER.debug(f"enforcetypes: {enforceTypes}")
+        if isinstance(inputDataStruct, list):
+            iterObj = range(0, len(inputDataStruct))
+        else:
+            iterObj = inputDataStruct.keys()
+
+        # iterate over each input data struct
+        for iterVal in iterObj:
+            # iterate over the different type enformcements,
+            #    format = property: <type of object>
+            for fieldName in enforceTypes:
+                 # does the field definition from enforcement types exist in the
+                 # add data struct
+                if fieldName in inputDataStruct[iterVal]:
+                    # do the types of the data in the field struct align with what
+                    # we are expecting it to be.
+                    if type(enforceTypes[fieldName]) is not type(inputDataStruct[iterVal][fieldName]):
+                        # only try to fix if the data is empty.
+                        if not inputDataStruct[iterVal][fieldName]:
+                            LOGGER.info(f"fixing the data type for: {fieldName}")
+                            inputDataStruct[iterVal][fieldName] = enforceTypes[fieldName]
+                        else:
+                            LOGGER.warning(f'the property {fieldName} has a type '
+                                f'{type(inputDataStruct[iterVal][fieldName])}.  This '
+                                f'conficts with the expected type defined in '
+                                f'the {constants.TRANSFORM_PARAM_TYPE_ENFORCEMENT}'
+                                f'transformation config section.  The field '
+                                f'currently has the following data in it: {inputDataStruct[iterVal][fieldName]}')
+        return inputDataStruct
 
     def remapIdFields(self, inputDataStruct, idFields):
         """
@@ -594,7 +650,7 @@ class CKANDataSetDeltas:
         if isinstance(inputDataStruct, list):
             iterObj = range(0, len(inputDataStruct))
         else:
-            iterObj = inputDataStruct
+            iterObj = inputDataStruct.keys()
         for iterVal in iterObj:
             LOGGER.debug(f"iterVal:  {iterVal}")
             currentDataset = inputDataStruct[iterVal]
