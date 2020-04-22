@@ -46,6 +46,15 @@ def getTransformationConfig(transformConfigFile=None):
             constants.TRANSFORM_CONFIG_DIR,
             constants.TRANSFORM_CONFIG_FILE_NAME,
         )
+        if constants.CKAN_TRANS_CONF_FILE in os.environ:
+            LOGGER.info(
+                "using the transformation config file defined in env " +
+                f"var {constants.CKAN_TRANS_CONF_FILE}"
+            )
+            transformConfigFile = os.path.join(
+                os.path.dirname(transformConfigFile),
+                os.environ[constants.CKAN_TRANS_CONF_FILE])
+
     LOGGER.info(f"tranform config file being read: {transformConfigFile}")
     with open(transformConfigFile) as json_file:
         transConfData = json.load(json_file)
@@ -350,6 +359,20 @@ class TransformationConfig:
         if transKey in self.transConf[datatype]:
             retVal = self.transConf[datatype][transKey]
         return retVal
+
+    def getTypeEnforcement(self, datatype):
+        """retrieves the section that defines field type enforcement.  These are
+        fields that CKAN expects to be a specific type.
+
+        :param datatype: [description]
+        :type datatype: [type]
+        """
+        retVal = None
+        typeEnforceKey = constants.TRANSFORM_PARAM_TYPE_ENFORCEMENT
+        if typeEnforceKey in self.transConf[datatype]:
+            retVal = self.transConf[datatype][typeEnforceKey]
+        return retVal
+
 
 class InvalidTransformationConfiguration(AttributeError):
     """Raised when values cannot be found or incorrect values are found in the

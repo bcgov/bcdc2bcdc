@@ -213,22 +213,20 @@
             "tag_string": "TEST",
             "org": "databc",
             "owner_org": "databc",
-            "iso_topic_string": "TBD",
-            "retention_expiry_date": "2300-01-01",
+            "iso_topic_string": "undefined",
             "resources": [
                 {
+                    "iso_topic_string": "TBD",
                     "bcdc_type": "bcdc_dataset",
-                    "projection_name": "crap crap crap",
-                    "resource_storage_access_method": "Indirect Access",
-                    "resource_storage_location": "External"
+                    "projection_name": "epsg3005",
+                    "format": "other",
+                    "url": "https://www.zoomquilt.org/",
+                    "resource_storage_format": "",
+                    "resource_update_cycle": "notPlanned",
+                    "resource_storage_access_method": "direct access",
+                    "resource_storage_location": "unspecified",
+                    "edc_resource_type": "Data"
                 }
-            ],
-            "test": [
-                "value",
-                "someother",
-                [
-                    "another list"
-                ]
             ]
         },
         "transformations": {

@@ -17,6 +17,7 @@ import requests
 import urllib.parse
 
 import constants
+import CacheFiles
 
 # pylint: disable=logging-format-interpolation
 
@@ -69,9 +70,12 @@ class CKANWrapper:
                 + f"{constants.CKAN_URL_DEST} and {constants.CKAN_APIKEY_DEST}"
             )
             raise ValueError(msg)
+
         self.remoteapi = ckanapi.RemoteCKAN(url, apikey=apiKey)
         self.CKANHeader = {"X-CKAN-API-KEY": apiKey}
         self.CKANUrl = url
+        self.cacheFilePaths = CacheFiles.CKANCacheFiles()
+
         if self.CKANUrl[len(self.CKANUrl) - 1] != "/":
             self.CKANUrl = self.CKANUrl + "/"
 
@@ -134,7 +138,7 @@ class CKANWrapper:
 
     def getSinglePagePackageNames(self, offset=0, pageSize=500):
         params = {"limit": pageSize, "offset": offset}
-        LOGGER.debug(f'params: {params}')
+        LOGGER.debug(f"params: {params}")
         # pageData = self.remoteapi.action.package_list(limit=elemCnt,
         #                                              offset=offset)
         pageData = self.remoteapi.action.package_list(**params)
@@ -169,7 +173,7 @@ class CKANWrapper:
             params = {"limit": elemCnt, "offset": offset}
             # pageData = self.remoteapi.action.package_list(limit=elemCnt,
             #                                              offset=offset)
-            #pageData = self.remoteapi.action.package_list(context=params)
+            # pageData = self.remoteapi.action.package_list(context=params)
 
             if not isinstance(pageData, list):
                 LOGGER.debug(f"page data is: {pageData}")
@@ -200,14 +204,12 @@ class CKANWrapper:
         """Used for debugging, re-uses a cached version of the package data
         instead of retrieving it from the api.
         """
-        dataDir = constants.getCachedDir()
-        cachedPackagesFileName = os.path.join(dataDir, cacheFileName)
-        if not os.path.exists(cachedPackagesFileName):
+        if not os.path.exists(cacheFileName):
             pkgs = self.getPackagesAndData()
-            with open(cachedPackagesFileName, "w") as fh:
+            with open(cacheFileName, "w") as fh:
                 json.dump(pkgs, fh)
         else:
-            with open(cachedPackagesFileName) as fh:
+            with open(cacheFileName) as fh:
                 pkgs = json.load(fh)
         return pkgs
 
@@ -263,6 +265,16 @@ class CKANWrapper:
         """
         orgList = self.remoteapi.action.organization_list()
         return orgList
+
+    def getUsers_cached(self, cacheFileName, includeData=False):
+        if not os.path.exists(cacheFileName):
+            users = self.getUsers(includeData)
+            with open(cacheFileName, "w") as fh:
+                json.dump(users, fh)
+        else:
+            with open(cacheFileName) as fh:
+                users = json.load(fh)
+        return users
 
     def getUsers(self, includeData=False):
         """gets a list of users in the ckan instance
@@ -361,14 +373,14 @@ class CKANWrapper:
             userData = {"id": userId}
         elif isinstance(userId, dict):
             userData = userId
-            if 'name' in userData:
+            if "name" in userData:
                 msg = (
-                    f'unable to process the dictionary {userData}, individual ' +
-                    'queries for users must use the parameter \'id\' instead ' +
-                    'and not \'name\', Going to swap the param name for id.'
+                    f"unable to process the dictionary {userData}, individual "
+                    + "queries for users must use the parameter 'id' instead "
+                    + "and not 'name', Going to swap the param name for id."
                 )
-                userData['id'] = userData['name']
-                del userData['name']
+                userData["id"] = userData["name"]
+                del userData["name"]
         else:
             msg = (
                 f'parameter "userId" provided: {userId} which has a type '
@@ -447,6 +459,16 @@ class CKANWrapper:
         LOGGER.debug(f"groupconfig is {groupConfig}")
         retVal = self.remoteapi.action.group_list(**groupConfig)
         return retVal
+
+    def getGroups_cached(self, cacheFileName, includeData=False):
+        if not os.path.exists(cacheFileName):
+            groups = self.getGroups(includeData)
+            with open(cacheFileName, "w") as fh:
+                json.dump(groups, fh)
+        else:
+            with open(cacheFileName) as fh:
+                groups = json.load(fh)
+        return groups
 
     def addGroup(self, groupData):
         """makes an api call to CKAN to create the group described in groupData
@@ -541,6 +563,17 @@ class CKANWrapper:
             pageCnt += 1
         return organizations
 
+    def getOrganizations_cached(self, cacheFileName, includeData=False):
+        if not os.path.exists(cacheFileName):
+            orgs = self.getOrganizations(includeData)
+            with open(cacheFileName, "w") as fh:
+                json.dump(orgs, fh)
+        else:
+            with open(cacheFileName) as fh:
+                orgs = json.load(fh)
+        return orgs
+
+
     def deleteOrganization(self, organizationIdentifier=None):
         """Deletes the organization that matches the provided identifying information.
         organizationIdentifier can be either the organization id or name
@@ -581,9 +614,10 @@ class CKANWrapper:
         :type organizationData: dict
         """
         self.checkUrl()
-        LOGGER.debug(
-            f"trying to update a organization using the data: {organizationData}"
-        )
+        # LOGGER.debug(
+        #    f"trying to update a organization using the data: {organizationData}"
+        # )
+        LOGGER.debug(f"updating org: {organizationData['name']}")
         retVal = self.remoteapi.action.organization_update(**organizationData)
         LOGGER.debug(f"Organization Updated: {retVal}")
 
@@ -620,7 +654,7 @@ class CKANWrapper:
         return retVal
 
     def getResource(self, query):
-        #TODO: code this when get to resources
+        # TODO: code this when get to resources
         pass
 
 

@@ -32,6 +32,10 @@ Things that can be configured in this file for each object type:
     they do not exist in the source object they get populated with these default
     values.
 
+* **data_type_enforcement:** Describes the strict types that a fields must comply
+    with.  If the field is None / Null then will modify the type of the field so
+    that it matches the expected type.
+
 * **transformations:** under this property are a bunch of different data
     transformations supported by the script:
 
