@@ -195,9 +195,8 @@
             "revision_id": false
         },
         "update_fields_to_include": [
-            "resources",
-            "owner_org",
-            "tags"
+            "tags",
+            "owner_org"
         ],
         "add_fields_to_include": [
             "resources",
@@ -209,22 +208,28 @@
             "more_info": [],
             "resources": []
         },
+        "stringified_fields": [
+            "more_info"
+        ],
         "required_default_values": {
             "tag_string": "TEST",
             "org": "databc",
             "owner_org": "databc",
             "iso_topic_string": "undefined",
+            "publish_state": "DRAFT",
             "resources": [
                 {
                     "iso_topic_string": "TBD",
-                    "bcdc_type": "bcdc_dataset",
+                    "bcdc_type": "geographic",
                     "projection_name": "epsg3005",
                     "format": "other",
                     "url": "https://www.zoomquilt.org/",
-                    "resource_storage_format": "",
+                    "resource_storage_format": "txt",
                     "resource_update_cycle": "notPlanned",
                     "resource_storage_access_method": "direct access",
                     "resource_storage_location": "unspecified",
+                    "resource_access_method": "direct access",
+                    "resource_type": "data",
                     "edc_resource_type": "Data"
                 }
             ]

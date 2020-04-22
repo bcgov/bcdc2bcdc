@@ -269,7 +269,8 @@ class TransformationConfig:
                 + f"ignore values: {retVal}"
             )
         else:
-            LOGGER.info(f"no ignore values found for type: {datatype}")
+            #LOGGER.info(f"no ignore values found for type: {datatype}")
+            pass
         return retVal
 
     def getFieldsToIncludeOnUpdate(self, datatype):
@@ -364,13 +365,29 @@ class TransformationConfig:
         """retrieves the section that defines field type enforcement.  These are
         fields that CKAN expects to be a specific type.
 
-        :param datatype: [description]
-        :type datatype: [type]
+        :param datatype: The object type, need to be a member of constants.VALID_TRANSFORM_TYPES
+        :type datatype: str
         """
         retVal = None
         typeEnforceKey = constants.TRANSFORM_PARAM_TYPE_ENFORCEMENT
         if typeEnforceKey in self.transConf[datatype]:
             retVal = self.transConf[datatype][typeEnforceKey]
+        return retVal
+
+    def getStringifiedFields(self, datatype):
+        """ Gets a list of field / property names who's values should be
+        stringified before attempting to send the to the API for update or add
+
+        :param datatype: The object type, need to be a member of constants.VALID_TRANSFORM_TYPES
+        :type datatype: str
+        :return: a list of property names who's values should be stringified before
+            sending to the api
+        :rtype: list
+        """
+        retVal = None
+        stringifiedKey = constants.TRANSFORM_PARAM_STRINGIFIED_FIELD
+        if stringifiedKey in self.transConf[datatype]:
+            retVal = self.transConf[datatype][stringifiedKey]
         return retVal
 
 

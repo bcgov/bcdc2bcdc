@@ -320,8 +320,12 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.info(f"{len(addStruct)}: number of packages to be added to destination instance")
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
+            with open("add_package.json", "w") as fh:
+                json.dump(packageData, fh)
+                LOGGER.debug("wrote data to: add_package.json")
+
             jsonStr = json.dumps(addData)
-            LOGGER.debug(f"pkg Struct: {jsonStr}")
+            LOGGER.debug(f"pkg Struct: {jsonStr[0:100]} ...")
             LOGGER.debug(f"adding package: {addData['name']}")
 
             # todo, this is working but am commenting out
@@ -348,19 +352,23 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         """
         LOGGER.debug(f"number of updates: {len(updtStruct)}")
         for updateName in updtStruct:
+            with open("updt_package.json", "w") as fh:
+                json.dump(updtStruct[updateName], fh)
+                LOGGER.debug("wrote data to: add_package.json")
+
             LOGGER.debug(f"updating the package: {updateName}")
+            self.CKANWrap.updatePackage(updtStruct[updateName])
 
     def update(self, deltaObj):
         # TODO: delete this method and use mixin once complete
         dels = deltaObj.getDeleteData()
         adds = deltaObj.getAddData()
-
-        #updts = deltaObj.getUpdateData()
+        updts = deltaObj.getUpdateData()
 
         #dels = self.removeIgnored(dels)
         #updts = self.removeIgnored(updts)
         LOGGER.debug(f"deltaObj: {deltaObj}")
         self.doDeletes(dels)
         self.doAdds(adds)
-        #self.doUpdates(updts)
+        self.doUpdates(updts)
         LOGGER.info("UPDATE COMPLETE")
