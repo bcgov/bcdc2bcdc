@@ -41,6 +41,28 @@ Things that can be configured in this file for each object type:
     with.  If the field is None / Null then will modify the type of the field so
     that it matches the expected type.
 
+* **custom_transformation_methods:** This transformer type allows you to link a
+    data_type (user, group, organizations, packages, resources) with a custom
+    transformer.  The custom transformer needs to be the name of a method in a
+    class with the same name as the datatype.  The method will get a update
+    object as a single argument, and it will return that same object with any
+    modifications.
+
+    Methods are added to the CustomTransformers.py module.
+
+    The following is an example of what the entry looks like in the transformation
+    config file:
+    ```
+       ...
+       custom_transformation_methods": [
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "packageTransform"
+            }
+        ],
+        ...
+    ```
+
 * **transformations:** under this property are a bunch of different data
     transformations supported by the script:
 

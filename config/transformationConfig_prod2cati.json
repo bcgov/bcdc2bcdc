@@ -129,6 +129,12 @@
                 "auto_populated_field": "id"
             }
         ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "packageTransform"
+            }
+        ],
         "user_populated_properties": {
             "license_title": true,
             "maintainer": true,
@@ -208,15 +214,13 @@
             "more_info": [],
             "resources": []
         },
-        "stringified_fields": [
-            "more_info"
-        ],
         "required_default_values": {
             "tag_string": "TEST",
             "org": "databc",
             "owner_org": "databc",
             "iso_topic_string": "undefined",
             "publish_state": "DRAFT",
+            "edc_state": "PUBLISHED",
             "resources": [
                 {
                     "iso_topic_string": "TBD",
@@ -230,7 +234,9 @@
                     "resource_storage_location": "unspecified",
                     "resource_access_method": "direct access",
                     "resource_type": "data",
-                    "edc_resource_type": "Data"
+                    "edc_resource_type": "Data",
+                    "edc_state": "PUBLISHED",
+                    "download_audience": "Public"
                 }
             ]
         },

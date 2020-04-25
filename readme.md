@@ -35,6 +35,7 @@ configure the following env vars:
 * export CKAN_URL_PRD=https://source.ckan.instance.com
 * export CKAN_DO_NOT_WRITE_URL=<optional: source instance, adds checks to make sure not being written to>
 * export CKAN_NEW_USER_PSWD=<default password to use for new users>
+* export CKAN_TRANSFORMATION_CONFIG=<config file in config dir you want to use>
 
 
 environment variables and how they get consumed is configured in the constants.py

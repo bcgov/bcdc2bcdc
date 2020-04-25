@@ -20,6 +20,7 @@ import CKANTransform
 import deepdiff
 import pprint
 import json
+import CustomTransformers
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -680,7 +681,7 @@ class CKANDataSetDeltas:
 
             jsonDatasetStr = json.dumps(currentDataset)
             LOGGER.debug(f"currentDataset:  {jsonDatasetStr[0:150]} ...")
-            LOGGER.debug(f"currentDataset:  {jsonDatasetStr} ")
+            #LOGGER.debug(f"currentDataset:  {jsonDatasetStr} ")
 
             for idRemapObj in idFields:
                 # properties of the idRemapObj, and some sample values
@@ -724,11 +725,17 @@ class CKANDataSetDeltas:
 
         updates = self.filterNonUserGeneratedFields(self.updates)
         idFields = TRANSCONF.getIdFieldConfigs(self.destCKANDataset.dataType)
-        stringifiedFields = TRANSCONF.getStringifiedFields(
-            self.destCKANDataset.dataType)
+
+        #stringifiedFields = TRANSCONF.getStringifiedFields(
+        #    self.destCKANDataset.dataType)
+
         defaultFields = TRANSCONF.getRequiredFieldDefaultValues(
             self.destCKANDataset.dataType
         )
+        customTransformers = TRANSCONF.getCustomUpdateTransformations(
+            self.destCKANDataset.dataType)
+        enforceTypes = TRANSCONF.getTypeEnforcement(self.destCKANDataset.dataType)
+
 
         # LOGGER.debug(f'updates: {updates}')
         updateFields = TRANSCONF.getFieldsToIncludeOnUpdate(
@@ -745,14 +752,28 @@ class CKANDataSetDeltas:
             LOGGER.debug("adding required Fields")
             updates = self.addRequiredDefaultValues(updates, defaultFields)
 
+        if enforceTypes:
+            LOGGER.debug("Addressing property type enforcement")
+            updates = self.enforceTypes(updates, enforceTypes)
+
         if idFields:
             LOGGER.debug("Addressing remapping of ID fields")
             updates = self.remapIdFields(updates, idFields)
 
-        if stringifiedFields:
-            LOGGER.debug("Addressing stringified fields")
-            updates = self.doStringify(updates, stringifiedFields)
+        # if stringifiedFields:
+        #     LOGGER.debug("Addressing stringified fields")
+        #     updates = self.doStringify(updates, stringifiedFields)
 
+        if customTransformers:
+            LOGGER.debug(f"found custom transforrmers: {customTransformers}")
+            methMap = CustomTransformers.MethodMapping(
+                self.destCKANDataset.dataType,
+                customTransformers
+            )
+            for customTransformer in customTransformers:
+                LOGGER.info(f"loading and running the custom transformer : {customTransformer}")
+                methodCall = methMap.getCustomMethodCall(customTransformer)
+                methodCall(updates)
         return updates
 
     def addRequiredDefaultValues(self, inputDataStruct, defaultFields):
@@ -784,12 +805,16 @@ class CKANDataSetDeltas:
             iterObj = range(0, len(inputDataStruct))
         else:
             iterObj = inputDataStruct
-
+        cnt = 0
         for iterVal in iterObj:
             for stringifyField in stringifiedFields:
                 if stringifyField in inputDataStruct[iterVal]:
-                    LOGGER.debug(f"stringify the field: {stringifyField}")
+                    if cnt < 5:
+                        LOGGER.debug(f"stringify the field: {stringifyField}")
+                    elif cnt == 10:
+                        LOGGER.debug(f"stringify the field: {stringifyField} ... (repeating)")
                     inputDataStruct[iterVal][stringifyField] = json.dumps(inputDataStruct[iterVal][stringifyField])
+                    cnt += 1
         return inputDataStruct
 
 
