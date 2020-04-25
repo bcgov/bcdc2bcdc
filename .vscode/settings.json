@@ -53,5 +53,6 @@
     ],
     "python.formatting.provider": "black",
     "workbench.editor.enablePreview": false,
-    "files.trimTrailingWhitespace": true
+    "files.trimTrailingWhitespace": true,
+    "files.eol": "\n"
 }

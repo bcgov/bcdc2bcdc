@@ -10,6 +10,7 @@ import logging
 import os
 import pprint
 import time
+import re
 import sys
 
 import ckanapi
@@ -526,8 +527,53 @@ class CKANWrapper:
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
         LOGGER.debug(f"trying to update a package using the data: {packageJsonStr[0:100]} ...")
-        retVal = self.remoteapi.action.package_update(**packageData)
-        LOGGER.debug(f"Package Updated: {retVal}")
+        try:
+            retVal = self.remoteapi.action.package_update(**packageData)
+            retValStr = json.dumps(retVal)
+            LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
+        except ckanapi.errors.ValidationError as e:
+            LOGGER.debug("CAUGHT EXCEPTION")
+            # Discovered that there is inconsistency in how ckan handles the
+            # more_info field.  Sometimes it wants it as a stringified object
+            # other times it wants it as a regular json object.
+            # Here we are trying to catch the exception, determine if it is
+            # associated with the more_info field, and if it is then stringify
+            # the contents of that field and send the request back to the api.
+            # if this is not a more_info related error, then just re-raise
+            # the exception
+            args = e.args
+            # example of what the e.args looks like if its a more_info related
+            # exception:
+            #
+            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info', 0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
+            if ((len(args)) and "__junk" in e.args[0]) and len(e.args[0]['__junk']) and \
+                    re.match('^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
+                msg = (
+                    'The update object contains a non stringified more_info '
+                    'field, and for some unknown reason it wants it as a '
+                    'stringified field for this update situation.... going '
+                    'to stringify the more_info property and resubmit the '
+                    'request'
+                )
+                LOGGER.warning(msg)
+                LOGGER.info("modifying the more_info field so it stringified")
+                packageData['more_info'] = json.dumps(packageData['more_info'])
+                LOGGER.debug(f"stringified version: {packageData['more_info']}")
+                LOGGER.debug("resubmit request")
+                self.updatePackage(packageData)
+                LOGGER.info("SUCCESS")
+            else:
+                LOGGER.error("Failed after attempt to catch exception", exc_info=True)
+                raise
+
+
+            # print("caught error")
+            # print(f'e: {e}')
+            # print(f'args: {e.args}')
+            # print(f'args: {e.args[0]["__junk"][0]}')
+            # execInfo = sys.exc_info()
+            # print(type(execInfo[1]))
+
 
     def getOrganizations(self, includeData=False):
         """Gets organizations, if include data is false then will only
