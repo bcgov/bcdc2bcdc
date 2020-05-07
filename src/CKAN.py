@@ -862,7 +862,16 @@ class CKANAsyncWrapper:
         if len(packageList) > len(self.pkgData):
             numMissingPkgs = len(packageList) - len(self.pkgData)
             LOGGER.warning(f'missing: {numMissingPkgs} packages')
+            # iterate through self.pkgData and populate with just names
+            pkgNamesInReturnData =
+            # check here where the name from packageList is not in list created above
             missingPkgNames = [pkg['name'] for pkg in self.pkgData if pkg['name'] not in packageList]
+
+            # finally need to make sure that packageList is carried forward in request somehow
+            # possibly add an additional parameter called missingP_packages, or package_filter
+            # so that always gets the full requested package list but if the filter is
+            # populated then only gets those.
+
             LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
             LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
             time.sleep(2)
