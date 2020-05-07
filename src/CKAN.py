@@ -15,6 +15,7 @@ import sys
 from ast import literal_eval
 import concurrent.futures
 import requests_futures.sessions
+import time
 
 
 import ckanapi
@@ -832,6 +833,12 @@ class CKANAsyncWrapper:
         #session.hooks['response'] = response_hook
         self.pkgFutures = []
         self.pkgData = []
+
+        self.asyncPackageShowRequest(packageList)
+        return self.pkgData
+
+    def asyncPackageShowRequest(self, packageList):
+        LOGGER.debug(f"packageList length: {len(packageList)}")
         packageShow = 'api/3/action/package_show'
         pkgShowUrl = f"{self.url}/{packageShow}"
         with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as self.session:
@@ -844,8 +851,22 @@ class CKANAsyncWrapper:
         for future in concurrent.futures.as_completed(self.pkgFutures):
             cnter += 1
             LOGGER.debug(f"completed: {cnter}")
-        #LOGGER.debug(f"pkgData: {self.pkgData}")
+
+        self.verify(packageList)
         return self.pkgData
+
+    def verify(self, packageList):
+        LOGGER.info(f"num requested packages: {len(packageList)}")
+        LOGGER.info(f"packages returned: {len(self.pkgData)}")
+        time.sleep(2)
+        if len(packageList) > len(self.pkgData):
+            numMissingPkgs = len(packageList) - len(self.pkgData)
+            LOGGER.warning(f'missing: {numMissingPkgs} packages')
+            missingPkgNames = [pkg['name'] for pkg in self.pkgData if pkg['name'] not in packageList]
+            LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
+            LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
+            time.sleep(2)
+            self.asyncPackageShowRequest(missingPkgNames)
 
     def getPackageDataHook(self, resp, *args, **kwargs):
         # if the response status_code is not 200 then
@@ -855,9 +876,12 @@ class CKANAsyncWrapper:
         LOGGER.debug(f"kwargs: {kwargs}")
         LOGGER.debug(f"resp: {resp}, {resp.url}")
 
-
         if not (resp.status_code >= 200 and resp.status_code < 300):
             # unsuccessful request, try again by adding to the stack
+            if not os.path.exists('fail.json'):
+                fh = open('fail.json', 'w')
+                fh.close()
+
             LOGGER.debug(f"resp status_code: {resp.status_code}")
             if (resp.url in self.retries) and \
                     self.retries[resp.url] > self.maxRetries:
