@@ -178,10 +178,6 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
 
         LOGGER.debug("updates complete")
 
-# for subsequent types will define their own updates, or think about making a
-# mapping between different types and equivalent methods in CKAN.ckanWrapper
-# class
-
 
 class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
 
@@ -321,7 +317,7 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addData in sortedList:
             with open("add_package.json", "w") as fh:
-                json.dump(packageData, fh)
+                json.dump(addStruct, fh)
                 LOGGER.debug("wrote data to: add_package.json")
 
             jsonStr = json.dumps(addData)
@@ -351,7 +347,9 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         :type updtStruct: dict
         """
         LOGGER.debug(f"number of updates: {len(updtStruct)}")
-        for updateName in updtStruct:
+        updateKeys = list(updtStruct.keys())
+        updateKeys.sort()
+        for updateName in updateKeys:
             with open("updt_package.json", "w") as fh:
                 json.dump(updtStruct[updateName], fh)
                 LOGGER.debug("wrote data to: add_package.json")
@@ -367,6 +365,7 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
 
         #dels = self.removeIgnored(dels)
         #updts = self.removeIgnored(updts)
+
         LOGGER.debug(f"deltaObj: {deltaObj}")
         self.doDeletes(dels)
         self.doAdds(adds)

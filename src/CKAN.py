@@ -12,6 +12,7 @@ import pprint
 import time
 import re
 import sys
+from ast import literal_eval
 
 import ckanapi
 import requests
@@ -316,6 +317,9 @@ class CKANWrapper:
             LOGGER.debug(f"Do not write instance: {doNotWriteInstance}")
             prodHostFromEnvVar = urllib.parse.urlparse(doNotWriteInstance)
             hostInDestUrl = urllib.parse.urlparse(self.CKANUrl)
+            LOGGER.debug(
+                f'host in DestURL: {hostInDestUrl.netloc} vs prod host: '
+                f'{prodHostFromEnvVar.netloc}')
             if prodHostFromEnvVar == hostInDestUrl:
                 msg = (
                     f"Attempting to perform an operation that writes to an "
@@ -323,7 +327,13 @@ class CKANWrapper:
                     f"{constants.CKAN_DO_NOT_WRITE_URL}"
                 )
                 raise DoNotWriteToHostError(msg)
-            LOGGER.debug(f"safe instance: {self.CKANUrl}")
+            LOGGER.debug(f"safe destination instance: {self.CKANUrl}")
+        else:
+            msg = (
+                f'The environment variable: {constants.CKAN_DO_NOT_WRITE_URL} '
+                'has not been defined.  Define and re-run'
+                )
+            raise ValueError(msg)
 
     def addUser(self, userData):
         """makes api call to ckan to create a new user
@@ -332,10 +342,12 @@ class CKANWrapper:
         :type userData: dict
         """
         self.checkUrl()
+        retVal = None
         # TODO: hasn't been tested... Waiting for proper access to prod.
         LOGGER.debug(f"creating a new user with the data: {userData}")
         try:
-            retVal = self.remoteapi.action.user_create(**userData)
+            LOGGER.warning("actual user add api call commented out")
+            #retVal = self.remoteapi.action.user_create(**userData)
         except ckanapi.errors.ValidationError:
             # usually because the user already exists but is in an deleted
             # state.  To resolve retrieve the user, update the user defs
@@ -347,7 +359,8 @@ class CKANWrapper:
             # retVal = self.remoteapi.action.user_show(**userShow)
             # LOGGER.debug(f"retVal: {retVal}")
             userData["id"] = userData["name"]
-            retVal = self.remoteapi.action.user_update(**userData)
+            LOGGER.warning("actual user add api call commented out")
+            #retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
@@ -359,13 +372,14 @@ class CKANWrapper:
         :type userData: dict
         """
         self.checkUrl()
+        retVal = None
         # wants the id to be the user or the name
         if "id" not in userData and "name" in userData:
             userData["id"] = userData["name"]
             del userData["name"]
         LOGGER.debug(f"trying to update a user using the data: {userData}")
-        # data_dict=userData
-        retVal = self.remoteapi.action.user_update(**userData)
+        LOGGER.warning("actual api commented out")
+        #retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Updated: {retVal}")
 
     def getUser(self, userId):
@@ -433,9 +447,11 @@ class CKANWrapper:
         :type userId: str
         """
         self.checkUrl()
+        retVal = None
         LOGGER.debug(f"trying to delete the user: {userId}")
         userParams = {"id": userId}
-        retVal = self.remoteapi.action.user_delete(**userParams)
+        LOGGER.warning("actual user delete api call commented out")
+        #retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
     def getGroups(self, includeData=False):
@@ -478,8 +494,13 @@ class CKANWrapper:
         :type groupData: [type]
         """
         self.checkUrl()
+        retVal = None
+        retValStr = None
         LOGGER.debug(f"groupData: {groupData}")
         LOGGER.debug(f"creating a new Group with the data: {groupData}")
+
+        if 'id' not in groupData and 'name' in groupData:
+            groupData['id'] = groupData['name']
         try:
             retVal = self.remoteapi.action.group_create(**groupData)
         except ckanapi.errors.ValidationError:
@@ -487,8 +508,9 @@ class CKANWrapper:
             # but is in a deleted state, (state='deleted')
             # going to try to update the data instead
             retVal = self.remoteapi.action.group_update(**groupData)
-
-        LOGGER.debug(f"Group Created: {retVal}")
+        if retVal:
+            retValStr = json.dumps(retVal)
+        LOGGER.debug(f"Group Created: {retValStr[0:100]} ...")
         return retVal
 
     def deleteGroup(self, groupIdentifier=None):
@@ -520,9 +542,10 @@ class CKANWrapper:
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
         retVal = self.remoteapi.action.group_update(**groupData)
-        LOGGER.debug(f"Group Updated: {retVal}")
+        retValStr = json.dumps(retVal)
+        LOGGER.debug(f"Group Updated: {retValStr[0:100]} ...")
 
-    def updatePackage(self, packageData):
+    def updatePackage(self, packageData, retry=False):
 
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
@@ -531,8 +554,36 @@ class CKANWrapper:
             retVal = self.remoteapi.action.package_update(**packageData)
             retValStr = json.dumps(retVal)
             LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
+        except ckanapi.errors.CKANAPIError as e:
+            LOGGER.debug("CAUGHT CKANAPIError EXCEPTION")
+            if retry:
+                raise
+            errMatchPatern = (
+                '^\s*Only\s+lists\s+of\s+dicts\s+can\s+be\s+placed\s+agains'
+                't\s+subschema\s+\(\'more_info\'\,\)\,\s+not\s+\<type\s+\'u'
+                'nicode\'\>\s*$'
+            )
+            # catching stringified issue
+            args = e.args
+            #print(f'args: {args}, {type(args)}, {len(args)}')
+            raiseErr = True
+            if len(args):
+                errMsgs = literal_eval(args[0])
+                ckanErrMsgs = json.loads(errMsgs[2])
+                ckanErrMsg = ckanErrMsgs['error']['message']
+                if re.match(errMatchPatern, ckanErrMsg):
+                    # caught the issue of more_info being expected as a non
+                    # stringified obj
+                    packageData['more_info'] = json.loads(packageData['more_info'])
+                    raiseErr = False
+                    self.updatePackage(packageData, retry=True)
+            if raiseErr:
+                raise
+
         except ckanapi.errors.ValidationError as e:
-            LOGGER.debug("CAUGHT EXCEPTION")
+            LOGGER.debug("CAUGHT ValidationError EXCEPTION")
+            if retry:
+                raise
             # Discovered that there is inconsistency in how ckan handles the
             # more_info field.  Sometimes it wants it as a stringified object
             # other times it wants it as a regular json object.
@@ -560,22 +611,13 @@ class CKANWrapper:
                 packageData['more_info'] = json.dumps(packageData['more_info'])
                 LOGGER.debug(f"stringified version: {packageData['more_info']}")
                 LOGGER.debug("resubmit request")
-                self.updatePackage(packageData)
+                self.updatePackage(packageData, retry=True)
                 LOGGER.info("SUCCESS")
             else:
                 LOGGER.error("Failed after attempt to catch exception", exc_info=True)
                 raise
 
-
-            # print("caught error")
-            # print(f'e: {e}')
-            # print(f'args: {e.args}')
-            # print(f'args: {e.args[0]["__junk"][0]}')
-            # execInfo = sys.exc_info()
-            # print(type(execInfo[1]))
-
-
-    def getOrganizations(self, includeData=False):
+    def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
 
@@ -588,9 +630,12 @@ class CKANWrapper:
         #       a paged call
         orgConfig = {}
         organizations = []
-        pageSize = 100
-        currentPosition = 0
+        pageSize = 70
+        if not currentPosition:
+            currentPosition = 0
         pageCnt = 1
+        maxRetries = 5
+
         if includeData:
             orgConfig = {
                 "order_by": "name",
@@ -605,8 +650,26 @@ class CKANWrapper:
         while True:
             LOGGER.debug(f"OrgConfig is {orgConfig}")
             LOGGER.debug(f"pagecount is {pageCnt}")
+            try:
+                retVal = self.remoteapi.action.organization_list(**orgConfig)
+            except ckanapi.errors.CKANAPIError as err:
+                LOGGER.error(err)
+                # catch 504 errors raised by ckanapi, otherwise re-raise
+                if ((((attempts < maxRetries) and
+                        hasattr(err, 'extra_msg')) and
+                        len(literal_eval(err.extra_msg)) >= 2) and
+                            literal_eval(err.extra_msg)[1] == 504):
+                    attempts += 1
+                    LOGGER.warning(f"organization_list: status: 504, retry {attempts} of {maxRetries} ")
+                    retVal = self.getOrganizations(includeData=includeData,
+                                                   attempts=attempts,
+                                                   currentPosition=currentPosition)
+                    # if gets here then succeeded, reset attempts
+                    attempts = 0
 
-            retVal = self.remoteapi.action.organization_list(**orgConfig)
+                else:
+                    raise
+
             LOGGER.debug(f"records returned: {len(retVal)}")
             organizations.extend(retVal)
 
@@ -672,7 +735,8 @@ class CKANWrapper:
         # )
         LOGGER.debug(f"updating org: {organizationData['name']}")
         retVal = self.remoteapi.action.organization_update(**organizationData)
-        LOGGER.debug(f"Organization Updated: {retVal}")
+        retValJson = json.dumps(retVal)
+        LOGGER.debug(f"Organization Updated: {retValJson[0:100]} ...")
 
     def addPackage(self, packageData):
         self.checkUrl()

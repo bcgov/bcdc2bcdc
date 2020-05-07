@@ -62,24 +62,24 @@ def getTransformationConfig(transformConfigFile=None):
 
 
 # TODO: Idea of transform data set is going to be moved to its own module
-class TransformDataSet:
-    """Ties together a transform config with the data allowing you to apply
-    transformations to the dataset as a whole.  Includes a record iterator
-    allowing you to iterate over each record in the dataset.
-    :raises InValidTransformationData: [description]
-    """
+# class TransformDataSet:
+#     """Ties together a transform config with the data allowing you to apply
+#     transformations to the dataset as a whole.  Includes a record iterator
+#     allowing you to iterate over each record in the dataset.
+#     :raises InValidTransformationData: [description]
+#     """
 
-    def __init__(self, dataType, transformData, transformConfigFile=None):
-        self.validateType(dataType)
-        self.dataType = dataType
-        self.transformData = transformData
+#     def __init__(self, dataType, transformData, transformConfigFile=None):
+#         self.validateType(dataType)
+#         self.dataType = dataType
+#         self.transformData = transformData
 
-        if not isinstance(self.transformData, list):
-            msg = (
-                "transformation data needs to be a list data type, "
-                + f"transformData provided is type: {type(transformData)}"
-            )
-            raise InValidTransformationData(msg)
+#         if not isinstance(self.transformData, list):
+#             msg = (
+#                 "transformation data needs to be a list data type, "
+#                 + f"transformData provided is type: {type(transformData)}"
+#             )
+#             raise InValidTransformationData(msg)
 
     # def getComparisonData(self):
     #     """removed machine generated data from the data allowing for comparison

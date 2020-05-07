@@ -141,6 +141,29 @@ class CKANRecord:
             return struct
         return newStruct
 
+    def runCustomTransformations(self, dataCell):
+        """Checks to see if a custom transformation has been defined for the
+        data type.  If it has then retrieves a reference to the method and runs
+        it, returning the resulting data transformation.
+
+        :param dataCell: a datacell object to run
+        :type dataCell: DataCell
+        """
+        updtTransConfigurations = TRANSCONF.getCustomUpdateTransformations(self.dataType)
+        #LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
+        if updtTransConfigurations:
+
+            methodMapper = CustomTransformers.MethodMapping(self.dataType, updtTransConfigurations)
+            for customMethodName in updtTransConfigurations:
+                #methodName = customTransformerConfig[constants.CUSTOM_UPDATE_METHOD_NAME]
+                methodReference = methodMapper.getCustomMethodCall(customMethodName)
+                # this is a bit cludgy.. the custom methods are designed to work with collections
+                # so just putting the individual record into a collection so that the
+                # method will work.
+                dataCell.struct = methodReference([dataCell.struct])[0]
+                #LOGGER.debug(f"called custom method: {customMethodName}")
+        return dataCell
+
     def removeEmbeddedIgnores(self, dataCell):
         """many data structs in CKAN can contain embedded data types.  Example
         of data types in CKAN: users, groups, organizations, packages, resources
@@ -228,19 +251,22 @@ class CKANRecord:
             thisComparable = self.getComparableStruct()
             dataCell = DataCell(thisComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            thisComparable = self.runCustomTransformations(dataCell)
             thisComparable = dataCellNoIgnores.struct
+
 
             # do the same thing for the input data structure
             inputComparable = inputRecord.getComparableStruct()
             dataCell = DataCell(inputComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            inputComparable = self.runCustomTransformations(dataCell)
             inputComparable = dataCell.struct
 
             diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
             if diff:
                 pp = pprint.PrettyPrinter(indent=4)
-                pp.pformat(inputComparable)
+                formatted = pp.pformat(inputComparable)
                 # LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
                 # LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
                 # LOGGER.debug(f"diffs are: {diff}")
@@ -765,7 +791,7 @@ class CKANDataSetDeltas:
         #     updates = self.doStringify(updates, stringifiedFields)
 
         if customTransformers:
-            LOGGER.debug(f"found custom transforrmers: {customTransformers}")
+            LOGGER.debug(f"found custom transformers: {customTransformers}")
             methMap = CustomTransformers.MethodMapping(
                 self.destCKANDataset.dataType,
                 customTransformers
@@ -1105,7 +1131,8 @@ class CKANDataSet:
         ignoreList = TRANSCONF.getIgnoreList(self.dataType)
 
         chkForUpdateIds = srcUniqueIdSet.intersection(destUniqueIdSet)
-
+        chkForUpdateIds = list(chkForUpdateIds)
+        chkForUpdateIds.sort()
         updateDataList = []
 
         for chkForUpdateId in chkForUpdateIds:

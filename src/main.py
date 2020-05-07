@@ -1,13 +1,15 @@
-import CKAN
-import CKANData
-import CKANUpdate
-import DataCache
-import constants
 import logging
 import logging.config
 import os
 import posixpath
+import sys
+
 import CacheFiles
+import CKAN
+import CKANData
+import CKANUpdate
+import constants
+import DataCache
 
 # pylint: disable=logging-format-interpolation
 
@@ -20,6 +22,8 @@ class RunUpdate:
         params = CKAN.CKANParams()
         self.srcCKANWrapper = params.getSrcWrapper()
         self.destCKANWrapper = params.getDestWrapper()
+        # verify that destination is not prod
+        self.destCKANWrapper.checkUrl()
         self.dataCache = DataCache.DataCache()
         self.cachedFilesPaths = CacheFiles.CKANCacheFiles()
 
@@ -134,6 +138,11 @@ class RunUpdate:
             updater.update(deltaObj)
 
     def updatePackages(self, useCache=False):
+        """ updates packages based on
+
+        :param useCache: [description], defaults to False
+        :type useCache: bool, optional
+        """
         getPackagesMap = {
             False: {
                 "src": self.srcCKANWrapper.getPackagesAndData,
@@ -144,14 +153,12 @@ class RunUpdate:
                 "dest": self.destCKANWrapper.getPackagesAndData_cached
                 }
         }
+
         srcCacheFile = self.cachedFilesPaths.getSrcPackagesJsonPath()
         destCacheFile = self.cachedFilesPaths.getDestPackagesJsonPath()
 
         srcPkgList = getPackagesMap[useCache]['src'](cacheFileName=srcCacheFile)
         destPkgList = getPackagesMap[useCache]['dest'](cacheFileName=destCacheFile)
-
-        # TODO: need to complete this method... ... left incomplete while work on
-        #       org compare and update instead.  NEEDS TO BE COMPLETED
 
         # TODO: once debug is complete remove the canned part
         #srcPkgList = self.srcCKANWrapper.getPackagesAndData()
@@ -166,13 +173,13 @@ class RunUpdate:
         self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
 
         if srcPkgDataSet != destPkgDataSet:
+
             LOGGER.debug("packages are not the same")
 
             deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
             LOGGER.info(f"Delta obj for orgs: {deltaObj}")
             updater = CKANUpdate.CKANPackagesUpdate(ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
-
 
 if __name__ == "__main__":
 
@@ -205,6 +212,8 @@ if __name__ == "__main__":
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
     # This is complete, commented out while work on group
+    # not running user update for now
+
     updater.updateUsers(useCache=True)
     updater.updateGroups(useCache=True)
     updater.updateOrganizations(useCache=True)

@@ -66,7 +66,7 @@ class MethodMapping:
         methods = inspect.getmembers(obj, predicate=inspect.ismethod)
         # extracting just the names of the methds as strings
         methodNames = [i[0] for i in  methods]
-        print(f'method names: {methodNames}')
+        #print(f'method names: {methodNames}')
         for customMethodName in self.customMethodNames:
             if customMethodName not in methodNames:
                 msg = (
@@ -77,7 +77,7 @@ class MethodMapping:
                 raise InvalidCustomTransformation(msg)
 
         # validate that the method has the expected custom method name
-        LOGGER.debug(f"methods: {methods}")
+        #LOGGER.debug(f"methods: {methods}")
 
     def getClasses(self):
         clsmembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
@@ -85,7 +85,6 @@ class MethodMapping:
         for cls in clsmembers:
             if cls[0] in constants.VALID_TRANSFORM_TYPES:
                 clsNameAsStr.append(cls[0])
-        print(clsNameAsStr)
         return clsNameAsStr
 
     def getCustomMethodCall(self, methodName):
@@ -106,19 +105,22 @@ class packages:
             this stuct will be modified and returned by this method.
         :type inputDataStruct: dict
         """
-        LOGGER.debug("packageTransform has been called")
+        #LOGGER.debug("packageTransform has been called")
         if isinstance(inputDataStruct, list):
             iterObj = range(0, len(inputDataStruct))
         else:
             iterObj = inputDataStruct
 
         for iterVal in iterObj:
-            print(f"iterval in custom method: {iterVal}")
             # individual update record referred to: inputDataStruct[iterVal]
             inputDataStruct[iterVal] = self.fixResourceStatus(inputDataStruct[iterVal])
             inputDataStruct[iterVal] = self.fixDownloadAudience(inputDataStruct[iterVal])
-            #inputDataStruct[iterVal] = self.fixMoreInfo(inputDataStruct[iterVal])
+            inputDataStruct[iterVal] = self.fixMoreInfo(inputDataStruct[iterVal])
             inputDataStruct[iterVal] = self.fixSecurityClass(inputDataStruct[iterVal])
+
+            # always set the type to 'bcdc_dataset'
+
+            inputDataStruct[iterVal]['type'] = 'bcdc_dataset'
 
         return inputDataStruct
 
@@ -180,34 +182,49 @@ class packages:
                 record["download_audience"] = defaultValue
             elif record["download_audience"] not in validDownloadAudiences:
                 record["download_audience"] = defaultValue
-
         return record
 
     def fixMoreInfo(self, record):
-        """if its empty ie:
-            [
-                {
-                    "link": "",
-                    "delete": "0"
-                }
-            ]
-        then don't bother stringy.
+        """ fixes the 'more_info' field so that it can be consistently compared
+        between instances.
 
-        removed this param from the transconf
-        ...
-            "stringified_fields": [
-                "more_info"
-            ],
-        ...
+        * If the 'more_info' field is string, it gets 'destringified'
+        * Evaluate more_info for fields called 'link', and changes to url
+        * restringifies with specific formatting parameters
 
-        :param record: [description]
-        :type record: [type]
+        In theory after the stringifyied more_info field should be comparable
+        accross instances.
+
+        :param record: input CKAN package data structure
+        :type record: dict, ckan package
+        :return: [d
+        :rtype: [type]
         """
-        if ('more_info' in record) and record['more_info']:
-            moreInfo = record['more_info']
-            if len(moreInfo) == 1 and isinstance(moreInfo, list):
-                if moreInfo[0]['link']:
-                    record['more_info'] = json.dumps(moreInfo)
+        if ('more_info') in record and record['more_info'] is None:
+            record['more_info'] = '[]'
+        # if more info has a value but is not a string, ie its a list
+        if ((('more_info' in record) and
+                record['more_info']) and
+                isinstance(record['more_info'], list)):
+            record['more_info'] = json.dumps(record['more_info'], sort_keys=True, separators=(',', ':'))
+            record = self.fixMoreInfo(record)
+        elif ((('more_info' in record) and
+                record['more_info']) and
+                isinstance(record['more_info'], str)):
+            # more info exists, has a value in it, and its a string.
+            # in this situation code will:
+            # * destringify
+            # * parse
+            # * convert link to url
+            # * re-stringify with consistent format
+            moreInfoRecord = json.loads(record['more_info'])
+            if moreInfoRecord is None:
+                moreInfoRecord = []
+            for listPos in range(0, len(moreInfoRecord)):
+                if 'link' in moreInfoRecord[listPos]:
+                    moreInfoRecord[listPos]['url'] = moreInfoRecord[listPos]['link']
+                    del moreInfoRecord[listPos]['link']
+            record['more_info'] = json.dumps(moreInfoRecord, sort_keys=True, separators=(',', ':'))
         return record
 
 class InvalidCustomTransformation(Exception):
@@ -217,10 +234,9 @@ class InvalidCustomTransformation(Exception):
 
 
 
-if __name__ == '__main__':
-    methMap = MethodMapping('packages', ['packageTransform'])
-    func = methMap.getCustomMethodCall('packageTransform')
-    print("calling the custom method")
-    func()
+# if __name__ == '__main__':
+#     methMap = MethodMapping('packages', ['packageTransform'])
+#     func = methMap.getCustomMethodCall('packageTransform')
+#     func()
 
 

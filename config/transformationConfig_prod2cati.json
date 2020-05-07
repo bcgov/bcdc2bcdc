@@ -4,6 +4,7 @@
         "ignore_list": [
             "cati",
             "idir-aeliving",
+            "aeliving",
             "idir-bsharrat",
             "p1",
             "idir-jchurchi",
@@ -20,7 +21,16 @@
             "dwelf",
             "idir-jerho",
             "idir-loneil",
-            "knetherton"
+            "knetherton",
+            "bsharrat@idir",
+            "crigdon@idir",
+            "jchurchi@idir",
+            "nanyang@idir",
+            "stchapma@idir",
+            "yusotoza@idir",
+            "mdwilkie",
+            "visitor",
+            "stchapma"
         ],
         "field_mapping": [
             {
@@ -93,7 +103,7 @@
             "name": true,
             "is_organization": true,
             "state": true,
-            "image_url": false,
+            "image_url": true,
             "groups": [
                 {
                     "capacity": true,
@@ -143,7 +153,7 @@
             "view_audience": true,
             "private": true,
             "maintainer_email": true,
-            "num_tags": true,
+            "num_tags": false,
             "id": false,
             "metadata_created": false,
             "metadata_modified": false,
@@ -156,15 +166,7 @@
             "resources": false,
             "more_info": true,
             "num_resources": false,
-            "tags": [
-                {
-                    "vocabulary_id": false,
-                    "state": true,
-                    "display_name": true,
-                    "id": false,
-                    "name": true
-                }
-            ],
+            "tags": false,
             "contacts": false,
             "resource_status": true,
             "purpose": true,
