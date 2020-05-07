@@ -13,6 +13,9 @@ import time
 import re
 import sys
 from ast import literal_eval
+import concurrent.futures
+import requests_futures.sessions
+
 
 import ckanapi
 import requests
@@ -216,6 +219,34 @@ class CKANWrapper:
         return pkgs
 
     def getPackagesAndData(self):
+        """ Makes a bunch of different calls.  Initially calls package_list and
+        then iterates through each object package name retrieving the data for it
+        using package_show api calls.
+
+        :return: a list of pkgs where each pkg is a python struct describing a
+            dataset in ckan.
+        :rtype: list of pkgs
+        """
+        pkgs = []
+        pkgList = self.getPackageNames()
+        for pkgName in pkgList:
+            pass
+
+
+        return pkgs
+
+    def getPackagesAndData_solr(self):
+        """Collects a complete list of packages from ckan.  Uses package_search
+        end point.  package_search hits cached state of CKAN managed by SOLR thus
+        cannot be relied upon to return the latest set of data.
+
+        If latest greatest data is important then use 'getPackagesAndData' method
+        that retrieves the data through individual package_show calls.  Takes a
+        longer period of time though.
+
+        :return: [description]
+        :rtype: [type]
+        """
         LOGGER.debug(f"url: {self.CKANUrl}")
         packageList = []
         elemCnt = 500
@@ -770,6 +801,81 @@ class CKANWrapper:
     def getResource(self, query):
         # TODO: code this when get to resources
         pass
+
+
+class CKANAsyncWrapper:
+    def __init__(self, baseUrl, header=None):
+        self.header = header
+        self.url = baseUrl
+        self.session = None
+
+        self.maxRetries = 5
+        self.max_workers = 20
+
+        self.pkgFutures = []
+        self.pkgData = []
+
+        self.retries = {}
+
+    def getDataWrapper(self, session, url, params, retries=0):
+        if retries < self.maxRetries:
+            retries += 1
+            pkgShowRequest = session.get(url, params=params)
+            session.hooks['response'] = self.getPackageDataHook
+            self.pkgFutures.append(pkgShowRequest)
+
+    def getPackageData(self, packageList):
+        # reloading the package data, start by ensuring the package data list
+        # is empty.
+
+        #session = FuturesSession()
+        #session.hooks['response'] = response_hook
+        self.pkgFutures = []
+        self.pkgData = []
+        packageShow = 'api/3/action/package_show'
+        pkgShowUrl = f"{self.url}/{packageShow}"
+        with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as self.session:
+            for pkgName in packageList:
+                pkgShowParams = {'id': pkgName}
+                self.getDataWrapper(self.session, pkgShowUrl, pkgShowParams)
+
+        # stack is now loaded, now wait for responses...
+        cnter = 0
+        for future in concurrent.futures.as_completed(self.pkgFutures):
+            cnter += 1
+            LOGGER.debug(f"completed: {cnter}")
+        #LOGGER.debug(f"pkgData: {self.pkgData}")
+        return self.pkgData
+
+    def getPackageDataHook(self, resp, *args, **kwargs):
+        # if the response status_code is not 200 then
+        # reload to the stack.
+        # also extract the data and load to pkgData
+        LOGGER.debug(f"args: {args}")
+        LOGGER.debug(f"kwargs: {kwargs}")
+        LOGGER.debug(f"resp: {resp}, {resp.url}")
+
+
+        if not (resp.status_code >= 200 and resp.status_code < 300):
+            # unsuccessful request, try again by adding to the stack
+            LOGGER.debug(f"resp status_code: {resp.status_code}")
+            if (resp.url in self.retries) and \
+                    self.retries[resp.url] > self.maxRetries:
+                msg = f'unable to retrieve: {resp.url}'
+                raise requests.exceptions.HTTPError(msg)
+
+            if resp.url not in self.retries:
+                self.retries[resp.url] = 0
+            self.retries[resp.url] += 1
+        else:
+            # get the data from the request and add it to the collection
+            # of data
+            pkgDataRaw = resp.json()
+            LOGGER.debug(f"have data for: {pkgDataRaw['result']['name']}")
+            self.pkgData.append(pkgDataRaw['result'])
+
+
+
 
 
 # ----------------- EXCEPTIONS
