@@ -230,10 +230,9 @@ class CKANWrapper:
         """
         pkgs = []
         pkgList = self.getPackageNames()
-        for pkgName in pkgList:
-            pass
-
-
+        LOGGER.debug(f"got {len(pkgList)} pkg names")
+        asyncWrapper = CKANAsyncWrapper(self.CKANUrl, self.CKANHeader)
+        pkgs = asyncWrapper.getPackageData(pkgList)
         return pkgs
 
     def getPackagesAndData_solr(self):
@@ -810,8 +809,8 @@ class CKANAsyncWrapper:
         self.url = baseUrl
         self.session = None
 
-        self.maxRetries = 5
-        self.max_workers = 20
+        self.maxRetries = 15
+        self.max_workers = 5
         self.currentRetry = 0
 
         self.pkgFutures = []
@@ -852,16 +851,20 @@ class CKANAsyncWrapper:
         pkgIterList = packageList
         if missingPkgs:
             pkgIterList = missingPkgs
-
+        LOGGER.debug("loading up the queue...")
         with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as session:
             if not exceptionsList:
                 for pkgName in pkgIterList:
                     pkgShowParams = {'id': pkgName}
-                    self.getDataWrapper(session, pkgShowUrl, params=pkgShowParams)
+                    self.getDataWrapper(session, pkgShowUrl, params=pkgShowParams, headers=self.header)
+
+                    if not (len(self.pkgFutures) % 100):
+                        LOGGER.debug(f"loaded {len(self.pkgFutures)} to the queue")
             else:
                 LOGGER.debug("re-running failed requests")
                 for failedRequest in exceptionsList:
                     self.getDataWrapper(session, failedRequest.url, headers=failedRequest.headers)
+        LOGGER.debug(f"queue loaded with {len(self.pkgFutures)}...")
 
         # stack is now loaded, now wait for responses...
         reRunList = []
@@ -869,6 +872,7 @@ class CKANAsyncWrapper:
         for future in concurrent.futures.as_completed(self.pkgFutures):
             futureExcept = future.exception()
             if futureExcept:
+                LOGGER.debug(f"done status of future: {future.done()}")
                 # catching exceptions where the request never completed, adding
                 # to a list that will be re-run in another async call
                 LOGGER.warning(f"future: {futureExcept}")
@@ -876,16 +880,21 @@ class CKANAsyncWrapper:
             else:
                 resp = future.result()
                 self.getPackageDataHook(resp)
+
+            if not cnter % 100:
+                LOGGER.debug(f"retrieved {cnter} of {len(packageList)} packages")
+            future.cancel()
             cnter += 1
 
         if reRunList:
 
             # dont' re-run if max retries is exceeded
             if self.currentRetry < self.maxRetries:
-                self.currentRetry + = 1
+                self.currentRetry += 1
 
                 self.pkgFutures = []
                 LOGGER.info(f"re-run list length: {len(reRunList)}")
+                #time.sleep(1)
                 self.asyncPackageShowRequest(packageList, exceptionsList=reRunList)
             else:
                 msg = (
@@ -898,11 +907,6 @@ class CKANAsyncWrapper:
 
         self.verify(packageList)
         return self.pkgData
-
-    def getPackageSync(self, url, headers):
-        resp = requests.get(url, headers=headers)
-        data = resp.json()
-        self.pkgData.append(data['result'])
 
     def verify(self, packageList):
         """Checks that all the requested package names have been populated into
@@ -918,7 +922,7 @@ class CKANAsyncWrapper:
         LOGGER.info(f"packages returned: {len(self.pkgData)}")
         if len(packageList) > len(self.pkgData):
             if self.currentRetry < self.maxRetries:
-                self.currentRetry + = 1
+                self.currentRetry += 1
                 numMissingPkgs = len(packageList) - len(self.pkgData)
                 LOGGER.warning(f'missing: {numMissingPkgs} packages')
 
