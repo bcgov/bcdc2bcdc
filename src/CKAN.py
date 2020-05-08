@@ -888,7 +888,12 @@ class CKANAsyncWrapper:
                 LOGGER.info(f"re-run list length: {len(reRunList)}")
                 self.asyncPackageShowRequest(packageList, exceptionsList=reRunList)
             else:
-                msg = ""
+                msg = (
+                    f'after {self.maxRetries} attempts to retrieve all the '
+                    'packages has failed, raising this exception, have retrieved'
+                    f'{len(self.pkgData)} of {len(packageList)} requested '
+                    'packages'
+                )
                 raise AsyncPackagesGetError(msg)
 
         self.verify(packageList)
@@ -926,7 +931,12 @@ class CKANAsyncWrapper:
                 self.pkgFutures = []
                 self.asyncPackageShowRequest(packageList, missingPkgNames)
             else:
-                msg =
+                msg = (
+                    f'after {self.maxRetries} attempts to retrieve all the '
+                    'packages has failed, raising this exception, have retrieved'
+                    f'{len(self.pkgData)} of {len(packageList)} requested '
+                    'packages'
+                )
                 raise AsyncPackagesGetError(msg)
 
     def getPackageDataHook(self, resp, *args, **kwargs):
