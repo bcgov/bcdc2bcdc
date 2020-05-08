@@ -54,5 +54,6 @@
     "python.formatting.provider": "black",
     "workbench.editor.enablePreview": false,
     "files.trimTrailingWhitespace": true,
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "terminal.integrated.scrollback": 20000
 }

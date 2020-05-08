@@ -812,17 +812,24 @@ class CKANAsyncWrapper:
 
         self.maxRetries = 5
         self.max_workers = 20
+        self.currentRetry = 0
 
         self.pkgFutures = []
         self.pkgData = []
 
         self.retries = {}
 
-    def getDataWrapper(self, session, url, params, retries=0):
+    def getDataWrapper(self, session, url, params=None, headers=None, retries=0):
         if retries < self.maxRetries:
             retries += 1
-            pkgShowRequest = session.get(url, params=params)
-            session.hooks['response'] = self.getPackageDataHook
+            kwargs = {}
+            if params:
+                kwargs['params'] = params
+            if headers:
+                kwargs['headers'] = headers
+
+            pkgShowRequest = session.get(url, **kwargs)
+            #session.hooks['response'] = self.getPackageDataHook
             self.pkgFutures.append(pkgShowRequest)
 
     def getPackageData(self, packageList):
@@ -837,53 +844,98 @@ class CKANAsyncWrapper:
         self.asyncPackageShowRequest(packageList)
         return self.pkgData
 
-    def asyncPackageShowRequest(self, packageList):
+    def asyncPackageShowRequest(self, packageList, missingPkgs=None, exceptionsList=None):
         LOGGER.debug(f"packageList length: {len(packageList)}")
         packageShow = 'api/3/action/package_show'
         pkgShowUrl = f"{self.url}/{packageShow}"
-        with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as self.session:
-            for pkgName in packageList:
-                pkgShowParams = {'id': pkgName}
-                self.getDataWrapper(self.session, pkgShowUrl, pkgShowParams)
+
+        pkgIterList = packageList
+        if missingPkgs:
+            pkgIterList = missingPkgs
+
+        with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as session:
+            if not exceptionsList:
+                for pkgName in pkgIterList:
+                    pkgShowParams = {'id': pkgName}
+                    self.getDataWrapper(session, pkgShowUrl, params=pkgShowParams)
+            else:
+                LOGGER.debug("re-running failed requests")
+                for failedRequest in exceptionsList:
+                    self.getDataWrapper(session, failedRequest.url, headers=failedRequest.headers)
 
         # stack is now loaded, now wait for responses...
+        reRunList = []
         cnter = 0
         for future in concurrent.futures.as_completed(self.pkgFutures):
+            futureExcept = future.exception()
+            if futureExcept:
+                # catching exceptions where the request never completed, adding
+                # to a list that will be re-run in another async call
+                LOGGER.warning(f"future: {futureExcept}")
+                reRunList.append(futureExcept.request)
+            else:
+                resp = future.result()
+                self.getPackageDataHook(resp)
             cnter += 1
-            LOGGER.debug(f"completed: {cnter}")
+
+        if reRunList:
+
+            # dont' re-run if max retries is exceeded
+            if self.currentRetry < self.maxRetries:
+                self.currentRetry + = 1
+
+                self.pkgFutures = []
+                LOGGER.info(f"re-run list length: {len(reRunList)}")
+                self.asyncPackageShowRequest(packageList, exceptionsList=reRunList)
+            else:
+                msg = ""
+                raise AsyncPackagesGetError(msg)
 
         self.verify(packageList)
         return self.pkgData
 
+    def getPackageSync(self, url, headers):
+        resp = requests.get(url, headers=headers)
+        data = resp.json()
+        self.pkgData.append(data['result'])
+
     def verify(self, packageList):
+        """Checks that all the requested package names have been populated into
+        self.pkgData, if they have not it constructs a list of the missing
+        packages and sends it back to the async request method.
+
+        This will keep on looping back until the max retries is exceeded.
+
+        :param packageList: [description]
+        :type packageList: [type]
+        """
         LOGGER.info(f"num requested packages: {len(packageList)}")
         LOGGER.info(f"packages returned: {len(self.pkgData)}")
-        time.sleep(2)
         if len(packageList) > len(self.pkgData):
-            numMissingPkgs = len(packageList) - len(self.pkgData)
-            LOGGER.warning(f'missing: {numMissingPkgs} packages')
-            # iterate through self.pkgData and populate with just names
-            pkgNamesInReturnData =
-            # check here where the name from packageList is not in list created above
-            missingPkgNames = [pkg['name'] for pkg in self.pkgData if pkg['name'] not in packageList]
+            if self.currentRetry < self.maxRetries:
+                self.currentRetry + = 1
+                numMissingPkgs = len(packageList) - len(self.pkgData)
+                LOGGER.warning(f'missing: {numMissingPkgs} packages')
 
-            # finally need to make sure that packageList is carried forward in request somehow
-            # possibly add an additional parameter called missingP_packages, or package_filter
-            # so that always gets the full requested package list but if the filter is
-            # populated then only gets those.
+                # iterate through self.pkgData and populate with just names
+                pkgNamesInReturnData = [pkg['name'] for pkg in self.pkgData]
+                missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
 
-            LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
-            LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
-            time.sleep(2)
-            self.asyncPackageShowRequest(missingPkgNames)
+                LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
+                LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
+                self.pkgFutures = []
+                self.asyncPackageShowRequest(packageList, missingPkgNames)
+            else:
+                msg =
+                raise AsyncPackagesGetError(msg)
 
     def getPackageDataHook(self, resp, *args, **kwargs):
         # if the response status_code is not 200 then
         # reload to the stack.
         # also extract the data and load to pkgData
-        LOGGER.debug(f"args: {args}")
-        LOGGER.debug(f"kwargs: {kwargs}")
-        LOGGER.debug(f"resp: {resp}, {resp.url}")
+        #LOGGER.debug(f"args: {args}")
+        #LOGGER.debug(f"kwargs: {kwargs}")
+        #LOGGER.debug(f"resp: {resp}, {resp.url}")
 
         if not (resp.status_code >= 200 and resp.status_code < 300):
             # unsuccessful request, try again by adding to the stack
@@ -904,12 +956,12 @@ class CKANAsyncWrapper:
             # get the data from the request and add it to the collection
             # of data
             pkgDataRaw = resp.json()
-            LOGGER.debug(f"have data for: {pkgDataRaw['result']['name']}")
+            prevLen = len(self.pkgData)
+            LOGGER.debug(f"have data for: {pkgDataRaw['result']['name']}, {resp.status_code}, {prevLen}")
             self.pkgData.append(pkgDataRaw['result'])
-
-
-
-
+            LOGGER.debug(f"current length: {len(self.pkgData)}, prev: {prevLen}")
+            if pkgDataRaw['result'] not in self.pkgData:
+                LOGGER.debug(f"DID NOT GET WRITTEN: {pkgDataRaw['result']['name']}")
 
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
@@ -928,6 +980,12 @@ class DoNotWriteToHostError(Exception):
     write to a host that has explicitly been marked as a read only host.
     """
 
+    def __init__(self, message):
+        LOGGER.error(message)
+        self.message = message
+
+
+class AsyncPackagesGetError(Exception):
     def __init__(self, message):
         LOGGER.error(message)
         self.message = message
