@@ -16,6 +16,7 @@ from ast import literal_eval
 import concurrent.futures
 import requests_futures.sessions
 import time
+import itertools
 
 
 import ckanapi
@@ -803,6 +804,11 @@ class CKANWrapper:
         pass
 
 
+class CKANAsyncIOWrapper:
+    def __init__(self, url, header):
+        self.header = header
+        self.url = baseUrl
+
 class CKANAsyncWrapper:
     def __init__(self, baseUrl, header=None):
         self.header = header
@@ -977,6 +983,97 @@ class CKANAsyncWrapper:
             if pkgDataRaw['result'] not in self.pkgData:
                 LOGGER.debug(f"DID NOT GET WRITTEN: {pkgDataRaw['result']['name']}")
 
+class CKANAsyncWrapper2:
+    '''
+    trying to implement this pattern
+    https://alexwlchan.net/2019/10/adventures-with-concurrent-futures/
+    '''
+    def __init__(self, baseUrl, apiKey=None):
+        self.baseUrl = baseUrl
+        self.header = {"X-CKAN-API-KEY": apiKey}
+        self.packageShowEndPoint = '/api/3/action/package_show?id='
+
+        self.packages = []
+
+        self.TASK_BUNDLE_SIZE = 20
+        self.MAX_CONCURRENT_TASKS = 10
+
+        self.requestSession = None
+
+    def packageRequestTask(self, url):
+
+        # TODO: look into whether we can re-use the connection, some way to
+        #       make the multiple requests more efficient
+        #LOGGER.debug(f"header {header}")
+        #resp = requests.get(url, headers=self.header)
+        LOGGER.debug(f"url: {url}")
+        resp = self.requestSession.get(url, headers=self.header)
+        LOGGER.debug(f"status code: {resp.status_code}")
+        packageData = resp.json()
+        #self.packages.append(packageData['result'])
+        return packageData['result']
+
+    def getPackages(self, packageNameList):
+        self.requestSession = requests.Session()
+        self.spoolRequests(packageNameList)
+
+    def spoolRequestsAll(self, packageList):
+        url = f"{self.baseUrl}{self.packageShowEndPoint}"
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Start the load operations and mark each future with its URL
+            # debug... need to understand what future_to_url looks like
+            future_to_url = {executor.submit(self.packageRequestTask, f"{url}{pkgName}"): f"{url}{pkgName}" for pkgName in packageList}
+            # future is the key, value is the end point to return
+            for future in concurrent.futures.as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    data = future.result()
+                    self.packages.append(data)
+                except Exception as exc:
+                    print('%r generated an exception: %s' % (url, exc))
+                else:
+                    print('%r page is %d bytes' % (url, len(data)))
+        print(f'packages Retrieved: {len(self.packages)}')
+
+    def spoolRequests(self, packageList):
+        pkgShowUrl = f"{self.baseUrl}{self.packageShowEndPoint}"
+        completed = 0
+        packageIterator = iter(packageList)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_TASKS) as executor:
+            # Schedule the first N futures.  We don't want to schedule them all
+            # at once, to avoid consuming excessive amounts of memory.
+            futures = {}
+            cnt = 0
+            for pkgName in itertools.islice(packageIterator, self.TASK_BUNDLE_SIZE):
+                curUrl = f"{pkgShowUrl}{pkgName}"
+                fut = executor.submit(self.packageRequestTask, curUrl)
+                futures[fut] = curUrl
+                LOGGER.debug(f"stack size: {cnt}")
+                cnt += 1
+
+            while futures:
+                # Wait for the next future to complete.
+                done, _ = concurrent.futures.wait(
+                    futures, return_when=concurrent.futures.FIRST_COMPLETED
+                )
+                completed += len(done)
+                LOGGER.debug(f"total completed: {completed} of {len(packageList)}")
+                LOGGER.debug(f" num done in this loop: {len(done)}")
+                for fut in done:
+                    original_task = futures.pop(fut)
+                    # can add error catching and re-add to executor here
+                    data = fut.result()
+                    self.packages.append(data)
+                # Schedule the next set of futures.  We don't want more than N futures
+                # in the pool at a time, to keep memory consumption down.
+                for pkgName in itertools.islice(packageIterator, len(done)):
+                    LOGGER.debug(f"adding: {pkgName} to the queue")
+                    curUrl = f"{pkgShowUrl}{pkgName}"
+                    fut = executor.submit(self.packageRequestTask, curUrl)
+                    futures[fut] = curUrl
+        LOGGER.debug(f"number of packages fetched: {len(self.packages)}")
+
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
     """CKAN instances seem to randomely go offline when in the middle of paging
@@ -1003,3 +1100,43 @@ class AsyncPackagesGetError(Exception):
     def __init__(self, message):
         LOGGER.error(message)
         self.message = message
+
+
+
+if __name__ == '__main__':
+
+
+    LOGGER = logging.getLogger()
+    LOGGER.setLevel(logging.DEBUG)
+    hndlr = logging.StreamHandler()
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
+    )
+    hndlr.setFormatter(formatter)
+    LOGGER.addHandler(hndlr)
+    LOGGER.debug("test")
+
+    lg = logging.getLogger('urllib3.connectionpool')
+    lg.setLevel(logging.INFO)
+
+
+
+    pkgList = ["aircraft-emissions-2000-5-km-grid",
+        "airfields-trim-enhanced-base-map-ebm",
+        "airphoto-centroids",
+        "airphoto-flightlines",
+        "air-photo-system-air-photo-polygons",
+        "air-photo-system-air-photo-polygons-spatial-view",
+        "air-photo-system-centre-points"]
+
+    pkgListPath = 'temp/pkgNames.json'
+    with open(pkgListPath) as fh:
+        pkgList = json.load(fh)
+    LOGGER.debug(f"numpkgs: {len(pkgList)}")
+
+    destUrl = os.environ[constants.CKAN_URL_DEST]
+    destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
+    asyncWrap = CKANAsyncWrapper2(destUrl, destAPIKey)
+    asyncWrap.getPackages(pkgList)
+
+
