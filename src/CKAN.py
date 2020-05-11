@@ -1000,6 +1000,11 @@ class CKANAsyncWrapper2:
 
         self.requestSession = None
 
+        # used to track how many times an api called has been retried, and the
+        # maximum number of times the api call will be retried
+        self.currentRetry = 0
+        self.maxRetries = 5
+
     def packageRequestTask(self, url):
 
         # TODO: look into whether we can re-use the connection, some way to
@@ -1016,30 +1021,37 @@ class CKANAsyncWrapper2:
     def getPackages(self, packageNameList):
         self.requestSession = requests.Session()
         self.spoolRequests(packageNameList)
+        return self.packages
 
-    def spoolRequestsAll(self, packageList):
-        url = f"{self.baseUrl}{self.packageShowEndPoint}"
+    # def spoolRequestsAll(self, packageList):
+    #     url = f"{self.baseUrl}{self.packageShowEndPoint}"
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-            # Start the load operations and mark each future with its URL
-            # debug... need to understand what future_to_url looks like
-            future_to_url = {executor.submit(self.packageRequestTask, f"{url}{pkgName}"): f"{url}{pkgName}" for pkgName in packageList}
-            # future is the key, value is the end point to return
-            for future in concurrent.futures.as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    data = future.result()
-                    self.packages.append(data)
-                except Exception as exc:
-                    print('%r generated an exception: %s' % (url, exc))
-                else:
-                    print('%r page is %d bytes' % (url, len(data)))
-        print(f'packages Retrieved: {len(self.packages)}')
+    #     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    #         # Start the load operations and mark each future with its URL
+    #         # debug... need to understand what future_to_url looks like
+    #         future_to_url = {executor.submit(self.packageRequestTask, f"{url}{pkgName}"): f"{url}{pkgName}" for pkgName in packageList}
+    #         # future is the key, value is the end point to return
+    #         for future in concurrent.futures.as_completed(future_to_url):
+    #             url = future_to_url[future]
+    #             try:
+    #                 data = future.result()
+    #                 self.packages.append(data)
+    #             except Exception as exc:
+    #                 print('%r generated an exception: %s' % (url, exc))
+    #             else:
+    #                 print('%r page is %d bytes' % (url, len(data)))
+    #     print(f'packages Retrieved: {len(self.packages)}')
 
-    def spoolRequests(self, packageList):
+    def spoolRequests(self, packageList, missingPackages=None):
         pkgShowUrl = f"{self.baseUrl}{self.packageShowEndPoint}"
         completed = 0
-        packageIterator = iter(packageList)
+
+        pkgs2Get = packageList
+        if missingPackages:
+            pkgs2Get = missingPackages
+
+        packageIterator = iter(pkgs2Get)
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_TASKS) as executor:
             # Schedule the first N futures.  We don't want to schedule them all
             # at once, to avoid consuming excessive amounts of memory.
@@ -1058,7 +1070,7 @@ class CKANAsyncWrapper2:
                     futures, return_when=concurrent.futures.FIRST_COMPLETED
                 )
                 completed += len(done)
-                LOGGER.debug(f"total completed: {completed} of {len(packageList)}")
+                LOGGER.debug(f"total completed: {completed} of {len(pkgs2Get)}")
                 LOGGER.debug(f" num done in this loop: {len(done)}")
                 for fut in done:
                     original_task = futures.pop(fut)
@@ -1072,7 +1084,43 @@ class CKANAsyncWrapper2:
                     curUrl = f"{pkgShowUrl}{pkgName}"
                     fut = executor.submit(self.packageRequestTask, curUrl)
                     futures[fut] = curUrl
+        # verify everthing we asked for has been returned
+        self.verify(packageList)
         LOGGER.debug(f"number of packages fetched: {len(self.packages)}")
+
+    def verify(self, packageList):
+        """verifies that all the requested packages have actually been
+        returned, and populated into self.packages struct.
+
+        :param packageList: list of requested package names
+        :type packageList: list
+        """
+        LOGGER.info(f"num requested packages: {len(packageList)}")
+        LOGGER.info(f"packages returned: {len(self.pkgData)}")
+        if len(packageList) > len(self.pkgData):
+            if self.currentRetry < self.maxRetries:
+                self.currentRetry += 1
+                numMissingPkgs = len(packageList) - len(self.pkgData)
+                LOGGER.warning(f'missing: {numMissingPkgs} packages')
+
+                # iterate through self.pkgData and populate with just names
+                pkgNamesInReturnData = [pkg['name'] for pkg in self.pkgData]
+                missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
+
+                LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
+                LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
+                self.pkgFutures = []
+                self.spoolRequests(packageList, missingPkgNames)
+            else:
+                msg = (
+                    f'after {self.maxRetries} attempts to retrieve all the '
+                    'packages has failed, raising this exception, have retrieved'
+                    f'{len(self.pkgData)} of {len(packageList)} requested '
+                    'packages'
+                )
+                raise AsyncPackagesGetError(msg)
+
+        pass
 
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
