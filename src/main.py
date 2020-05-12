@@ -214,7 +214,7 @@ if __name__ == "__main__":
     # This is complete, commented out while work on group
     # not running user update for now
 
-    updater.updateUsers(useCache=True)
+    #updater.updateUsers(useCache=True)
     updater.updateGroups(useCache=True)
     updater.updateOrganizations(useCache=True)
     updater.updatePackages(useCache=True)

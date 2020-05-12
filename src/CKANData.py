@@ -14,13 +14,14 @@ CKANTransform module will work directly with CKAN Data objects.
 """
 # pylint: disable=logging-format-interpolation
 
-import logging
-import constants
-import CKANTransform
-import deepdiff
-import pprint
 import json
+import logging
+import pprint
+
+import CKANTransform
+import constants
 import CustomTransformers
+import Diff
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -150,9 +151,8 @@ class CKANRecord:
         :type dataCell: DataCell
         """
         updtTransConfigurations = TRANSCONF.getCustomUpdateTransformations(self.dataType)
-        #LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
+        LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
         if updtTransConfigurations:
-
             methodMapper = CustomTransformers.MethodMapping(self.dataType, updtTransConfigurations)
             for customMethodName in updtTransConfigurations:
                 #methodName = customTransformerConfig[constants.CUSTOM_UPDATE_METHOD_NAME]
@@ -161,7 +161,7 @@ class CKANRecord:
                 # so just putting the individual record into a collection so that the
                 # method will work.
                 dataCell.struct = methodReference([dataCell.struct])[0]
-                #LOGGER.debug(f"called custom method: {customMethodName}")
+                LOGGER.debug(f"called custom method: {customMethodName}")
         return dataCell
 
     def removeEmbeddedIgnores(self, dataCell):
@@ -219,6 +219,17 @@ class CKANRecord:
     def __eq__(self, inputRecord):
         # LOGGER.debug("_________ EQ CALLED")
         diff = self.getDiff(inputRecord)
+
+        # now need to evaluate the diff object to remove any
+        # differences where type has changed but data continues to be
+        # empty / false
+        # example:
+        #   None vs ""
+        #   None vs []
+        # diff.type_changes = list of dicts
+        #   each dict: 'new_type': None, 'old_type': None
+        #     and vise versa
+
         retVal = True
         if diff:
             retVal = False
@@ -251,7 +262,7 @@ class CKANRecord:
             thisComparable = self.getComparableStruct()
             dataCell = DataCell(thisComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
-            thisComparable = self.runCustomTransformations(dataCell)
+            thisComparable = self.runCustomTransformations(dataCellNoIgnores)
             thisComparable = dataCellNoIgnores.struct
 
 
@@ -259,10 +270,12 @@ class CKANRecord:
             inputComparable = inputRecord.getComparableStruct()
             dataCell = DataCell(inputComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
-            inputComparable = self.runCustomTransformations(dataCell)
+            inputComparable = self.runCustomTransformations(dataCellNoIgnores)
             inputComparable = dataCell.struct
 
-            diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
+            diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
+            diff = diffIngoreEmptyTypes.getDiff()
+            #diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
             if diff:
                 pp = pprint.PrettyPrinter(indent=4)
