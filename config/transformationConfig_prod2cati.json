@@ -185,7 +185,7 @@
             "notes": true,
             "owner_org": false,
             "extras": false,
-            "license_url": true,
+            "license_url": false,
             "metadata_visibility": true,
             "title": true,
             "revision_id": false

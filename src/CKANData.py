@@ -151,7 +151,7 @@ class CKANRecord:
         :type dataCell: DataCell
         """
         updtTransConfigurations = TRANSCONF.getCustomUpdateTransformations(self.dataType)
-        LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
+        #LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
         if updtTransConfigurations:
             methodMapper = CustomTransformers.MethodMapping(self.dataType, updtTransConfigurations)
             for customMethodName in updtTransConfigurations:
@@ -161,7 +161,7 @@ class CKANRecord:
                 # so just putting the individual record into a collection so that the
                 # method will work.
                 dataCell.struct = methodReference([dataCell.struct])[0]
-                LOGGER.debug(f"called custom method: {customMethodName}")
+                #LOGGER.debug(f"called custom method: {customMethodName}")
         return dataCell
 
     def removeEmbeddedIgnores(self, dataCell):
