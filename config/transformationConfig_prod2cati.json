@@ -71,7 +71,7 @@
             "name": true,
             "is_organization": true,
             "state": false,
-            "image_url": false,
+            "image_url": true,
             "groups": [
                 {
                     "capacity": true,
@@ -146,7 +146,7 @@
             }
         ],
         "user_populated_properties": {
-            "license_title": true,
+            "license_title": false,
             "maintainer": true,
             "publish_state": false,
             "relationships_as_object": true,
@@ -164,7 +164,7 @@
             "license_id": true,
             "type": true,
             "resources": false,
-            "more_info": true,
+            "more_info": false,
             "num_resources": false,
             "tags": false,
             "contacts": false,
@@ -177,19 +177,7 @@
             "relationships_as_subject": true,
             "security_class": true,
             "dates": false,
-            "organization": {
-                "description": true,
-                "created": false,
-                "title": true,
-                "name": true,
-                "is_organization": true,
-                "state": true,
-                "image_url": true,
-                "revision_id": false,
-                "type": true,
-                "id": false,
-                "approval_status": true
-            },
+            "organization": false,
             "name": true,
             "isopen": true,
             "url": true,

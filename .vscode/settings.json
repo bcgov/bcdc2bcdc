@@ -30,6 +30,7 @@
         "fullname",
         "idir",
         "ints",
+        "itertools",
         "ivar",
         "jchurchi",
         "mccabe",

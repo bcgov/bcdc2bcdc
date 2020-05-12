@@ -11,11 +11,8 @@ import os
 import pprint
 import time
 import re
-import sys
 from ast import literal_eval
 import concurrent.futures
-import requests_futures.sessions
-import time
 import itertools
 
 
@@ -177,7 +174,7 @@ class CKANWrapper:
             LOGGER.info(f"    - page: {pageCnt} {offset} {elemCnt}")
             # offset=0, pageSize
             pageData = self.getSinglePagePackageNames(offset=offset, pageSize=elemCnt)
-            params = {"limit": elemCnt, "offset": offset}
+            #params = {"limit": elemCnt, "offset": offset}
             # pageData = self.remoteapi.action.package_list(limit=elemCnt,
             #                                              offset=offset)
             # pageData = self.remoteapi.action.package_list(context=params)
@@ -232,8 +229,8 @@ class CKANWrapper:
         pkgs = []
         pkgList = self.getPackageNames()
         LOGGER.debug(f"got {len(pkgList)} pkg names")
-        asyncWrapper = CKANAsyncWrapper(self.CKANUrl, self.CKANHeader)
-        pkgs = asyncWrapper.getPackageData(pkgList)
+        asyncWrapper = CKANAsyncWrapper(self.CKANUrl, header=self.CKANHeader)
+        pkgs = asyncWrapper.getPackages(pkgList)
         return pkgs
 
     def getPackagesAndData_solr(self):
@@ -481,8 +478,9 @@ class CKANWrapper:
         self.checkUrl()
         retVal = None
         LOGGER.debug(f"trying to delete the user: {userId}")
-        userParams = {"id": userId}
+        userParams = {"id": userId} # noqa
         LOGGER.warning("actual user delete api call commented out")
+        # TODO: uncomment when craig available to verify that ignore configs are working
         #retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
@@ -590,20 +588,20 @@ class CKANWrapper:
             LOGGER.debug("CAUGHT CKANAPIError EXCEPTION")
             if retry:
                 raise
-            errMatchPatern = (
-                '^\s*Only\s+lists\s+of\s+dicts\s+can\s+be\s+placed\s+agains'
-                't\s+subschema\s+\(\'more_info\'\,\)\,\s+not\s+\<type\s+\'u'
-                'nicode\'\>\s*$'
+            errMatchPattern = (
+                r'^\s*Only\s+lists\s+of\s+dicts\s+can\s+be\s+placed\s+agains'
+                r't\s+subschema\s+\(\'more_info\'\,\)\,\s+not\s+\<type\s+\'u'
+                r'nicode\'\>\s*$'
             )
             # catching stringified issue
             args = e.args
             #print(f'args: {args}, {type(args)}, {len(args)}')
             raiseErr = True
-            if len(args):
+            if len(args) > 0:
                 errMsgs = literal_eval(args[0])
                 ckanErrMsgs = json.loads(errMsgs[2])
                 ckanErrMsg = ckanErrMsgs['error']['message']
-                if re.match(errMatchPatern, ckanErrMsg):
+                if re.match(errMatchPattern, ckanErrMsg):
                     # caught the issue of more_info being expected as a non
                     # stringified obj
                     packageData['more_info'] = json.loads(packageData['more_info'])
@@ -628,9 +626,10 @@ class CKANWrapper:
             # example of what the e.args looks like if its a more_info related
             # exception:
             #
-            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info', 0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
-            if ((len(args)) and "__junk" in e.args[0]) and len(e.args[0]['__junk']) and \
-                    re.match('^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
+            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info',
+            #   0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
+            if ((len(args) > 0) and "__junk" in e.args[0]) and len(e.args[0]['__junk'] > 0) and \
+                    re.match(r'^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
                 msg = (
                     'The update object contains a non stringified more_info '
                     'field, and for some unknown reason it wants it as a '
@@ -804,193 +803,19 @@ class CKANWrapper:
         pass
 
 
-class CKANAsyncIOWrapper:
-    def __init__(self, url, header):
-        self.header = header
-        self.url = baseUrl
-
 class CKANAsyncWrapper:
-    def __init__(self, baseUrl, header=None):
-        self.header = header
-        self.url = baseUrl
-        self.session = None
-
-        self.maxRetries = 15
-        self.max_workers = 5
-        self.currentRetry = 0
-
-        self.pkgFutures = []
-        self.pkgData = []
-
-        self.retries = {}
-
-    def getDataWrapper(self, session, url, params=None, headers=None, retries=0):
-        if retries < self.maxRetries:
-            retries += 1
-            kwargs = {}
-            if params:
-                kwargs['params'] = params
-            if headers:
-                kwargs['headers'] = headers
-
-            pkgShowRequest = session.get(url, **kwargs)
-            #session.hooks['response'] = self.getPackageDataHook
-            self.pkgFutures.append(pkgShowRequest)
-
-    def getPackageData(self, packageList):
-        # reloading the package data, start by ensuring the package data list
-        # is empty.
-
-        #session = FuturesSession()
-        #session.hooks['response'] = response_hook
-        self.pkgFutures = []
-        self.pkgData = []
-
-        self.asyncPackageShowRequest(packageList)
-        return self.pkgData
-
-    def asyncPackageShowRequest(self, packageList, missingPkgs=None, exceptionsList=None):
-        LOGGER.debug(f"packageList length: {len(packageList)}")
-        packageShow = 'api/3/action/package_show'
-        pkgShowUrl = f"{self.url}/{packageShow}"
-
-        pkgIterList = packageList
-        if missingPkgs:
-            pkgIterList = missingPkgs
-        LOGGER.debug("loading up the queue...")
-        with requests_futures.sessions.FuturesSession(max_workers=self.max_workers) as session:
-            if not exceptionsList:
-                for pkgName in pkgIterList:
-                    pkgShowParams = {'id': pkgName}
-                    self.getDataWrapper(session, pkgShowUrl, params=pkgShowParams, headers=self.header)
-
-                    if not (len(self.pkgFutures) % 100):
-                        LOGGER.debug(f"loaded {len(self.pkgFutures)} to the queue")
-            else:
-                LOGGER.debug("re-running failed requests")
-                for failedRequest in exceptionsList:
-                    self.getDataWrapper(session, failedRequest.url, headers=failedRequest.headers)
-        LOGGER.debug(f"queue loaded with {len(self.pkgFutures)}...")
-
-        # stack is now loaded, now wait for responses...
-        reRunList = []
-        cnter = 0
-        for future in concurrent.futures.as_completed(self.pkgFutures):
-            futureExcept = future.exception()
-            if futureExcept:
-                LOGGER.debug(f"done status of future: {future.done()}")
-                # catching exceptions where the request never completed, adding
-                # to a list that will be re-run in another async call
-                LOGGER.warning(f"future: {futureExcept}")
-                reRunList.append(futureExcept.request)
-            else:
-                resp = future.result()
-                self.getPackageDataHook(resp)
-
-            if not cnter % 100:
-                LOGGER.debug(f"retrieved {cnter} of {len(packageList)} packages")
-            future.cancel()
-            cnter += 1
-
-        if reRunList:
-
-            # dont' re-run if max retries is exceeded
-            if self.currentRetry < self.maxRetries:
-                self.currentRetry += 1
-
-                self.pkgFutures = []
-                LOGGER.info(f"re-run list length: {len(reRunList)}")
-                #time.sleep(1)
-                self.asyncPackageShowRequest(packageList, exceptionsList=reRunList)
-            else:
-                msg = (
-                    f'after {self.maxRetries} attempts to retrieve all the '
-                    'packages has failed, raising this exception, have retrieved'
-                    f'{len(self.pkgData)} of {len(packageList)} requested '
-                    'packages'
-                )
-                raise AsyncPackagesGetError(msg)
-
-        self.verify(packageList)
-        return self.pkgData
-
-    def verify(self, packageList):
-        """Checks that all the requested package names have been populated into
-        self.pkgData, if they have not it constructs a list of the missing
-        packages and sends it back to the async request method.
-
-        This will keep on looping back until the max retries is exceeded.
-
-        :param packageList: [description]
-        :type packageList: [type]
-        """
-        LOGGER.info(f"num requested packages: {len(packageList)}")
-        LOGGER.info(f"packages returned: {len(self.pkgData)}")
-        if len(packageList) > len(self.pkgData):
-            if self.currentRetry < self.maxRetries:
-                self.currentRetry += 1
-                numMissingPkgs = len(packageList) - len(self.pkgData)
-                LOGGER.warning(f'missing: {numMissingPkgs} packages')
-
-                # iterate through self.pkgData and populate with just names
-                pkgNamesInReturnData = [pkg['name'] for pkg in self.pkgData]
-                missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
-
-                LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
-                LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
-                self.pkgFutures = []
-                self.asyncPackageShowRequest(packageList, missingPkgNames)
-            else:
-                msg = (
-                    f'after {self.maxRetries} attempts to retrieve all the '
-                    'packages has failed, raising this exception, have retrieved'
-                    f'{len(self.pkgData)} of {len(packageList)} requested '
-                    'packages'
-                )
-                raise AsyncPackagesGetError(msg)
-
-    def getPackageDataHook(self, resp, *args, **kwargs):
-        # if the response status_code is not 200 then
-        # reload to the stack.
-        # also extract the data and load to pkgData
-        #LOGGER.debug(f"args: {args}")
-        #LOGGER.debug(f"kwargs: {kwargs}")
-        #LOGGER.debug(f"resp: {resp}, {resp.url}")
-
-        if not (resp.status_code >= 200 and resp.status_code < 300):
-            # unsuccessful request, try again by adding to the stack
-            if not os.path.exists('fail.json'):
-                fh = open('fail.json', 'w')
-                fh.close()
-
-            LOGGER.debug(f"resp status_code: {resp.status_code}")
-            if (resp.url in self.retries) and \
-                    self.retries[resp.url] > self.maxRetries:
-                msg = f'unable to retrieve: {resp.url}'
-                raise requests.exceptions.HTTPError(msg)
-
-            if resp.url not in self.retries:
-                self.retries[resp.url] = 0
-            self.retries[resp.url] += 1
-        else:
-            # get the data from the request and add it to the collection
-            # of data
-            pkgDataRaw = resp.json()
-            prevLen = len(self.pkgData)
-            LOGGER.debug(f"have data for: {pkgDataRaw['result']['name']}, {resp.status_code}, {prevLen}")
-            self.pkgData.append(pkgDataRaw['result'])
-            LOGGER.debug(f"current length: {len(self.pkgData)}, prev: {prevLen}")
-            if pkgDataRaw['result'] not in self.pkgData:
-                LOGGER.debug(f"DID NOT GET WRITTEN: {pkgDataRaw['result']['name']}")
-
-class CKANAsyncWrapper2:
     '''
     trying to implement this pattern
     https://alexwlchan.net/2019/10/adventures-with-concurrent-futures/
     '''
-    def __init__(self, baseUrl, apiKey=None):
-        self.baseUrl = baseUrl
-        self.header = {"X-CKAN-API-KEY": apiKey}
+    def __init__(self, baseUrl, apiKey=None, header=None):
+        self.baseUrl = baseUrl.strip()
+        self.header = header
+        if apiKey:
+            if not self.header:
+                self.header = {}
+            self.header["X-CKAN-API-KEY"] = apiKey
+
         self.packageShowEndPoint = '/api/3/action/package_show?id='
 
         self.packages = []
@@ -1006,43 +831,50 @@ class CKANAsyncWrapper2:
         self.maxRetries = 5
 
     def packageRequestTask(self, url):
+        """retrieves the data associated with the url.
 
-        # TODO: look into whether we can re-use the connection, some way to
-        #       make the multiple requests more efficient
-        #LOGGER.debug(f"header {header}")
-        #resp = requests.get(url, headers=self.header)
-        LOGGER.debug(f"url: {url}")
+        :param url: url to call using get to get an individual ckan package
+        :type url: str
+        :return: the ckan package that was requested
+        :rtype: dict
+        """
+        #LOGGER.debug(f"url: {url}")
         resp = self.requestSession.get(url, headers=self.header)
-        LOGGER.debug(f"status code: {resp.status_code}")
+        if resp.status_code != 200:
+            LOGGER.debug(f"status code: {resp.status_code}")
         packageData = resp.json()
-        #self.packages.append(packageData['result'])
         return packageData['result']
 
     def getPackages(self, packageNameList):
+        """Retrieves the list of packages described in the arg: packageNameList
+        Packages are retrieve asynchronously
+
+        :param packageNameList: list of packages that need to be retrieved
+        :type packageNameList: list of str
+        :return: list of dicts where each dict describes one of the packages in
+            the 'packageNameList' list.
+        :rtype: list of packages
+        """
         self.requestSession = requests.Session()
         self.spoolRequests(packageNameList)
         return self.packages
 
-    # def spoolRequestsAll(self, packageList):
-    #     url = f"{self.baseUrl}{self.packageShowEndPoint}"
+    def spoolRequests(self, packageList, missingPackages=None): # pylint: disable=too-many-locals
+        """where the async calls are created.  Gets the list of package names
+        and spools up a number of requests, monitors the requests, retrieves the
+        data from the requests and stuffs them into self.packages.
 
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-    #         # Start the load operations and mark each future with its URL
-    #         # debug... need to understand what future_to_url looks like
-    #         future_to_url = {executor.submit(self.packageRequestTask, f"{url}{pkgName}"): f"{url}{pkgName}" for pkgName in packageList}
-    #         # future is the key, value is the end point to return
-    #         for future in concurrent.futures.as_completed(future_to_url):
-    #             url = future_to_url[future]
-    #             try:
-    #                 data = future.result()
-    #                 self.packages.append(data)
-    #             except Exception as exc:
-    #                 print('%r generated an exception: %s' % (url, exc))
-    #             else:
-    #                 print('%r page is %d bytes' % (url, len(data)))
-    #     print(f'packages Retrieved: {len(self.packages)}')
-
-    def spoolRequests(self, packageList, missingPackages=None):
+        :param packageList: list of package names to retrieve
+        :type packageList: list
+        :param missingPackages: This method will be called again if the verification
+            determines that the number of requested packages is not equal to the
+            packages that have been retrieved.  In that event the missing packages
+            go into this parameter.
+        :type missingPackages: list of package names that failed, optional
+        """
+        # trim training / from baseUrl
+        if self.baseUrl[-1] == '/':
+            self.baseUrl = self.baseUrl[0:-1]
         pkgShowUrl = f"{self.baseUrl}{self.packageShowEndPoint}"
         completed = 0
 
@@ -1054,24 +886,26 @@ class CKANAsyncWrapper2:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_TASKS) as executor:
             # Schedule the first N futures.  We don't want to schedule them all
-            # at once, to avoid consuming excessive amounts of memory.
+            # at once, to avoid consuming excessive amounts of memory.  Also
+            # allows finer grained monitoring of tasks
             futures = {}
             cnt = 0
             for pkgName in itertools.islice(packageIterator, self.TASK_BUNDLE_SIZE):
                 curUrl = f"{pkgShowUrl}{pkgName}"
                 fut = executor.submit(self.packageRequestTask, curUrl)
                 futures[fut] = curUrl
-                LOGGER.debug(f"stack size: {cnt}")
                 cnt += 1
-
+            LOGGER.debug(f"stack size: {cnt}")
+            # using futures dict as a stack of tasks
             while futures:
                 # Wait for the next future to complete.
                 done, _ = concurrent.futures.wait(
                     futures, return_when=concurrent.futures.FIRST_COMPLETED
                 )
                 completed += len(done)
-                LOGGER.debug(f"total completed: {completed} of {len(pkgs2Get)}")
-                LOGGER.debug(f" num done in this loop: {len(done)}")
+                if not completed % 200:
+                    LOGGER.debug(f"total completed: {completed} of {len(pkgs2Get)} (pkgs in loop: {len(done)})")
+                    #LOGGER.debug(f" num done in this loop: {len(done)}")
                 for fut in done:
                     original_task = futures.pop(fut)
                     # can add error catching and re-add to executor here
@@ -1080,7 +914,8 @@ class CKANAsyncWrapper2:
                 # Schedule the next set of futures.  We don't want more than N futures
                 # in the pool at a time, to keep memory consumption down.
                 for pkgName in itertools.islice(packageIterator, len(done)):
-                    LOGGER.debug(f"adding: {pkgName} to the queue")
+                    # LOGGER.debug(f"adding: {pkgName} to the queue")
+                    # adding the package name to the url, as a param
                     curUrl = f"{pkgShowUrl}{pkgName}"
                     fut = executor.submit(self.packageRequestTask, curUrl)
                     futures[fut] = curUrl
@@ -1096,15 +931,15 @@ class CKANAsyncWrapper2:
         :type packageList: list
         """
         LOGGER.info(f"num requested packages: {len(packageList)}")
-        LOGGER.info(f"packages returned: {len(self.pkgData)}")
-        if len(packageList) > len(self.pkgData):
+        LOGGER.info(f"packages returned: {len(self.packages)}")
+        if len(packageList) > len(self.packages):
             if self.currentRetry < self.maxRetries:
                 self.currentRetry += 1
-                numMissingPkgs = len(packageList) - len(self.pkgData)
+                numMissingPkgs = len(packageList) - len(self.packages)
                 LOGGER.warning(f'missing: {numMissingPkgs} packages')
 
                 # iterate through self.pkgData and populate with just names
-                pkgNamesInReturnData = [pkg['name'] for pkg in self.pkgData]
+                pkgNamesInReturnData = [pkg['name'] for pkg in self.packages]
                 missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
 
                 LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
@@ -1115,12 +950,10 @@ class CKANAsyncWrapper2:
                 msg = (
                     f'after {self.maxRetries} attempts to retrieve all the '
                     'packages has failed, raising this exception, have retrieved'
-                    f'{len(self.pkgData)} of {len(packageList)} requested '
+                    f'{len(self.packages)} of {len(packageList)} requested '
                     'packages'
                 )
                 raise AsyncPackagesGetError(msg)
-
-        pass
 
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
@@ -1151,40 +984,39 @@ class AsyncPackagesGetError(Exception):
 
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
 
-    LOGGER = logging.getLogger()
-    LOGGER.setLevel(logging.DEBUG)
-    hndlr = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
-    )
-    hndlr.setFormatter(formatter)
-    LOGGER.addHandler(hndlr)
-    LOGGER.debug("test")
+#     LOGGER = logging.getLogger()
+#     LOGGER.setLevel(logging.DEBUG)
+#     hndlr = logging.StreamHandler()
+#     formatter = logging.Formatter(
+#         "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
+#     )
+#     hndlr.setFormatter(formatter)
+#     LOGGER.addHandler(hndlr)
+#     LOGGER.debug("test")
 
-    lg = logging.getLogger('urllib3.connectionpool')
-    lg.setLevel(logging.INFO)
-
-
-
-    pkgList = ["aircraft-emissions-2000-5-km-grid",
-        "airfields-trim-enhanced-base-map-ebm",
-        "airphoto-centroids",
-        "airphoto-flightlines",
-        "air-photo-system-air-photo-polygons",
-        "air-photo-system-air-photo-polygons-spatial-view",
-        "air-photo-system-centre-points"]
-
-    pkgListPath = 'temp/pkgNames.json'
-    with open(pkgListPath) as fh:
-        pkgList = json.load(fh)
-    LOGGER.debug(f"numpkgs: {len(pkgList)}")
-
-    destUrl = os.environ[constants.CKAN_URL_DEST]
-    destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
-    asyncWrap = CKANAsyncWrapper2(destUrl, destAPIKey)
-    asyncWrap.getPackages(pkgList)
+#     lg = logging.getLogger('urllib3.connectionpool')
+#     lg.setLevel(logging.INFO)
 
 
+
+#     pkgList = ["aircraft-emissions-2000-5-km-grid",
+#         "airfields-trim-enhanced-base-map-ebm",
+#         "airphoto-centroids",
+#         "airphoto-flightlines",
+#         "air-photo-system-air-photo-polygons",
+#         "air-photo-system-air-photo-polygons-spatial-view",
+#         "air-photo-system-centre-points"]
+
+#     pkgListPath = 'temp/pkgNames.json'
+#     with open(pkgListPath) as fh:
+#         pkgList = json.load(fh)
+#     LOGGER.debug(f"numpkgs: {len(pkgList)}")
+
+#     destUrl = os.environ[constants.CKAN_URL_DEST]
+#     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
+#     asyncWrap = CKANAsyncWrapper(destUrl, destAPIKey)
+#     pkgs = asyncWrap.getPackages(pkgList)
+#     LOGGER.debug(f"packages returned {len(pkgs)}")

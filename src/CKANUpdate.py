@@ -350,9 +350,10 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         updateKeys = list(updtStruct.keys())
         updateKeys.sort()
         for updateName in updateKeys:
-            with open("updt_package.json", "w") as fh:
+            tmpCacheFileName = 'updt_package.json'
+            with open(tmpCacheFileName, "w") as fh:
                 json.dump(updtStruct[updateName], fh)
-                LOGGER.debug("wrote data to: add_package.json")
+                LOGGER.debug(f"wrote data to: {tmpCacheFileName}")
 
             LOGGER.debug(f"updating the package: {updateName}")
             self.CKANWrap.updatePackage(updtStruct[updateName])
