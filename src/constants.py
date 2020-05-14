@@ -42,11 +42,23 @@ TRANSFORM_PARAM_ID_FIELD_DEFS = 'id_fields'
 TRANSFORM_PARAM_ID_AUTOGEN_FIELD_MAPPINGS = 'field_mapping'
 TRANSFORM_PARAM_TYPE_ENFORCEMENT = 'data_type_enforcement'
 TRANSFORM_PARAM_STRINGIFIED_FIELD = 'stringified_fields'
+TRANSFORM_PARAM_CUSTOM_TRANFORMERS = 'custom_transformation_methods'
+
+## subproperties of TRANSFORM_PARAM_CUSTOM_TRANFORMERS
+CUSTOM_UPDATE_TYPE = 'UpdateType'
+CUSTOM_UPDATE_METHOD_NAME = 'CustomMethodName'
+
+# The enumeration of possible values for CUSTOM_UPDATE_TYPE
+class UPDATE_TYPES(enum.Enum):
+    ADD = 1
+    UPDATE = 2
+
 
 # other misc property references
-# Propertys of field_mapping type
+# property's of field_mapping type
 FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
 FIELD_MAPPING_USER_FIELD = 'user_populated_field'
+
 
 # Properties of id_fields
 IDFLD_RELATION_PROPERTY = 'property'

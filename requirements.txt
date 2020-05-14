@@ -1,6 +1,7 @@
 requests==2.23.0
 ckanapi==4.3
 deepdiff==4.3.2
+requests-futures==1.0.0
 # dev requirements
 pytest==5.4.1
 black>=19.*

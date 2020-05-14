@@ -62,24 +62,24 @@ def getTransformationConfig(transformConfigFile=None):
 
 
 # TODO: Idea of transform data set is going to be moved to its own module
-class TransformDataSet:
-    """Ties together a transform config with the data allowing you to apply
-    transformations to the dataset as a whole.  Includes a record iterator
-    allowing you to iterate over each record in the dataset.
-    :raises InValidTransformationData: [description]
-    """
+# class TransformDataSet:
+#     """Ties together a transform config with the data allowing you to apply
+#     transformations to the dataset as a whole.  Includes a record iterator
+#     allowing you to iterate over each record in the dataset.
+#     :raises InValidTransformationData: [description]
+#     """
 
-    def __init__(self, dataType, transformData, transformConfigFile=None):
-        self.validateType(dataType)
-        self.dataType = dataType
-        self.transformData = transformData
+#     def __init__(self, dataType, transformData, transformConfigFile=None):
+#         self.validateType(dataType)
+#         self.dataType = dataType
+#         self.transformData = transformData
 
-        if not isinstance(self.transformData, list):
-            msg = (
-                "transformation data needs to be a list data type, "
-                + f"transformData provided is type: {type(transformData)}"
-            )
-            raise InValidTransformationData(msg)
+#         if not isinstance(self.transformData, list):
+#             msg = (
+#                 "transformation data needs to be a list data type, "
+#                 + f"transformData provided is type: {type(transformData)}"
+#             )
+#             raise InValidTransformationData(msg)
 
     # def getComparisonData(self):
     #     """removed machine generated data from the data allowing for comparison
@@ -197,10 +197,13 @@ class TransformationConfig:
         the given datatype they will be returned.  If they are not defined then
         will return None.
 
-        :param datatype: [description]
-        :type datatype: [type]
-        :return: [description]
-        :rtype: [type]
+        user populated fields are the fields for the 'datatype' that are populated
+        by users, vs auto-generated fields.
+
+        :param datatype: a data type, needs to be included in 'constants.VALID_TRANSFORM_TYPES'
+        :type datatype: str
+        :return: a list of user populated fields for the 'datatype'
+        :rtype: list
         """
 
         validateType(datatype)
@@ -390,6 +393,74 @@ class TransformationConfig:
             retVal = self.transConf[datatype][stringifiedKey]
         return retVal
 
+    def getCustomUpdateTransformations(self, datatype):
+        """ Gets a list of the method names that should be run on the
+        data that is prepared for an ADD operation.
+
+        :param datatype: The datatype who's custom transformers should be
+            retrieved (add only operations), needs to be member of
+            constants.VALID_TRANSFORM_TYPES
+        :type datatype: str
+        """
+
+        retVal = None
+        customTransParam = constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS
+        if customTransParam in self.transConf[datatype]:
+            LOGGER.debug("found custom transformation entry in transconf file")
+            customTransList = self.transConf[datatype][customTransParam]
+            LOGGER.debug(f"customTransList: {customTransList}")
+            for customTran in customTransList:
+                LOGGER.debug(f"customTran: {customTran}")
+                # now iterate through the list and retrieve only the
+                # update of type
+                validTypesStrList = list(constants.UPDATE_TYPES.__members__)
+                updateType = customTran[constants.CUSTOM_UPDATE_TYPE]
+
+                if updateType not in validTypesStrList:
+                    msg = (
+                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
+                        "type found in the transformation config file defines an " +
+                        f"update type that is unknown: ({updateType}) valid types " +
+                        f"are: {validTypesStrList}"
+                    )
+                    LOGGER.error(msg)
+                elif updateType.upper() == constants.UPDATE_TYPES.UPDATE.name:
+                    if retVal is None:
+                        retVal = []
+                    retVal.append(customTran[constants.CUSTOM_UPDATE_METHOD_NAME])
+        return retVal
+
+    def getCustomAddTransformations(self, datatype):
+        """ Gets a list of the method names that should be run on the
+        data that is prepared for an ADD operation.
+
+        :param datatype: The datatype who's custom transformers should be
+            retrieved (add only operations), needs to be member of
+            constants.VALID_TRANSFORM_TYPES
+        :type datatype: str
+        """
+        retVal = None
+        customTransList = constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS
+        for customTran in customTransList:
+            if customTran in self.transConf[datatype]:
+                # now iterate through the list and retrieve only the
+                # update of type
+                validTypesStrList = list(constants.UPDATE_TYPES.__members__)
+                updateType = customTran[constants.CUSTOM_UPDATE_TYPE]
+
+                if updateType not in validTypesStrList:
+                    msg = (
+                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
+                        "type found in the transformation config file defines an " +
+                        f"update type that is unknown: ({updateType}) valid types " +
+                        f"are: {validTypesStrList}"
+                    )
+                    LOGGER.error(msg)
+                elif updateType.upper() == constants.UPDATE_TYPES.ADD.name:
+                    if retVal is None:
+                        retVal = []
+                    retVal.append(customTran[constants.CUSTOM_UPDATE_METHOD_NAME])
+        return retVal
 
 class InvalidTransformationConfiguration(AttributeError):
     """Raised when values cannot be found or incorrect values are found in the
