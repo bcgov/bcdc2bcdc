@@ -265,7 +265,6 @@ class CKANRecord:
             thisComparable = self.runCustomTransformations(dataCellNoIgnores)
             thisComparable = dataCellNoIgnores.struct
 
-
             # do the same thing for the input data structure
             inputComparable = inputRecord.getComparableStruct()
             dataCell = DataCell(inputComparable)
@@ -734,6 +733,8 @@ class CKANDataSetDeltas:
                 childObjFieldName = idRemapObj[constants.IDFLD_RELATION_FLDNAME]
 
                 parentFieldValue = currentDataset[parentFieldName]
+
+                # dest is not loaded
                 if not dataCache.isAutoValueInDest(childObjFieldName,
                         childObjType, parentFieldValue):
 
@@ -1204,7 +1205,7 @@ class CKANDataSet:
         :param ckanDataSet: The input CKANDataset
         :type ckanDataSet: either CKANDataSet, or a subclass of it
         """
-        LOGGER.debug("DATASET EQ")
+        LOGGER.debug("DATASET EQ TEST")
         retVal = True
         # TODO: rework this, should be used to compare a collection
         validateTypeIsComparable(self, ckanDataSet)

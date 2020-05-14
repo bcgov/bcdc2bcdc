@@ -70,8 +70,8 @@
             "title": true,
             "name": true,
             "is_organization": true,
-            "state": false,
-            "image_url": true,
+            "state": true,
+            "image_url": false,
             "groups": [
                 {
                     "capacity": true,
@@ -103,7 +103,7 @@
             "name": true,
             "is_organization": true,
             "state": true,
-            "image_url": true,
+            "image_url": false,
             "groups": [
                 {
                     "capacity": true,
@@ -170,7 +170,11 @@
             "contacts": false,
             "resource_status": true,
             "purpose": true,
-            "groups": true,
+            "groups": [
+                {
+                    "name": true
+                }
+            ],
             "creator_user_id": false,
             "download_audience": true,
             "replacement_record": true,

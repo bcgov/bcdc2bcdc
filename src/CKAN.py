@@ -493,7 +493,9 @@ class CKANWrapper:
         :return: list of groups
         :rtype: list (struct)
         """
-        groupConfig = {}
+        groupConfig = {
+            "order_by": "name"
+        }
         if includeData:
             groupConfig = {
                 "order_by": "name",
@@ -571,6 +573,9 @@ class CKANWrapper:
             # del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
+        with open('updt_group.json', 'w') as grpfh:
+            json.dump(groupData, grpfh)
+
         retVal = self.remoteapi.action.group_update(**groupData)
         retValStr = json.dumps(retVal)
         LOGGER.debug(f"Group Updated: {retValStr[0:100]} ...")

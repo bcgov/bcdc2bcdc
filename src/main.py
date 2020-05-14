@@ -55,6 +55,9 @@ class RunUpdate:
         srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache)
         destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache)
 
+        self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
+        self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
+
         # use CKANDataset functionality to determine if differences
         if srcUserCKANDataSet != destUserCKANDataSet:
             # perform the update
@@ -92,6 +95,9 @@ class RunUpdate:
         srcGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataSrc, self.dataCache)
         destGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataDest, self.dataCache)
 
+        self.dataCache.addData(srcGroupCKANDataSet, constants.DATA_SOURCE.SRC)
+        self.dataCache.addData(destGroupCKANDataSet, constants.DATA_SOURCE.DEST)
+
         if srcGroupCKANDataSet != destGroupCKANDataSet:
             LOGGER.info("found differences between group data in src an dest")
             deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
@@ -127,6 +133,10 @@ class RunUpdate:
         destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
             orgDataDest, self.dataCache
         )
+
+        self.dataCache.addData(srcOrgCKANDataSet, constants.DATA_SOURCE.SRC)
+        self.dataCache.addData(destOrgCKANDataSet, constants.DATA_SOURCE.DEST)
+
 
         if srcOrgCKANDataSet != destOrgCKANDataSet:
             LOGGER.info("found differences between group data in src an dest")
@@ -177,7 +187,7 @@ class RunUpdate:
             LOGGER.debug("packages are not the same")
 
             deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
-            LOGGER.info(f"Delta obj for orgs: {deltaObj}")
+            LOGGER.info(f"Delta obj for packages: {deltaObj}")
             updater = CKANUpdate.CKANPackagesUpdate(ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
@@ -216,5 +226,6 @@ if __name__ == "__main__":
 
     #updater.updateUsers(useCache=True)
     updater.updateGroups(useCache=True)
+
     updater.updateOrganizations(useCache=True)
     updater.updatePackages(useCache=True)
