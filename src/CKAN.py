@@ -11,7 +11,10 @@ import os
 import pprint
 import time
 import re
-import sys
+from ast import literal_eval
+import concurrent.futures
+import itertools
+
 
 import ckanapi
 import requests
@@ -171,7 +174,7 @@ class CKANWrapper:
             LOGGER.info(f"    - page: {pageCnt} {offset} {elemCnt}")
             # offset=0, pageSize
             pageData = self.getSinglePagePackageNames(offset=offset, pageSize=elemCnt)
-            params = {"limit": elemCnt, "offset": offset}
+            #params = {"limit": elemCnt, "offset": offset}
             # pageData = self.remoteapi.action.package_list(limit=elemCnt,
             #                                              offset=offset)
             # pageData = self.remoteapi.action.package_list(context=params)
@@ -215,6 +218,33 @@ class CKANWrapper:
         return pkgs
 
     def getPackagesAndData(self):
+        """ Makes a bunch of different calls.  Initially calls package_list and
+        then iterates through each object package name retrieving the data for it
+        using package_show api calls.
+
+        :return: a list of pkgs where each pkg is a python struct describing a
+            dataset in ckan.
+        :rtype: list of pkgs
+        """
+        pkgs = []
+        pkgList = self.getPackageNames()
+        LOGGER.debug(f"got {len(pkgList)} pkg names")
+        asyncWrapper = CKANAsyncWrapper(self.CKANUrl, header=self.CKANHeader)
+        pkgs = asyncWrapper.getPackages(pkgList)
+        return pkgs
+
+    def getPackagesAndData_solr(self):
+        """Collects a complete list of packages from ckan.  Uses package_search
+        end point.  package_search hits cached state of CKAN managed by SOLR thus
+        cannot be relied upon to return the latest set of data.
+
+        If latest greatest data is important then use 'getPackagesAndData' method
+        that retrieves the data through individual package_show calls.  Takes a
+        longer period of time though.
+
+        :return: [description]
+        :rtype: [type]
+        """
         LOGGER.debug(f"url: {self.CKANUrl}")
         packageList = []
         elemCnt = 500
@@ -316,6 +346,9 @@ class CKANWrapper:
             LOGGER.debug(f"Do not write instance: {doNotWriteInstance}")
             prodHostFromEnvVar = urllib.parse.urlparse(doNotWriteInstance)
             hostInDestUrl = urllib.parse.urlparse(self.CKANUrl)
+            LOGGER.debug(
+                f'host in DestURL: {hostInDestUrl.netloc} vs prod host: '
+                f'{prodHostFromEnvVar.netloc}')
             if prodHostFromEnvVar == hostInDestUrl:
                 msg = (
                     f"Attempting to perform an operation that writes to an "
@@ -323,7 +356,13 @@ class CKANWrapper:
                     f"{constants.CKAN_DO_NOT_WRITE_URL}"
                 )
                 raise DoNotWriteToHostError(msg)
-            LOGGER.debug(f"safe instance: {self.CKANUrl}")
+            LOGGER.debug(f"safe destination instance: {self.CKANUrl}")
+        else:
+            msg = (
+                f'The environment variable: {constants.CKAN_DO_NOT_WRITE_URL} '
+                'has not been defined.  Define and re-run'
+                )
+            raise ValueError(msg)
 
     def addUser(self, userData):
         """makes api call to ckan to create a new user
@@ -332,10 +371,12 @@ class CKANWrapper:
         :type userData: dict
         """
         self.checkUrl()
+        retVal = None
         # TODO: hasn't been tested... Waiting for proper access to prod.
         LOGGER.debug(f"creating a new user with the data: {userData}")
         try:
-            retVal = self.remoteapi.action.user_create(**userData)
+            LOGGER.warning("actual user add api call commented out")
+            #retVal = self.remoteapi.action.user_create(**userData)
         except ckanapi.errors.ValidationError:
             # usually because the user already exists but is in an deleted
             # state.  To resolve retrieve the user, update the user defs
@@ -347,7 +388,8 @@ class CKANWrapper:
             # retVal = self.remoteapi.action.user_show(**userShow)
             # LOGGER.debug(f"retVal: {retVal}")
             userData["id"] = userData["name"]
-            retVal = self.remoteapi.action.user_update(**userData)
+            LOGGER.warning("actual user add api call commented out")
+            #retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
@@ -359,13 +401,14 @@ class CKANWrapper:
         :type userData: dict
         """
         self.checkUrl()
+        retVal = None
         # wants the id to be the user or the name
         if "id" not in userData and "name" in userData:
             userData["id"] = userData["name"]
             del userData["name"]
         LOGGER.debug(f"trying to update a user using the data: {userData}")
-        # data_dict=userData
-        retVal = self.remoteapi.action.user_update(**userData)
+        LOGGER.warning("actual api commented out")
+        #retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Updated: {retVal}")
 
     def getUser(self, userId):
@@ -433,9 +476,12 @@ class CKANWrapper:
         :type userId: str
         """
         self.checkUrl()
+        retVal = None
         LOGGER.debug(f"trying to delete the user: {userId}")
-        userParams = {"id": userId}
-        retVal = self.remoteapi.action.user_delete(**userParams)
+        userParams = {"id": userId} # noqa
+        LOGGER.warning("actual user delete api call commented out")
+        # TODO: uncomment when craig available to verify that ignore configs are working
+        #retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
     def getGroups(self, includeData=False):
@@ -447,7 +493,9 @@ class CKANWrapper:
         :return: list of groups
         :rtype: list (struct)
         """
-        groupConfig = {}
+        groupConfig = {
+            "order_by": "name"
+        }
         if includeData:
             groupConfig = {
                 "order_by": "name",
@@ -478,8 +526,13 @@ class CKANWrapper:
         :type groupData: [type]
         """
         self.checkUrl()
+        retVal = None
+        retValStr = None
         LOGGER.debug(f"groupData: {groupData}")
         LOGGER.debug(f"creating a new Group with the data: {groupData}")
+
+        if 'id' not in groupData and 'name' in groupData:
+            groupData['id'] = groupData['name']
         try:
             retVal = self.remoteapi.action.group_create(**groupData)
         except ckanapi.errors.ValidationError:
@@ -487,8 +540,9 @@ class CKANWrapper:
             # but is in a deleted state, (state='deleted')
             # going to try to update the data instead
             retVal = self.remoteapi.action.group_update(**groupData)
-
-        LOGGER.debug(f"Group Created: {retVal}")
+        if retVal:
+            retValStr = json.dumps(retVal)
+        LOGGER.debug(f"Group Created: {retValStr[0:100]} ...")
         return retVal
 
     def deleteGroup(self, groupIdentifier=None):
@@ -519,10 +573,14 @@ class CKANWrapper:
             # del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
-        retVal = self.remoteapi.action.group_update(**groupData)
-        LOGGER.debug(f"Group Updated: {retVal}")
+        with open('updt_group.json', 'w') as grpfh:
+            json.dump(groupData, grpfh)
 
-    def updatePackage(self, packageData):
+        retVal = self.remoteapi.action.group_update(**groupData)
+        retValStr = json.dumps(retVal)
+        LOGGER.debug(f"Group Updated: {retValStr[0:100]} ...")
+
+    def updatePackage(self, packageData, retry=False):
 
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
@@ -531,8 +589,36 @@ class CKANWrapper:
             retVal = self.remoteapi.action.package_update(**packageData)
             retValStr = json.dumps(retVal)
             LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
-        except ckanapi.errors.ValidationError as e:
-            LOGGER.debug("CAUGHT EXCEPTION")
+        except ckanapi.errors.CKANAPIError as e:
+            LOGGER.debug("CAUGHT CKANAPIError EXCEPTION")
+            if retry:
+                raise
+            errMatchPattern = (
+                r'^\s*Only\s+lists\s+of\s+dicts\s+can\s+be\s+placed\s+agains'
+                r't\s+subschema\s+\(\'more_info\'\,\)\,\s+not\s+\<type\s+\'u'
+                r'nicode\'\>\s*$'
+            )
+            # catching stringified issue
+            args = e.args
+            #print(f'args: {args}, {type(args)}, {len(args)}')
+            raiseErr = True
+            if len(args) > 0:
+                errMsgs = literal_eval(args[0])
+                ckanErrMsgs = json.loads(errMsgs[2])
+                ckanErrMsg = ckanErrMsgs['error']['message']
+                if re.match(errMatchPattern, ckanErrMsg):
+                    # caught the issue of more_info being expected as a non
+                    # stringified obj
+                    packageData['more_info'] = json.loads(packageData['more_info'])
+                    raiseErr = False
+                    self.updatePackage(packageData, retry=True)
+            if raiseErr:
+                raise
+
+        except ckanapi.errors.ValidationError as e: # noqa
+            LOGGER.debug("CAUGHT ValidationError EXCEPTION")
+            if retry:
+                raise
             # Discovered that there is inconsistency in how ckan handles the
             # more_info field.  Sometimes it wants it as a stringified object
             # other times it wants it as a regular json object.
@@ -545,9 +631,10 @@ class CKANWrapper:
             # example of what the e.args looks like if its a more_info related
             # exception:
             #
-            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info', 0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
-            if ((len(args)) and "__junk" in e.args[0]) and len(e.args[0]['__junk']) and \
-                    re.match('^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
+            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info',
+            #   0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
+            if ((len(args) > 0) and "__junk" in e.args[0]) and len(e.args[0]['__junk'] > 0) and \
+                    re.match(r'^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
                 msg = (
                     'The update object contains a non stringified more_info '
                     'field, and for some unknown reason it wants it as a '
@@ -560,22 +647,13 @@ class CKANWrapper:
                 packageData['more_info'] = json.dumps(packageData['more_info'])
                 LOGGER.debug(f"stringified version: {packageData['more_info']}")
                 LOGGER.debug("resubmit request")
-                self.updatePackage(packageData)
+                self.updatePackage(packageData, retry=True)
                 LOGGER.info("SUCCESS")
             else:
                 LOGGER.error("Failed after attempt to catch exception", exc_info=True)
                 raise
 
-
-            # print("caught error")
-            # print(f'e: {e}')
-            # print(f'args: {e.args}')
-            # print(f'args: {e.args[0]["__junk"][0]}')
-            # execInfo = sys.exc_info()
-            # print(type(execInfo[1]))
-
-
-    def getOrganizations(self, includeData=False):
+    def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
 
@@ -588,9 +666,12 @@ class CKANWrapper:
         #       a paged call
         orgConfig = {}
         organizations = []
-        pageSize = 100
-        currentPosition = 0
+        pageSize = 70
+        if not currentPosition:
+            currentPosition = 0
         pageCnt = 1
+        maxRetries = 5
+
         if includeData:
             orgConfig = {
                 "order_by": "name",
@@ -605,8 +686,26 @@ class CKANWrapper:
         while True:
             LOGGER.debug(f"OrgConfig is {orgConfig}")
             LOGGER.debug(f"pagecount is {pageCnt}")
+            try:
+                retVal = self.remoteapi.action.organization_list(**orgConfig)
+            except ckanapi.errors.CKANAPIError as err:
+                LOGGER.error(err)
+                # catch 504 errors raised by ckanapi, otherwise re-raise
+                if ((((attempts < maxRetries) and
+                        hasattr(err, 'extra_msg')) and
+                        len(literal_eval(err.extra_msg)) >= 2) and
+                            literal_eval(err.extra_msg)[1] == 504):
+                    attempts += 1
+                    LOGGER.warning(f"organization_list: status: 504, retry {attempts} of {maxRetries} ")
+                    retVal = self.getOrganizations(includeData=includeData,
+                                                   attempts=attempts,
+                                                   currentPosition=currentPosition)
+                    # if gets here then succeeded, reset attempts
+                    attempts = 0
 
-            retVal = self.remoteapi.action.organization_list(**orgConfig)
+                else:
+                    raise
+
             LOGGER.debug(f"records returned: {len(retVal)}")
             organizations.extend(retVal)
 
@@ -672,7 +771,8 @@ class CKANWrapper:
         # )
         LOGGER.debug(f"updating org: {organizationData['name']}")
         retVal = self.remoteapi.action.organization_update(**organizationData)
-        LOGGER.debug(f"Organization Updated: {retVal}")
+        retValJson = json.dumps(retVal)
+        LOGGER.debug(f"Organization Updated: {retValJson[0:100]} ...")
 
     def addPackage(self, packageData):
         self.checkUrl()
@@ -708,6 +808,158 @@ class CKANWrapper:
         pass
 
 
+class CKANAsyncWrapper:
+    '''
+    trying to implement this pattern
+    https://alexwlchan.net/2019/10/adventures-with-concurrent-futures/
+    '''
+    def __init__(self, baseUrl, apiKey=None, header=None):
+        self.baseUrl = baseUrl.strip()
+        self.header = header
+        if apiKey:
+            if not self.header:
+                self.header = {}
+            self.header["X-CKAN-API-KEY"] = apiKey
+
+        self.packageShowEndPoint = '/api/3/action/package_show?id='
+
+        self.packages = []
+
+        self.TASK_BUNDLE_SIZE = 20
+        self.MAX_CONCURRENT_TASKS = 10
+
+        self.requestSession = None
+
+        # used to track how many times an api called has been retried, and the
+        # maximum number of times the api call will be retried
+        self.currentRetry = 0
+        self.maxRetries = 5
+
+    def packageRequestTask(self, url):
+        """retrieves the data associated with the url.
+
+        :param url: url to call using get to get an individual ckan package
+        :type url: str
+        :return: the ckan package that was requested
+        :rtype: dict
+        """
+        #LOGGER.debug(f"url: {url}")
+        resp = self.requestSession.get(url, headers=self.header)
+        if resp.status_code != 200:
+            LOGGER.debug(f"status code: {resp.status_code}")
+        packageData = resp.json()
+        return packageData['result']
+
+    def getPackages(self, packageNameList):
+        """Retrieves the list of packages described in the arg: packageNameList
+        Packages are retrieve asynchronously
+
+        :param packageNameList: list of packages that need to be retrieved
+        :type packageNameList: list of str
+        :return: list of dicts where each dict describes one of the packages in
+            the 'packageNameList' list.
+        :rtype: list of packages
+        """
+        self.requestSession = requests.Session()
+        self.spoolRequests(packageNameList)
+        return self.packages
+
+    def spoolRequests(self, packageList, missingPackages=None): # pylint: disable=too-many-locals
+        """where the async calls are created.  Gets the list of package names
+        and spools up a number of requests, monitors the requests, retrieves the
+        data from the requests and stuffs them into self.packages.
+
+        :param packageList: list of package names to retrieve
+        :type packageList: list
+        :param missingPackages: This method will be called again if the verification
+            determines that the number of requested packages is not equal to the
+            packages that have been retrieved.  In that event the missing packages
+            go into this parameter.
+        :type missingPackages: list of package names that failed, optional
+        """
+        # trim training / from baseUrl
+        if self.baseUrl[-1] == '/':
+            self.baseUrl = self.baseUrl[0:-1]
+        pkgShowUrl = f"{self.baseUrl}{self.packageShowEndPoint}"
+        completed = 0
+
+        pkgs2Get = packageList
+        if missingPackages:
+            pkgs2Get = missingPackages
+
+        packageIterator = iter(pkgs2Get)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_TASKS) as executor:
+            # Schedule the first N futures.  We don't want to schedule them all
+            # at once, to avoid consuming excessive amounts of memory.  Also
+            # allows finer grained monitoring of tasks
+            futures = {}
+            cnt = 0
+            for pkgName in itertools.islice(packageIterator, self.TASK_BUNDLE_SIZE):
+                curUrl = f"{pkgShowUrl}{pkgName}"
+                fut = executor.submit(self.packageRequestTask, curUrl)
+                futures[fut] = curUrl
+                cnt += 1
+            LOGGER.debug(f"stack size: {cnt}")
+            # using futures dict as a stack of tasks
+            while futures:
+                # Wait for the next future to complete.
+                done, _ = concurrent.futures.wait(
+                    futures, return_when=concurrent.futures.FIRST_COMPLETED
+                )
+                completed += len(done)
+                if not completed % 200:
+                    LOGGER.debug(f"total completed: {completed} of {len(pkgs2Get)} (pkgs in loop: {len(done)})")
+                    #LOGGER.debug(f" num done in this loop: {len(done)}")
+                for fut in done:
+                    original_task = futures.pop(fut)
+                    # can add error catching and re-add to executor here
+                    data = fut.result()
+                    self.packages.append(data)
+                # Schedule the next set of futures.  We don't want more than N futures
+                # in the pool at a time, to keep memory consumption down.
+                for pkgName in itertools.islice(packageIterator, len(done)):
+                    # LOGGER.debug(f"adding: {pkgName} to the queue")
+                    # adding the package name to the url, as a param
+                    curUrl = f"{pkgShowUrl}{pkgName}"
+                    fut = executor.submit(self.packageRequestTask, curUrl)
+                    futures[fut] = curUrl
+        # verify everthing we asked for has been returned
+        self.verify(packageList)
+        LOGGER.debug(f"number of packages fetched: {len(self.packages)}")
+
+    def verify(self, packageList):
+        """verifies that all the requested packages have actually been
+        returned, and populated into self.packages struct.
+
+        :param packageList: list of requested package names
+        :type packageList: list
+        """
+        LOGGER.info(f"num requested packages: {len(packageList)}")
+        LOGGER.info(f"packages returned: {len(self.packages)}")
+        if len(packageList) > len(self.packages):
+            if self.currentRetry < self.maxRetries:
+                self.currentRetry += 1
+                numMissingPkgs = len(packageList) - len(self.packages)
+                LOGGER.warning(f'missing: {numMissingPkgs} packages')
+
+                # iterate through self.pkgData and populate with just names
+                pkgNamesInReturnData = [pkg['name'] for pkg in self.packages]
+                missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
+
+                LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
+                LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
+                self.pkgFutures = []
+                self.spoolRequests(packageList, missingPkgNames)
+            else:
+                msg = (
+                    f'after {self.maxRetries} attempts to retrieve all the '
+                    'packages has failed, raising this exception, have retrieved'
+                    f'{len(self.packages)} of {len(packageList)} requested '
+                    'packages'
+                )
+                raise AsyncPackagesGetError(msg)
+
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
     """CKAN instances seem to randomely go offline when in the middle of paging
@@ -728,3 +980,48 @@ class DoNotWriteToHostError(Exception):
     def __init__(self, message):
         LOGGER.error(message)
         self.message = message
+
+
+class AsyncPackagesGetError(Exception):
+    def __init__(self, message):
+        LOGGER.error(message)
+        self.message = message
+
+
+
+# if __name__ == '__main__':
+
+
+#     LOGGER = logging.getLogger()
+#     LOGGER.setLevel(logging.DEBUG)
+#     hndlr = logging.StreamHandler()
+#     formatter = logging.Formatter(
+#         "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
+#     )
+#     hndlr.setFormatter(formatter)
+#     LOGGER.addHandler(hndlr)
+#     LOGGER.debug("test")
+
+#     lg = logging.getLogger('urllib3.connectionpool')
+#     lg.setLevel(logging.INFO)
+
+
+
+#     pkgList = ["aircraft-emissions-2000-5-km-grid",
+#         "airfields-trim-enhanced-base-map-ebm",
+#         "airphoto-centroids",
+#         "airphoto-flightlines",
+#         "air-photo-system-air-photo-polygons",
+#         "air-photo-system-air-photo-polygons-spatial-view",
+#         "air-photo-system-centre-points"]
+
+#     pkgListPath = 'temp/pkgNames.json'
+#     with open(pkgListPath) as fh:
+#         pkgList = json.load(fh)
+#     LOGGER.debug(f"numpkgs: {len(pkgList)}")
+
+#     destUrl = os.environ[constants.CKAN_URL_DEST]
+#     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
+#     asyncWrap = CKANAsyncWrapper(destUrl, destAPIKey)
+#     pkgs = asyncWrap.getPackages(pkgList)
+#     LOGGER.debug(f"packages returned {len(pkgs)}")

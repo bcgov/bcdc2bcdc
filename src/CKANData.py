@@ -14,13 +14,14 @@ CKANTransform module will work directly with CKAN Data objects.
 """
 # pylint: disable=logging-format-interpolation
 
-import logging
-import constants
-import CKANTransform
-import deepdiff
-import pprint
 import json
+import logging
+import pprint
+
+import CKANTransform
+import constants
 import CustomTransformers
+import Diff
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -141,6 +142,28 @@ class CKANRecord:
             return struct
         return newStruct
 
+    def runCustomTransformations(self, dataCell):
+        """Checks to see if a custom transformation has been defined for the
+        data type.  If it has then retrieves a reference to the method and runs
+        it, returning the resulting data transformation.
+
+        :param dataCell: a datacell object to run
+        :type dataCell: DataCell
+        """
+        updtTransConfigurations = TRANSCONF.getCustomUpdateTransformations(self.dataType)
+        #LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
+        if updtTransConfigurations:
+            methodMapper = CustomTransformers.MethodMapping(self.dataType, updtTransConfigurations)
+            for customMethodName in updtTransConfigurations:
+                #methodName = customTransformerConfig[constants.CUSTOM_UPDATE_METHOD_NAME]
+                methodReference = methodMapper.getCustomMethodCall(customMethodName)
+                # this is a bit cludgy.. the custom methods are designed to work with collections
+                # so just putting the individual record into a collection so that the
+                # method will work.
+                dataCell.struct = methodReference([dataCell.struct])[0]
+                #LOGGER.debug(f"called custom method: {customMethodName}")
+        return dataCell
+
     def removeEmbeddedIgnores(self, dataCell):
         """many data structs in CKAN can contain embedded data types.  Example
         of data types in CKAN: users, groups, organizations, packages, resources
@@ -196,6 +219,17 @@ class CKANRecord:
     def __eq__(self, inputRecord):
         # LOGGER.debug("_________ EQ CALLED")
         diff = self.getDiff(inputRecord)
+
+        # now need to evaluate the diff object to remove any
+        # differences where type has changed but data continues to be
+        # empty / false
+        # example:
+        #   None vs ""
+        #   None vs []
+        # diff.type_changes = list of dicts
+        #   each dict: 'new_type': None, 'old_type': None
+        #     and vise versa
+
         retVal = True
         if diff:
             retVal = False
@@ -228,19 +262,23 @@ class CKANRecord:
             thisComparable = self.getComparableStruct()
             dataCell = DataCell(thisComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            thisComparable = self.runCustomTransformations(dataCellNoIgnores)
             thisComparable = dataCellNoIgnores.struct
 
             # do the same thing for the input data structure
             inputComparable = inputRecord.getComparableStruct()
             dataCell = DataCell(inputComparable)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
+            inputComparable = self.runCustomTransformations(dataCellNoIgnores)
             inputComparable = dataCell.struct
 
-            diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
+            diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
+            diff = diffIngoreEmptyTypes.getDiff()
+            #diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
             if diff:
                 pp = pprint.PrettyPrinter(indent=4)
-                pp.pformat(inputComparable)
+                formatted = pp.pformat(inputComparable) # noqa
                 # LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
                 # LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
                 # LOGGER.debug(f"diffs are: {diff}")
@@ -614,7 +652,7 @@ class CKANDataSetDeltas:
 
         # iterate over each input data struct
         for iterVal in iterObj:
-            # iterate over the different type enformcements,
+            # iterate over the different type enforcements,
             #    format = property: <type of object>
             for fieldName in enforceTypes:
                 # does the field definition from enforcement types exist in the
@@ -635,7 +673,7 @@ class CKANDataSetDeltas:
                             LOGGER.warning(
                                 f"the property {fieldName} has a type "
                                 f"{type(inputDataStruct[iterVal][fieldName])}.  This "
-                                f"conficts with the expected type defined in "
+                                f"conflicts with the expected type defined in "
                                 f"the {constants.TRANSFORM_PARAM_TYPE_ENFORCEMENT}"
                                 f"transformation config section.  The field "
                                 f"currently has the following data in it: {inputDataStruct[iterVal][fieldName]}"
@@ -695,6 +733,8 @@ class CKANDataSetDeltas:
                 childObjFieldName = idRemapObj[constants.IDFLD_RELATION_FLDNAME]
 
                 parentFieldValue = currentDataset[parentFieldName]
+
+                # dest is not loaded
                 if not dataCache.isAutoValueInDest(childObjFieldName,
                         childObjType, parentFieldValue):
 
@@ -765,7 +805,7 @@ class CKANDataSetDeltas:
         #     updates = self.doStringify(updates, stringifiedFields)
 
         if customTransformers:
-            LOGGER.debug(f"found custom transforrmers: {customTransformers}")
+            LOGGER.debug(f"found custom transformers: {customTransformers}")
             methMap = CustomTransformers.MethodMapping(
                 self.destCKANDataset.dataType,
                 customTransformers
@@ -785,7 +825,7 @@ class CKANDataSetDeltas:
         else:
             iterObj = inputDataStruct
         for iterVal in iterObj:
-            # iterobj either a list of dict of data sets
+            # 'iterObj' either a list of dict of data sets
             # LOGGER.debug(f"iterVal:  {iterVal}")
             currentDataset = inputDataStruct[iterVal]
             # LOGGER.debug(f"currentDataset:  {currentDataset}")
@@ -836,9 +876,10 @@ class CKANDataSetDeltas:
             populated to 0 by default, however if the input is a dict it will
             be a key that should exist in the dictionary
         :type key: int, str
-        :param valueStruct: a structure that should be represented in the inpuData
-            the structure defined keys that must exist if its a dict, and the
-            value to set the keys equal to if they do NOT exist in the inputData.
+        :param valueStruct: a structure that should be represented in the input
+            Data the structure defined keys that must exist if its a dict, and
+            the value to set the keys equal to if they do NOT exist in the
+            inputData.
         :type valueStruct: any
         :raises ValueError: raised when an unexpected type is encountered.
         :return: the inputData struct with modifications
@@ -885,7 +926,7 @@ class CKANDataSetDeltas:
             for elemKey in valueStruct:
                 elemValue = valueStruct[elemKey]
                 if isinstance(inputData, list):
-                    for inputDataPosition in range(0, len(inputData)):
+                    for inputDataPosition in range(0, len(inputData)): #pylint: disable=consider-using-enumerate
                         inputData[inputDataPosition] = self.__populateField(
                             inputData[inputDataPosition], elemKey, elemValue
                         )
@@ -1105,7 +1146,8 @@ class CKANDataSet:
         ignoreList = TRANSCONF.getIgnoreList(self.dataType)
 
         chkForUpdateIds = srcUniqueIdSet.intersection(destUniqueIdSet)
-
+        chkForUpdateIds = list(chkForUpdateIds)
+        chkForUpdateIds.sort()
         updateDataList = []
 
         for chkForUpdateId in chkForUpdateIds:
@@ -1164,7 +1206,7 @@ class CKANDataSet:
         :param ckanDataSet: The input CKANDataset
         :type ckanDataSet: either CKANDataSet, or a subclass of it
         """
-        LOGGER.debug("DATASET EQ")
+        LOGGER.debug("DATASET EQ TEST")
         retVal = True
         # TODO: rework this, should be used to compare a collection
         validateTypeIsComparable(self, ckanDataSet)
@@ -1186,7 +1228,7 @@ class CKANDataSet:
             LOGGER.debug(f"iterate ckanDataSet: {ckanDataSet}")
             LOGGER.debug(f"ckanDataSet record count: {len(ckanDataSet)}")
             for inputRecord in ckanDataSet:
-                sampleString = (str(inputRecord))[0:65]
+                #sampleString = (str(inputRecord))[0:65]
                 # LOGGER.debug(f"iterating: {sampleString} ...")
                 recordUniqueId = inputRecord.getUniqueIdentifier()
                 compareRecord = self.getRecordByUniqueId(recordUniqueId)
@@ -1216,9 +1258,11 @@ class CKANDataSet:
                 self.jsonData[self.iterCnt], self.dataType
             )
         else:
+            # this is catching a subclass of CKANRecord that does not require
+            # the dataType parameter to be included in the constructor.
             ckanRecord = self.recordConstructor(
                 self.jsonData[self.iterCnt]
-            )  # pylint: disable=no-value-for-parameter
+            )  # noqa
         self.iterCnt += 1
         return ckanRecord
 
