@@ -278,7 +278,7 @@ class CKANRecord:
 
             if diff:
                 pp = pprint.PrettyPrinter(indent=4)
-                formatted = pp.pformat(inputComparable)
+                formatted = pp.pformat(inputComparable) # noqa
                 # LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
                 # LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
                 # LOGGER.debug(f"diffs are: {diff}")
@@ -652,7 +652,7 @@ class CKANDataSetDeltas:
 
         # iterate over each input data struct
         for iterVal in iterObj:
-            # iterate over the different type enformcements,
+            # iterate over the different type enforcements,
             #    format = property: <type of object>
             for fieldName in enforceTypes:
                 # does the field definition from enforcement types exist in the
@@ -673,7 +673,7 @@ class CKANDataSetDeltas:
                             LOGGER.warning(
                                 f"the property {fieldName} has a type "
                                 f"{type(inputDataStruct[iterVal][fieldName])}.  This "
-                                f"conficts with the expected type defined in "
+                                f"conflicts with the expected type defined in "
                                 f"the {constants.TRANSFORM_PARAM_TYPE_ENFORCEMENT}"
                                 f"transformation config section.  The field "
                                 f"currently has the following data in it: {inputDataStruct[iterVal][fieldName]}"
@@ -825,7 +825,7 @@ class CKANDataSetDeltas:
         else:
             iterObj = inputDataStruct
         for iterVal in iterObj:
-            # iterobj either a list of dict of data sets
+            # 'iterObj' either a list of dict of data sets
             # LOGGER.debug(f"iterVal:  {iterVal}")
             currentDataset = inputDataStruct[iterVal]
             # LOGGER.debug(f"currentDataset:  {currentDataset}")
@@ -876,9 +876,10 @@ class CKANDataSetDeltas:
             populated to 0 by default, however if the input is a dict it will
             be a key that should exist in the dictionary
         :type key: int, str
-        :param valueStruct: a structure that should be represented in the inpuData
-            the structure defined keys that must exist if its a dict, and the
-            value to set the keys equal to if they do NOT exist in the inputData.
+        :param valueStruct: a structure that should be represented in the input
+            Data the structure defined keys that must exist if its a dict, and
+            the value to set the keys equal to if they do NOT exist in the
+            inputData.
         :type valueStruct: any
         :raises ValueError: raised when an unexpected type is encountered.
         :return: the inputData struct with modifications
@@ -925,7 +926,7 @@ class CKANDataSetDeltas:
             for elemKey in valueStruct:
                 elemValue = valueStruct[elemKey]
                 if isinstance(inputData, list):
-                    for inputDataPosition in range(0, len(inputData)):
+                    for inputDataPosition in range(0, len(inputData)): #pylint: disable=consider-using-enumerate
                         inputData[inputDataPosition] = self.__populateField(
                             inputData[inputDataPosition], elemKey, elemValue
                         )
@@ -1227,7 +1228,7 @@ class CKANDataSet:
             LOGGER.debug(f"iterate ckanDataSet: {ckanDataSet}")
             LOGGER.debug(f"ckanDataSet record count: {len(ckanDataSet)}")
             for inputRecord in ckanDataSet:
-                sampleString = (str(inputRecord))[0:65]
+                #sampleString = (str(inputRecord))[0:65]
                 # LOGGER.debug(f"iterating: {sampleString} ...")
                 recordUniqueId = inputRecord.getUniqueIdentifier()
                 compareRecord = self.getRecordByUniqueId(recordUniqueId)
@@ -1257,9 +1258,11 @@ class CKANDataSet:
                 self.jsonData[self.iterCnt], self.dataType
             )
         else:
+            # this is catching a subclass of CKANRecord that does not require
+            # the dataType parameter to be included in the constructor.
             ckanRecord = self.recordConstructor(
                 self.jsonData[self.iterCnt]
-            )  # pylint: disable=no-value-for-parameter
+            )  # noqa
         self.iterCnt += 1
         return ckanRecord
 

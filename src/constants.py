@@ -55,7 +55,7 @@ class UPDATE_TYPES(enum.Enum):
 
 
 # other misc property references
-# Propertys of field_mapping type
+# property's of field_mapping type
 FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
 FIELD_MAPPING_USER_FIELD = 'user_populated_field'
 

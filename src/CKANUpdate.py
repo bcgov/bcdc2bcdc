@@ -358,17 +358,3 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.debug(f"updating the package: {updateName}")
             self.CKANWrap.updatePackage(updtStruct[updateName])
 
-    def update(self, deltaObj):
-        # TODO: delete this method and use mixin once complete
-        dels = deltaObj.getDeleteData()
-        adds = deltaObj.getAddData()
-        updts = deltaObj.getUpdateData()
-
-        #dels = self.removeIgnored(dels)
-        #updts = self.removeIgnored(updts)
-
-        LOGGER.debug(f"deltaObj: {deltaObj}")
-        self.doDeletes(dels)
-        self.doAdds(adds)
-        self.doUpdates(updts)
-        LOGGER.info("UPDATE COMPLETE")

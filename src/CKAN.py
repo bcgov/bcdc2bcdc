@@ -615,7 +615,7 @@ class CKANWrapper:
             if raiseErr:
                 raise
 
-        except ckanapi.errors.ValidationError as e:
+        except ckanapi.errors.ValidationError as e: # noqa
             LOGGER.debug("CAUGHT ValidationError EXCEPTION")
             if retry:
                 raise

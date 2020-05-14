@@ -197,10 +197,13 @@ class TransformationConfig:
         the given datatype they will be returned.  If they are not defined then
         will return None.
 
-        :param datatype: [description]
-        :type datatype: [type]
-        :return: [description]
-        :rtype: [type]
+        user populated fields are the fields for the 'datatype' that are populated
+        by users, vs auto-generated fields.
+
+        :param datatype: a data type, needs to be included in 'constants.VALID_TRANSFORM_TYPES'
+        :type datatype: str
+        :return: a list of user populated fields for the 'datatype'
+        :rtype: list
         """
 
         validateType(datatype)
