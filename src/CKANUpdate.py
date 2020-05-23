@@ -26,8 +26,9 @@ class CKANUpdate_abc(abc.ABC):
     Each different object type in ckan should implement its own version of this
     class.
     """
-    def __init__(self, ckanWrapper=None):
+    def __init__(self, dataCache, ckanWrapper=None):
         self.CKANWrap = ckanWrapper
+        self.dataCache = dataCache
         if ckanWrapper is None:
             self.CKANWrap = CKAN.CKANWrapper()
 
@@ -52,10 +53,14 @@ class UpdateMixin:
     from the abstract method.
     """
     def update(self, deltaObj):
-        adds = deltaObj.getAddData()
-        dels = deltaObj.getDeleteData()
-        updts = deltaObj.getUpdateData()
 
+        # These are all lists of dicts, each dict is the info
+        # that will be sent directly to the api
+        adds = deltaObj.getAddData() # list of dicts
+        dels = deltaObj.getDeleteData() # list of names
+        updts = deltaObj.getUpdateData() # list of dicts
+
+        # this should have been calculated earlier?
         dels = self.removeIgnored(dels)
         updts = self.removeIgnored(updts)
 
@@ -117,8 +122,8 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     :type CKANUpdate_abc: abstract base class
     """
 
-    def __init__(self, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, ckanWrapper)
+    def __init__(self, dataCache, ckanWrapper=None):
+        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_USERS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
@@ -178,16 +183,15 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
 
         LOGGER.debug("updates complete")
 
-
 class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
 
-    def __init__(self, ckanWrapper=None):
+    def __init__(self, dataCache, ckanWrapper=None):
         """Gets a list of updates
 
         :param ckanWrapper: [description], defaults to None
         :type ckanWrapper: [type], optional
         """
-        CKANUpdate_abc.__init__(self, ckanWrapper)
+        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_GROUPS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
@@ -244,8 +248,8 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
     the orgs from one ckan instance to another.
     '''
 
-    def __init__(self, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, ckanWrapper)
+    def __init__(self, dataCache, ckanWrapper=None):
+        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_ORGS
         self.CKANTransformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
@@ -298,13 +302,13 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
     the packages from one ckan instance to another.
     '''
 
-    def __init__(self, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, ckanWrapper)
+    def __init__(self, dataCache, ckanWrapper=None):
+        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_PACKAGES
         self.CKANTransformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
 
-    def doAdds(self, addStruct):
+    def doAdds(self, addCollection):
         """adds the packages described in the param addStruct
 
         :param addStruct: dictionary where the key is the name of the org to be added
@@ -312,33 +316,35 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             to add this org
         :type addStruct: dict
         """
-        #LOGGER.debug(f"adds: {addStruct}")
-        LOGGER.info(f"{len(addStruct)}: number of packages to be added to destination instance")
-        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
-        for addData in sortedList:
+        LOGGER.info(f"{len(addCollection)}: number of packages to be added to destination instance")
+        uniqueIds = addCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        #sortedList = sorted(addStruct, key=operator.itemgetter('name'))
+        for addDataSetName in uniqueIds:
+            addDataRecord = addCollection.getRecordByUniqueId(addDataSetName)
+            addStruct = addDataRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
             with open("add_package.json", "w") as fh:
                 json.dump(addStruct, fh)
                 LOGGER.debug("wrote data to: add_package.json")
-
-            jsonStr = json.dumps(addData)
+            LOGGER.info(f"adding package: {addDataSetName}")
+            jsonStr = json.dumps(addStruct)
             LOGGER.debug(f"pkg Struct: {jsonStr[0:100]} ...")
-            LOGGER.debug(f"adding package: {addData['name']}")
+            self.CKANWrap.addPackage(addStruct)
 
-            # todo, this is working but am commenting out
-            self.CKANWrap.addPackage(addData)
-
-    def doDeletes(self, delStruct):
+    def doDeletes(self, delCollection):
         """does deletes of all the orgs described in the delStruct
 
         :param delStruct: a list of org names that should be deleted
         :type delStruct: str
         """
-        LOGGER.debug(f"number of packages deletes: {len(delStruct)}")
-        for pkg2Del in delStruct:
-            LOGGER.debug(f"    deleting the package: {pkg2Del}")
+        LOGGER.info(f"number of packages deletes: {len(delCollection)}")
+        uniqueIds = delCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for pkg2Del in uniqueIds:
+            LOGGER.info(f"deleting the package: {pkg2Del}")
             self.CKANWrap.deletePackage(pkg2Del)
 
-    def doUpdates(self, updtStruct):
+    def doUpdates(self, updtCollection):
         """Does the package updates
 
         :param updtStruct: dictionary where the key is the name of the package
@@ -346,15 +352,18 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             the org
         :type updtStruct: dict
         """
-        LOGGER.debug(f"number of updates: {len(updtStruct)}")
-        updateKeys = list(updtStruct.keys())
-        updateKeys.sort()
-        for updateName in updateKeys:
+        LOGGER.debug(f"number of updates: {len(updtCollection)}")
+        uniqueIds = updtCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for updateName in uniqueIds:
+            updtDataRecord = updtCollection.getRecordByUniqueId(updateName)
+            updtStruct = updtDataRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+
             tmpCacheFileName = 'updt_package.json'
             with open(tmpCacheFileName, "w") as fh:
-                json.dump(updtStruct[updateName], fh)
-                LOGGER.debug(f"wrote data to: {tmpCacheFileName}")
+                json.dump(updtStruct, fh)
+                LOGGER.debug(f"wrote updt data for {updateName} to: {tmpCacheFileName}")
 
-            LOGGER.debug(f"updating the package: {updateName}")
-            self.CKANWrap.updatePackage(updtStruct[updateName])
+            LOGGER.info(f"updating the package: {updateName}")
+            self.CKANWrap.updatePackage(updtStruct)
 

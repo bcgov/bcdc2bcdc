@@ -54,8 +54,8 @@ class RunUpdate:
 
         # wrap the data with CKANDataset class
         # cache is populated when delta obj is requested!
-        srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache)
-        destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache)
+        srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
+        destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache, constants.DATA_SOURCE.DEST)
 
         self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
@@ -98,8 +98,8 @@ class RunUpdate:
         # groupDataDest = self.destCKANWrapper.getGroups(includeData=True)
         # LOGGER.debug(f"Groupdata is: {groupDataProd}")
 
-        srcGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataSrc, self.dataCache)
-        destGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataDest, self.dataCache)
+        srcGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
+        destGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataDest, self.dataCache, constants.DATA_SOURCE.DEST)
 
         self.dataCache.addData(srcGroupCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destGroupCKANDataSet, constants.DATA_SOURCE.DEST)
@@ -139,9 +139,10 @@ class RunUpdate:
         # orgDataDest = self.destCKANWrapper.getOrganizations(includeData=True)
         # LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
 
-        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc, self.dataCache)
+        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
         destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
-            orgDataDest, self.dataCache
+            orgDataDest, self.dataCache,
+            constants.DATA_SOURCE.DEST
         )
 
         self.dataCache.addData(srcOrgCKANDataSet, constants.DATA_SOURCE.SRC)
@@ -185,8 +186,8 @@ class RunUpdate:
         # srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
         # destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
 
-        srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList, self.dataCache)
-        destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList, self.dataCache)
+        srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList, self.dataCache, constants.DATA_SOURCE.SRC)
+        destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList, self.dataCache, constants.DATA_SOURCE.DEST)
 
         self.dataCache.addData(srcPkgDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
@@ -197,7 +198,7 @@ class RunUpdate:
 
             deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
             LOGGER.info(f"Delta obj for packages: {deltaObj}")
-            updater = CKANUpdate.CKANPackagesUpdate(ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANPackagesUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
 
@@ -234,7 +235,7 @@ if __name__ == "__main__":
     # This is complete, commented out while work on group
     # not running user update for now
 
-    # updater.updateUsers(useCache=True)
+    #updater.updateUsers(useCache=True)
     updater.updateGroups(useCache=True)
 
     updater.updateOrganizations(useCache=True)

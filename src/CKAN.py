@@ -376,7 +376,7 @@ class CKANWrapper:
         LOGGER.debug(f"creating a new user with the data: {userData}")
         try:
             LOGGER.warning("actual user add api call commented out")
-            #retVal = self.remoteapi.action.user_create(**userData)
+            retVal = self.remoteapi.action.user_create(**userData)
         except ckanapi.errors.ValidationError:
             # usually because the user already exists but is in an deleted
             # state.  To resolve retrieve the user, update the user defs
@@ -389,7 +389,7 @@ class CKANWrapper:
             # LOGGER.debug(f"retVal: {retVal}")
             userData["id"] = userData["name"]
             LOGGER.warning("actual user add api call commented out")
-            #retVal = self.remoteapi.action.user_update(**userData)
+            retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
@@ -408,7 +408,7 @@ class CKANWrapper:
             del userData["name"]
         LOGGER.debug(f"trying to update a user using the data: {userData}")
         LOGGER.warning("actual api commented out")
-        #retVal = self.remoteapi.action.user_update(**userData)
+        retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Updated: {retVal}")
 
     def getUser(self, userId):
@@ -481,7 +481,7 @@ class CKANWrapper:
         userParams = {"id": userId} # noqa
         LOGGER.warning("actual user delete api call commented out")
         # TODO: uncomment when craig available to verify that ignore configs are working
-        #retVal = self.remoteapi.action.user_delete(**userParams)
+        retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
     def getGroups(self, includeData=False):
@@ -774,12 +774,21 @@ class CKANWrapper:
         retValJson = json.dumps(retVal)
         LOGGER.debug(f"Organization Updated: {retValJson[0:100]} ...")
 
-    def addPackage(self, packageData):
+    def addPackage(self, packageData, retries=0):
         self.checkUrl()
+        try:
+            LOGGER.debug("adding the package data")
+            retVal = self.remoteapi.action.package_create(**packageData)
+            LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
+        except (requests.exceptions.ConnectionError, ckanapi.errors.CKANAPIError):
+            if retries >= 5:
+                raise
+            LOGGER.warning(f'connection error raised on instance: {self.self.CKANUrl} retry {retries} of 5')
+            LOGGER.info(f'pause-ing for {retries * 2}')
+            time.sleep(retries * 2)
+            retries += 1
 
-        LOGGER.debug("adding the package data")
-        retVal = self.remoteapi.action.package_create(**packageData)
-        LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
+            self.addPackage(packageData, retries)
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg
@@ -846,7 +855,7 @@ class CKANAsyncWrapper:
         #LOGGER.debug(f"url: {url}")
         resp = self.requestSession.get(url, headers=self.header)
         if resp.status_code != 200:
-            LOGGER.debug(f"status code: {resp.status_code}")
+            LOGGER.debug(f"status code: {resp.status_code}, {url}")
         packageData = resp.json()
         return packageData['result']
 

@@ -53,7 +53,6 @@ class UPDATE_TYPES(enum.Enum):
     ADD = 1
     UPDATE = 2
 
-
 # other misc property references
 # property's of field_mapping type
 FIELD_MAPPING_AUTOGEN_FIELD = 'auto_populated_field'
@@ -84,10 +83,10 @@ CKAN_SHOW_IDENTIFIER = 'id'
 TRANSFORM_TYPE_USERS = 'users'
 TRANSFORM_TYPE_GROUPS = 'groups'
 TRANSFORM_TYPE_ORGS = 'organizations'
-TRANSFORM_TYPE_RESOURCES = 'resources'
+TRANSFORM_TYPE_RESOURCES = 'resources' # not implemented yet
 TRANSFORM_TYPE_PACKAGES = 'packages'
 VALID_TRANSFORM_TYPES = [TRANSFORM_TYPE_USERS, TRANSFORM_TYPE_GROUPS,
-                         TRANSFORM_TYPE_ORGS, TRANSFORM_TYPE_RESOURCES,
+                         TRANSFORM_TYPE_ORGS,
                          TRANSFORM_TYPE_PACKAGES]
 
 # LOGGING config file name
