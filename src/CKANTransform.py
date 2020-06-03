@@ -312,7 +312,8 @@ class TransformationConfig:
                 + f"include fields are: {retVal}"
             )
         else:
-            LOGGER.info(f"no ignore values found for type: {datatype}")
+            #LOGGER.info(f"no ignore values found for type: {datatype}")
+            pass
         return retVal
 
     def getFieldsToIncludeOnAdd(self, datatype):
@@ -393,6 +394,93 @@ class TransformationConfig:
             retVal = self.transConf[datatype][stringifiedKey]
         return retVal
 
+    def getCustomTranformations(self, datatype):
+        """Extracts a the information about the custom transformers for the
+        specified datatype.
+
+        return data will be a dict with the following properties:
+            UpdateType: either UPDATE or ADD, identifies when the method
+                        should be applied, if it should be applied for both
+                        UPDATE and ADD create two custom transformer records
+            CustomMethodName: The name of the method in the CustomTransformers.py
+                        module.  The actual method should be placed in a class
+                        with the same name as the datatype.  (organizations,
+                        packages, etc)
+            WhenToApply: The data read from the API gets transformed in two
+                        different places.  Either for COMPARE or for UPDATE.
+
+                        COMPARE means that the custom transformer is applied
+                        to the source data before it is compared with the
+                        destination data.
+
+                        UPDATE means that the custom transformer is applied to
+                        the source data before it is sent to the api for actual
+                        update.
+
+        :param datatype: The datatype who's custom transformers should be
+            retrieved (add only operations), needs to be member of
+            constants.VALID_TRANSFORM_TYPES
+        :type datatype: str
+        :raises InvalidTransformationConfiguration: Raised if the validation of the
+            contents of the transformation config file fails.
+        :return: a list of dictionaries with the custom transformations that
+            are described in the transformation configuration file for the
+            specified datatype.
+        :rtype: list of dicts
+        """
+        retVal = None
+        customTransParam = constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS
+        if customTransParam in self.transConf[datatype]:
+            retVal = []
+            LOGGER.debug("found custom transformation entry in transconf file")
+            customTransList = self.transConf[datatype][customTransParam]
+            LOGGER.debug(f"customTransList: {customTransList}")
+            for customTran in customTransList:
+                LOGGER.debug(f"customTran: {customTran}")
+
+                # make sure there is an entry for update type
+                if constants.CUSTOM_UPDATE_TYPE not in customTran:
+                    msg = (
+                        f"The custom transformer for the data type {datatype} "
+                        f"does not include an entry for {constants.CUSTOM_UPDATE_TYPE}"
+                    )
+                    raise InvalidTransformationConfiguration(msg)
+
+                # ensure update type contains a valid value
+                validTypesStrList = list(constants.UPDATE_TYPES.__members__)
+                updateType = customTran[constants.CUSTOM_UPDATE_TYPE]
+
+                if updateType not in validTypesStrList:
+                    msg = (
+                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
+                        "type found in the transformation config file defines an " +
+                        f"update type that is unknown: ({updateType}) valid types " +
+                        f"are: {validTypesStrList}"
+                    )
+                    LOGGER.error(msg)
+
+                # validate that the whentoApply exists
+                # if constants.CUSTOM_UPDATE_WHEN2APPLY not in customTran:
+                #     msg = (
+                #         f'The custom transformer for the data type {datatype} '
+                #         f'does not include the property: {constants.CUSTOM_UPDATE_WHEN2APPLY}. '
+                #     )
+                #     LOGGER.error(msg)
+                #     raise InvalidTransformationConfiguration(msg)
+
+                # # validate that the whentoApply contains a valid value
+                # validTypesStrList = list(constants.WHEN2APPLY_TYPES.__members__)
+                # when2Apply = customTran[constants.CUSTOM_UPDATE_WHEN2APPLY]
+                # if when2Apply not in validTypesStrList:
+                #     msg = (
+                #         "The custom transformation configuration for the datatype "
+                #         f'{datatype} contains the value: {when2Apply} which is not '
+                #         f'a valid value.  Valid values include: {validTypesStrList}'
+                #     )
+                #     raise InvalidTransformationConfiguration(msg)
+                retVal.append(customTran)
+        return retVal
+
     def getCustomUpdateTransformations(self, datatype):
         """ Gets a list of the method names that should be run on the
         data that is prepared for an ADD operation.
@@ -402,64 +490,25 @@ class TransformationConfig:
             constants.VALID_TRANSFORM_TYPES
         :type datatype: str
         """
-
         retVal = None
-        customTransParam = constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS
-        if customTransParam in self.transConf[datatype]:
-            LOGGER.debug("found custom transformation entry in transconf file")
-            customTransList = self.transConf[datatype][customTransParam]
-            LOGGER.debug(f"customTransList: {customTransList}")
-            for customTran in customTransList:
-                LOGGER.debug(f"customTran: {customTran}")
-                # now iterate through the list and retrieve only the
-                # update of type
-                validTypesStrList = list(constants.UPDATE_TYPES.__members__)
-                updateType = customTran[constants.CUSTOM_UPDATE_TYPE]
-
-                if updateType not in validTypesStrList:
-                    msg = (
-                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
-                        "type found in the transformation config file defines an " +
-                        f"update type that is unknown: ({updateType}) valid types " +
-                        f"are: {validTypesStrList}"
-                    )
-                    LOGGER.error(msg)
-                elif updateType.upper() == constants.UPDATE_TYPES.UPDATE.name:
-                    if retVal is None:
-                        retVal = []
-                    retVal.append(customTran[constants.CUSTOM_UPDATE_METHOD_NAME])
+        allCustomTransformations = self.getCustomTranformations(datatype)
+        for customTransformation in allCustomTransformations:
+            if customTransformation[constants.CUSTOM_UPDATE_TYPE] == constants.UPDATE_TYPES.UPDATE.name:
+                if retVal is None:
+                    retVal = []
+                retVal.append(customTransformation)
         return retVal
 
     def getCustomAddTransformations(self, datatype):
-        """ Gets a list of the method names that should be run on the
-        data that is prepared for an ADD operation.
-
-        :param datatype: The datatype who's custom transformers should be
-            retrieved (add only operations), needs to be member of
-            constants.VALID_TRANSFORM_TYPES
-        :type datatype: str
+        """
         """
         retVal = None
-        customTransList = constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS
-        for customTran in customTransList:
-            if customTran in self.transConf[datatype]:
-                # now iterate through the list and retrieve only the
-                # update of type
-                validTypesStrList = list(constants.UPDATE_TYPES.__members__)
-                updateType = customTran[constants.CUSTOM_UPDATE_TYPE]
-
-                if updateType not in validTypesStrList:
-                    msg = (
-                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
-                        "type found in the transformation config file defines an " +
-                        f"update type that is unknown: ({updateType}) valid types " +
-                        f"are: {validTypesStrList}"
-                    )
-                    LOGGER.error(msg)
-                elif updateType.upper() == constants.UPDATE_TYPES.ADD.name:
-                    if retVal is None:
-                        retVal = []
-                    retVal.append(customTran[constants.CUSTOM_UPDATE_METHOD_NAME])
+        allCustomTransformations = self.getCustomTranformations(datatype)
+        for customTransformation in allCustomTransformations:
+            if customTransformation[constants.CUSTOM_UPDATE_TYPE] == constants.UPDATE_TYPES.ADD.name:
+                if retVal is None:
+                    retVal = []
+                retVal.append(customTransformation)
         return retVal
 
 class InvalidTransformationConfiguration(AttributeError):
@@ -482,3 +531,22 @@ class InValidTransformationTypeError(AttributeError):
 class InValidTransformationData(AttributeError):
     def __init__(self, message):
         self.message = message
+
+
+# if __name__ == '__main__':
+#     LOGGER = logging.getLogger()
+#     LOGGER.setLevel(logging.DEBUG)
+#     hndlr = logging.StreamHandler()
+#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s')
+#     hndlr.setFormatter(formatter)
+#     LOGGER.addHandler(hndlr)
+#     LOGGER.debug("test")
+
+#     confFile = os.path.join('config', os.environ['CKAN_TRANSFORMATION_CONFIG'])
+#     transConff = TransformationConfig(confFile)
+#     allTrans = transConff.getCustomTranformations('packages')
+#     LOGGER.debug(f"allTrans: {allTrans}")
+#     adds = transConff.getCustomAddTransformations('packages')
+#     LOGGER.debug(f"adds: {adds}")
+#     updates = transConff.getCustomUpdateTransformations('packages')
+#     LOGGER.debug(f"updates: {updates}")

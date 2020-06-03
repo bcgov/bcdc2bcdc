@@ -52,6 +52,7 @@ CUSTOM_UPDATE_METHOD_NAME = 'CustomMethodName'
 class UPDATE_TYPES(enum.Enum):
     ADD = 1
     UPDATE = 2
+    COMPARE = 3
 
 # other misc property references
 # property's of field_mapping type

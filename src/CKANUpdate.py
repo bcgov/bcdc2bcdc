@@ -14,6 +14,7 @@ import json
 
 import constants
 import CKAN
+import CKANData
 import CKANTransform
 import os
 
@@ -63,13 +64,14 @@ class UpdateMixin:
         # this should have been calculated earlier?
         dels = self.removeIgnored(dels)
         updts = self.removeIgnored(updts)
+        adds = self.removeIgnored(adds)
 
         self.doAdds(adds)
         self.doDeletes(dels)
         self.doUpdates(updts)
         LOGGER.info("UPDATE COMPLETE")
 
-    def removeIgnored(self, inputData):
+    def removeIgnored(self, inputRecordCollection):
         """Receives an input data structure, either list or dict.  If list its the
         list of unique identifiers that should be excluded from any update.  If
         inputData is a dict then the keys that for the dict are the unique
@@ -88,27 +90,41 @@ class UpdateMixin:
             that intersect with the ignore list removed.
         :rtype: dict / list
         """
-        if isinstance(inputData, list):
-            filteredData = []
-            for inputVal in inputData:
-                if inputVal not in self.ignoreList:
-                    filteredData.append(inputVal)
-                else:
-                    LOGGER.debug(f"found filter value, {inputVal} removing from" +
-                        "update list")
-        elif isinstance(inputData, dict):
-            filteredData = {}
-            for inputVal in inputData:
-                #LOGGER.debug(f"input value: {inputVal}")
-                if inputVal not in self.ignoreList:
-                    filteredData[inputVal] = inputData[inputVal]
-                else:
-                    LOGGER.debug(f"found filter value, {inputVal} removing from" +
-                        "update list")
-        else:
-            msg = f"received type  {type(inputData)}.  Must be a list or dict"
-            raise TypeError(msg)
-        return filteredData
+        # receives a record collection, iterate over it
+        recordCollection = None
+        for ckanRecord in inputRecordCollection:
+            recordUniqueId = ckanRecord.getUniqueIdentifier()
+            if recordUniqueId not in self.ignoreList:
+                if recordCollection is None:
+                    recordCollection = CKANData.CKANRecordCollection(inputRecordCollection.dataType)
+                recordCollection.addRecord(ckanRecord)
+        retVal = inputRecordCollection
+        if recordCollection is not None:
+            retVal = recordCollection
+        return retVal
+
+
+        # if isinstance(inputData, list):
+        #     filteredData = []
+        #     for inputVal in inputData:
+        #         if inputVal not in self.ignoreList:
+        #             filteredData.append(inputVal)
+        #         else:
+        #             LOGGER.debug(f"found filter value, {inputVal} removing from" +
+        #                 "update list")
+        # elif isinstance(inputData, dict):
+        #     filteredData = {}
+        #     for inputVal in inputData:
+        #         #LOGGER.debug(f"input value: {inputVal}")
+        #         if inputVal not in self.ignoreList:
+        #             filteredData[inputVal] = inputData[inputVal]
+        #         else:
+        #             LOGGER.debug(f"found filter value, {inputVal} removing from" +
+        #                 "update list")
+        # else:
+        #     msg = f"received type  {type(inputData)}.  Must be a list or dict"
+        #     raise TypeError(msg)
+        # return filteredData
 
 class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     """implements the abstract base class CKANUpdate_abc to allow user data to
@@ -289,9 +305,13 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
         :type updtStruct: dict
         """
         LOGGER.debug(f"number of updates: {len(updtStruct)}")
-        for updateName in updtStruct:
+        for updateRecord in updtStruct:
+            updateName = updateRecord.getUniqueIdentifier()
             LOGGER.debug(f"updating the org: {updateName}")
-            self.CKANWrap.updateOrganization(updtStruct[updateName])
+            data4API = updateRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.UPDATE)
+
+            self.CKANWrap.updateOrganization(data4API)
 
 class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
     '''
@@ -366,4 +386,3 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
 
             LOGGER.info(f"updating the package: {updateName}")
             self.CKANWrap.updatePackage(updtStruct)
-

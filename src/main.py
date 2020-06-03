@@ -153,6 +153,7 @@ class RunUpdate:
             deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
             LOGGER.info(f"Delta obj for orgs: {deltaObj}")
             updater = CKANUpdate.CKANOrganizationUpdate(
+                dataCache=self.dataCache,
                 ckanWrapper=self.destCKANWrapper
             )
             updater.update(deltaObj)

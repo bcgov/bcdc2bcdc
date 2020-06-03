@@ -212,8 +212,8 @@ class packages:
 
         :param record: input CKAN package data structure
         :type record: dict, ckan package
-        :return: [d
-        :rtype: [type]
+        :return: CKAN package data structure, modified to resolve more_info issues
+        :rtype: dict, ckan package
         """
         if ("more_info") in record and record["more_info"] is None:
             record["more_info"] = "[]"
@@ -246,6 +246,36 @@ class packages:
             )
         return record
 
+    def noNullMoreInfo(self, record):
+        """checks to see if moreInfo is set to Null, if it is then it removes
+        the property from the object
+
+        :param record: input CKAN package data structure
+        :type record: dict, ckan package
+        :return: CKAN package data structure, modified to resolve more_info issues
+        :rtype: dict, ckan package
+        """
+        #if ("more_info") in record:
+        for recCnt in range(0, len(record)):
+            if ("more_info" in record[recCnt]) and record[recCnt]['more_info'] is None:
+                del record[recCnt]['more_info']
+        return record
+
+    def addStrangeFields(self, record):
+        """ These are fields that are "required" for update / add
+        operations, however the values that these fields get set to
+
+        :param record: CKAN package data structure, modified to resolve more_info issues
+        :type record: dict, ckan package
+        """
+        for recCnt in range(0, len(record)):
+            if ("tag_string" not in record[recCnt]) or record[recCnt]['tag_string'] is None:
+                record[recCnt]['tag_string'] = 'dummy tag string'
+            if ("iso_topic_string" not in record[recCnt]) or record[recCnt]['iso_topic_string'] is None:
+                record[recCnt]['iso_topic_string'] = 'TBD'
+
+
+        return record
 
 class InvalidCustomTransformation(Exception):
     def __init__(self, message):

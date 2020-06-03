@@ -573,8 +573,8 @@ class CKANWrapper:
             # del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
-        with open('updt_group.json', 'w') as grpfh:
-            json.dump(groupData, grpfh)
+        with open('updt_group.json', 'w') as groupFileHandle:
+            json.dump(groupData, groupFileHandle)
 
         retVal = self.remoteapi.action.group_update(**groupData)
         retValStr = json.dumps(retVal)
@@ -781,14 +781,17 @@ class CKANWrapper:
             retVal = self.remoteapi.action.package_create(**packageData)
             LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
         except (requests.exceptions.ConnectionError, ckanapi.errors.CKANAPIError):
-            if retries >= 5:
-                raise
-            LOGGER.warning(f'connection error raised on instance: {self.self.CKANUrl} retry {retries} of 5')
-            LOGGER.info(f'pause-ing for {retries * 2}')
-            time.sleep(retries * 2)
-            retries += 1
+            LOGGER.error("Error when adding package...", exc_info=True)
+            LOGGER.warning("skipping this package")
+            time.sleep(2)
+            # if retries >= 5:
+            #     raise
+            # LOGGER.warning(f'connection error raised on instance: {self.CKANUrl} retry {retries} of 5')
+            # LOGGER.info(f'pause-ing for {retries * 2}')
+            # time.sleep(retries * 2)
+            # retries += 1
 
-            self.addPackage(packageData, retries)
+            # self.addPackage(packageData, retries)
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg
@@ -844,7 +847,7 @@ class CKANAsyncWrapper:
         self.currentRetry = 0
         self.maxRetries = 5
 
-    def packageRequestTask(self, url):
+    def packageRequestTask(self, url, retries=0):
         """retrieves the data associated with the url.
 
         :param url: url to call using get to get an individual ckan package
@@ -853,11 +856,22 @@ class CKANAsyncWrapper:
         :rtype: dict
         """
         #LOGGER.debug(f"url: {url}")
-        resp = self.requestSession.get(url, headers=self.header)
-        if resp.status_code != 200:
-            LOGGER.debug(f"status code: {resp.status_code}, {url}")
-        packageData = resp.json()
-        return packageData['result']
+        maxRetries = 5
+        retVal = None
+        try:
+            resp = self.requestSession.get(url, headers=self.header)
+            if resp.status_code != 200:
+                LOGGER.debug(f"status code: {resp.status_code}, {url}")
+            packageData = resp.json()
+            retVal = packageData['result']
+        except requests.exceptions.ConnectionError:
+            if retries > maxRetries:
+                raise
+            retries += 1
+            LOGGER.warning(f"non 200 status, trying again... retries: {retries} of 5")
+            time.sleep(5)
+            retVal = self.packageRequestTask(url, retries)
+        return retVal
 
     def getPackages(self, packageNameList):
         """Retrieves the list of packages described in the arg: packageNameList

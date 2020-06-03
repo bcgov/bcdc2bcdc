@@ -141,7 +141,7 @@
         ],
         "custom_transformation_methods": [
             {
-                "UpdateType": "UPDATE",
+                "UpdateType": "COMPARE",
                 "CustomMethodName": "packageTransform"
             }
         ],

@@ -97,10 +97,10 @@
     "organizations": {
         "unique_id_field": "name",
         "user_populated_properties": {
-            "sector": true,
+            "sector": false,
             "approval_status": true,
             "image_display_url": false,
-            "url": true,
+            "url": false,
             "title": true,
             "name": true,
             "is_organization": true,
@@ -137,7 +137,8 @@
         "unique_id_field": "name",
         "ignore_list": [
             "__duplicate__motor-vehicle-hospitalizations-by-region",
-            "__duplicate__motor-vehicle-hospitalizations-by-road-user-type"
+            "__duplicate__motor-vehicle-hospitalizations-by-road-user-type",
+            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006"
         ],
         "field_mapping": [
             {
@@ -145,8 +146,28 @@
                 "auto_populated_field": "id"
             }
         ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "addStrangeFields"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "addStrangeFields"
+            }
+        ],
         "user_populated_properties": {
-            "license_title": true,
+            "iso_topic_string": true,
+            "retention_expiry_date": true,
+            "license_title": false,
             "maintainer": true,
             "publish_state": false,
             "relationships_as_object": true,
@@ -238,7 +259,9 @@
             "license_url": true,
             "metadata_visibility": true,
             "title": true,
-            "revision_id": false
+            "revision_id": false,
+            "tag_string": false,
+            "org": true
         },
         "update_fields_to_include": [
             "owner_org",
@@ -252,14 +275,10 @@
             "sub_org"
         ],
         "data_type_enforcement": {
-            "more_info": [],
             "resources": []
         },
         "required_default_values": {
-            "tag_string": "TEST",
             "org": "databc",
-            "owner_org": "databc",
-            "iso_topic_string": "TBD",
             "retention_expiry_date": "2300-01-01",
             "resources": [
                 {
