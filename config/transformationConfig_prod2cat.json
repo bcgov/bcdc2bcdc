@@ -148,6 +148,10 @@
         ],
         "custom_transformation_methods": [
             {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "orgAndSubOrgToNames"
+            },
+            {
                 "UpdateType": "ADD",
                 "CustomMethodName": "noNullMoreInfo"
             },
@@ -236,19 +240,7 @@
             "relationships_as_subject": true,
             "security_class": true,
             "dates": false,
-            "organization": {
-                "description": false,
-                "created": false,
-                "title": false,
-                "name": true,
-                "is_organization": false,
-                "state": false,
-                "image_url": false,
-                "revision_id": false,
-                "type": false,
-                "id": false,
-                "approval_status": false
-            },
+            "organization": false,
             "name": true,
             "isopen": true,
             "url": true,
@@ -264,9 +256,7 @@
             "org": true
         },
         "update_fields_to_include": [
-            "owner_org",
-            "tags",
-            "sub_org"
+            "tags"
         ],
         "add_fields_to_include": [
             "owner_org",

@@ -24,6 +24,7 @@ import pickle
 import CKANTransform
 import constants
 import CustomTransformers
+import DataCache
 import Diff
 
 LOGGER = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ class CKANRecord:
         run from being re-run
 
     """
-    def __init__(self, jsonData, dataType, origin):
+    def __init__(self, jsonData, dataType, origin, dataCache):
         self.jsonData = jsonData
         self.dataType = dataType
         self.origin = origin
@@ -92,6 +93,7 @@ class CKANRecord:
         self.destRecord = None
         # after a diff has been run for update objects this will be
         self.diff = None
+        self.dataCache = dataCache
 
     def getFieldValue(self, fieldName):
         return self.jsonData[fieldName]
@@ -419,7 +421,11 @@ class CKANRecord:
                 childObjType = idRemapObj[constants.IDFLD_RELATION_OBJ_TYPE]
                 childObjFieldName = idRemapObj[constants.IDFLD_RELATION_FLDNAME]
 
-                parentFieldValue = self.updateableJsonData[parentFieldName]
+                # get the original value from the package, that has not been
+                # modified in any way
+                parentFieldValue = self.jsonData[parentFieldName]
+
+
                 if not dataCache.isAutoValueInDest(childObjFieldName,
                         childObjType, parentFieldValue):
 
@@ -428,9 +434,8 @@ class CKANRecord:
                     )
                     # last step is to write the value back to the data struct and
                     # return it
-                    LOGGER.debug(
-                        f"remapped autopop value from: {parentFieldValue} to {destAutoGenId}"
-                    )
+                    #LOGGER.debug(f"remapped autopop value from: {parentFieldValue}"
+                    #             " to {destAutoGenId}")
                     self.updateableJsonData[parentFieldName] = destAutoGenId
             self.operations.append(methodName)
 
@@ -473,7 +478,6 @@ class CKANRecord:
                if applicationType = 'COMPARE' then the custom transformation is
                applied
 
-
         :param applicationType: [description]
         :type applicationType: [type]
         :param customTransformationConfig: [description], defaults to None
@@ -490,7 +494,6 @@ class CKANRecord:
                 # gets all custom transformations for all types
                 customTransformationConfig = TRANSCONF.getCustomTranformations(self.dataType)
 
-
             # if there is a custom tranformation for the current datatype
             if customTransformationConfig:
                 # create a method mapper, which will validate the custom tranformation names
@@ -500,7 +503,8 @@ class CKANRecord:
 
                 methMap = CustomTransformers.MethodMapping(
                     self.dataType,
-                    customTransformerMethodNames
+                    customTransformerMethodNames,
+                    applicationType
                 )
                 for customTransformer in customTransformationConfig:
                     # run the custom transformer that are configured for the current applicationType
@@ -509,8 +513,12 @@ class CKANRecord:
                         # CustomMethodName
                         customTransformerName = customTransformer[constants.CUSTOM_UPDATE_METHOD_NAME]
                         methodCall = methMap.getCustomMethodCall(customTransformerName)
-                        struct = methodCall([self.comparableJsonData])
-                        self.comparableJsonData = struct.pop()
+                        self.customTransformerParams = {
+                            'updateType': applicationType
+                        }
+                        methodCall(self)
+                        #struct = methodCall([self.comparableJsonData])
+                        #self.comparableJsonData = struct.pop()
                         if methodName not in self.operations:
                             self.operations.append(methodName)
 
@@ -538,32 +546,62 @@ class CKANRecord:
                 self.comparableJsonData = currentDataset
             self.operations.append(methodName)
 
-    def getDiff(self, inputRecord):
+    def getPackageDiff(self, inputRecord):
+        """
+        deepdiff does not seem to be working for list of dicts, resources for example
+        report the same resource as an ADD and a REMOVE.
+
+        https://gist.github.com/samuraisam/901117
+        https://pypi.org/project/deep/
+
+        :return: [description]
+        :rtype: [type]
+        """
         # retrieve a comparable structure, and remove embedded data types
         # that have been labelled as ignores
 
         # TODO: before do anything check to see if this record is an
         diff = None
+
         # don't even go any further if the records unique id, usually name is in
         # the ignore list
         if not self.isIgnore(inputRecord):
             thisComparable = self.getComparableStruct()
+            thisComparable = thisComparable.copy()
             inputComparable = inputRecord.getComparableStruct()
-            # thisComparable = self.getComparableStruct()
-            # dataCell = DataCell(thisComparable)
-            # dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
-            # thisComparable = self.runCustomTransformations(dataCellNoIgnores)
-            # thisComparable = dataCellNoIgnores.struct
+            inputComparable = inputComparable.copy()
 
-            # do the same thing for the input data structure
-            # inputComparable = inputRecord.getComparableStruct()
-            # dataCell = DataCell(inputComparable)
-            # dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
-            # inputComparable = self.runCustomTransformations(dataCellNoIgnores)
-            # inputComparable = dataCell.struct
+            diff = None
+            # remove resources and compare separately
+            if 'resources' in thisComparable and 'resources' in inputComparable:
+                resource1 = thisComparable['resources'].copy()
+                resource2 = inputComparable['resources'].copy()
+                del thisComparable['resources']
+                del inputComparable['resources']
 
-            diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
-            diff = diffIngoreEmptyTypes.getDiff()
+                # if the value for a specific property is 'None' convert it to None
+                for inputResource in [resource1, resource2]:
+                    for cnt in range(0, len(inputResource)):
+                        for key in inputResource[cnt]:
+                            if inputResource[cnt][key] == 'None':
+                                inputResource[cnt][key] = None
+
+                set_list1 = set(tuple(sorted(d.items())) for d in resource1)
+                set_list2 = set(tuple(sorted(d.items())) for d in resource2)
+
+                diff = set_list1.symmetric_difference(set_list2)
+                if diff:
+                    LOGGER.debug(f'resource diff: {diff}')
+
+                #resDiff = Diff.Diff(resource1, resource2)
+                #diff = resDiff.getDiff()
+                #LOGGER.debug(f'resource1: {resource1}')
+                #LOGGER.debug(f'resource2: {resource2}')
+
+            if not diff:
+                LOGGER.debug("resources are the same, checking rest of object")
+                diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
+                diff = diffIngoreEmptyTypes.getDiff()
             #diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
             if diff:
@@ -572,16 +610,35 @@ class CKANRecord:
                 formatted = pp.pformat(inputComparable) # noqa
                 formattedDiff = pp.pformat(diff) # noqa
                 LOGGER.debug(f"record name: {recordName}")
-                #LOGGER.debug(f"formattedDiff: {formattedDiff}")
-                # LOGGER.debug("inputComparable: %s", pp.pformat(inputComparable))
-                # LOGGER.debug('thisComparable: %s', pp.pformat(thisComparable))
-                # LOGGER.debug(f"diffs are: {diff}")
-                #'{   \'type_changes\':
-                # #  {   "root[\'sector\']":
-                #        {   \'new_type\': <class \'NoneType\'>,\n
-                #            \'new_value\': None,\n
-                #            \'old_type\': <class \'str\'>,\n
-                #            \'old_value\': \'Service\'}}}'
+                #LOGGER.debug(f"formatted diff:\n {formattedDiff}")
+        return diff
+
+    def getDiff(self, inputRecord):
+        # retrieve a comparable structure, and remove embedded data types
+        # that have been labelled as ignores
+
+        # TODO: before do anything check to see if this record is an
+        diff = None
+        if inputRecord.dataType == 'packages':
+            diff = self.getPackageDiff(inputRecord)
+        else:
+
+            # don't even go any further if the records unique id, usually name is in
+            # the ignore list
+            if not self.isIgnore(inputRecord):
+                thisComparable = self.getComparableStruct()
+                inputComparable = inputRecord.getComparableStruct()
+
+                diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
+                diff = diffIngoreEmptyTypes.getDiff()
+                #diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
+
+                if diff:
+                    pp = pprint.PrettyPrinter(indent=4)
+                    recordName = self.getUniqueIdentifier()
+                    formatted = pp.pformat(inputComparable) # noqa
+                    formattedDiff = pp.pformat(diff) # noqa
+                    LOGGER.debug(f"record name: {recordName}")
         return diff
 
     def __ne__(self, inputRecord):
@@ -696,27 +753,27 @@ class DataCell:
 
 
 class CKANUserRecord(CKANRecord):
-    def __init__(self, jsonData, origin):
+    def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_USERS
-        CKANRecord.__init__(self, jsonData, recordType, origin)
+        CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
 
 class CKANGroupRecord(CKANRecord):
-    def __init__(self, jsonData, origin):
+    def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_GROUPS
-        CKANRecord.__init__(self, jsonData, recordType, origin)
+        CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
 
 class CKANOrganizationRecord(CKANRecord):
-    def __init__(self, jsonData, origin):
+    def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_ORGS
-        CKANRecord.__init__(self, jsonData, recordType, origin)
+        CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
 
 class CKANPackageRecord(CKANRecord):
-    def __init__(self, jsonData, origin):
+    def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_PACKAGES
-        CKANRecord.__init__(self, jsonData, recordType, origin)
+        CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
 
 # -------------------- DATASET DELTA ------------------
@@ -1482,45 +1539,53 @@ class CKANDataSet(CKANRecordCollection):
     def calcUpdatesCollection(self, destDataSet):
 
         # DEBUG: REMOVE ONCE CoMPLETE
-        updtPcl = os.path.join(os.path.dirname(__file__), '..', 'temp', 'updates.pcl')
-        if os.path.exists(updtPcl):
-            pass
-            updateCollection = pickle.load( open( updtPcl, "rb" ) )
-        else:
-            self.populateDataSets(destDataSet)
+        #updtPcl = os.path.join(os.path.dirname(__file__), '..', 'temp', 'updates.pcl')
+        #if os.path.exists(updtPcl):
+        #    pass
+        #    updateCollection = pickle.load( open( updtPcl, "rb" ) )
+        #else:
+        self.populateDataSets(destDataSet)
 
-            ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
 
-            chkForUpdateIds = self.srcUniqueIdSet.intersection(self.destUniqueIdSet)
-            chkForUpdateIds = list(chkForUpdateIds)
-            chkForUpdateIds.sort()
-            LOGGER.info(f"evaluting {len(chkForUpdateIds)} overlapping ids for update")
+        chkForUpdateIds = self.srcUniqueIdSet.intersection(self.destUniqueIdSet)
+        chkForUpdateIds = list(chkForUpdateIds)
+        chkForUpdateIds.sort()
+        LOGGER.info(f"evaluting {len(chkForUpdateIds)} overlapping ids for update")
 
-            updateCollection = CKANRecordCollection(self.dataType)
+        updateCollection = CKANRecordCollection(self.dataType)
 
-            for chkForUpdateId in chkForUpdateIds:
-                # now make sure the id is not in the ignore list
-                if chkForUpdateIds not in ignoreList:
-                    srcRecordForUpdate = self.getRecordByUniqueId(chkForUpdateId)
-                    destRecordForUpdate = destDataSet.getRecordByUniqueId(chkForUpdateId)
+        for chkForUpdateId in chkForUpdateIds:
+            # now make sure the id is not in the ignore list
+            if chkForUpdateIds not in ignoreList:
+                srcRecordForUpdate = self.getRecordByUniqueId(chkForUpdateId)
+                destRecordForUpdate = destDataSet.getRecordByUniqueId(chkForUpdateId)
 
-                    # when an update operation is required it uses both the
-                    # source and the destination objects to form the data
-                    # that is sent to the api.  The lines below add a reference
-                    # to the dest record in the source record so that it is available
-                    # later during the update.
-                    srcRecordForUpdate.setDestRecord(destRecordForUpdate)
+                # when an update operation is required it uses both the
+                # source and the destination objects to form the data
+                # that is sent to the api.  The lines below add a reference
+                # to the dest record in the source record so that it is available
+                # later during the update.
+                srcRecordForUpdate.setDestRecord(destRecordForUpdate)
 
-                    # if they are different then identify as an update.  The __eq__
-                    # method for dataset is getting called here.  __eq__ will consider
-                    # ignore lists.  If record is in ignore list it will return as
-                    # equal.
-                    if srcRecordForUpdate != destRecordForUpdate:
-                        # updateDataList.append(srcRecordForUpdate)
-                        LOGGER.debug(f"adding {chkForUpdateId} to update list")
-                        updateCollection.addRecord(srcRecordForUpdate)
+                # if they are different then identify as an update.  The __eq__
+                # method for dataset is getting called here.  __eq__ will consider
+                # ignore lists.  If record is in ignore list it will return as
+                # equal.
+                if srcRecordForUpdate != destRecordForUpdate:
+                    # updateDataList.append(srcRecordForUpdate)
+                    LOGGER.debug(f"adding {chkForUpdateId} to update list")
+                    # DEBUG: putting these lines in here so that we can test the
+                    #        updates data, as for some reason updates are not
+                    #        making the changes that they should or CKAN
+                    #        is not accepting them even though it says they are
+                    updateStruct = srcRecordForUpdate.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+                    updtJson = json.dumps(updateStruct)
+                    #LOGGER.debug(f"update struct: {updtJson}")
+
+                    updateCollection.addRecord(srcRecordForUpdate)
             # DEBUG: REMOVE ONCE CoMPLETE
-            pickle.dump( updateCollection, open(updtPcl, "wb"))
+            #pickle.dump( updateCollection, open(updtPcl, "wb"))
         return updateCollection
 
     def parseDataIntoRecords(self, jsonData):
@@ -1532,9 +1597,9 @@ class CKANDataSet(CKANRecordCollection):
             includeType = False
         for recordJson in jsonData:
             if includeType:
-                record = constructor(recordJson, self.dataType, self.origin)
+                record = constructor(recordJson, self.dataType, self.origin, self.dataCache)
             else:
-                record = constructor(recordJson, self.origin)
+                record = constructor(recordJson, self.origin, self.dataCache)
             self.addRecord(record)
 
     def getDelta(self, destDataSet):
