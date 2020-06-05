@@ -210,14 +210,14 @@ if __name__ == "__main__":
     # LOG config file
     logConfigFile = os.path.join(
         appDir,
-        "..",
+        "..", "..",
         constants.TRANSFORM_CONFIG_DIR,
         constants.LOGGING_CONFIG_FILE_NAME,
     )
     logConfigFile = os.path.abspath(logConfigFile)
 
     # output log file for roller if implemented... not implemented atm
-    logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
+    logOutputsDir = os.path.join(appDir, "..", "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
     if not os.path.exists(logOutputsDir):
         os.mkdir(logOutputsDir)

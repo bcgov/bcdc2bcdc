@@ -3,7 +3,17 @@ Functionality that can:
     * identify two CKANData.CKANDataSet ( or subclasses of these ) and identify
       differences between the two
     * Using the CKAN module, update one or the other.
+
+
+
+
+
 """
+# TODO: Looking at each of the different update classes below... All could
+#       be deleted.  updates all are identical, the only difference is the
+#       CKANWrapper method that gets called.  Could create a method map
+#       like {del: delMethod, updt: updtemethod... }, this could even be
+#       inferred from each record.dataType
 
 # pylint: disable=logging-format-interpolation, logging-not-lazy
 
@@ -144,23 +154,26 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
 
-    def doAdds(self, addStruct):
+    def doAdds(self, addCollection):
         """List of user data to be added to a ckan instance,
 
-        :param addStruct: list of user struct
-        :type addStruct: list
+        :param addCollection: a CKANRecordCollection object which contains the
+            CKAN records that need to be added
+        :type addStruct: CKANData.CKANRecordCollection
         """
-        LOGGER.info(f"{len(addStruct)} to be added to destination instance")
-        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
-        for addData in sortedList:
-            LOGGER.debug(f"adding dataset: {addData['name']}")
-            LOGGER.debug(f"dataset data: {addData}")
+        LOGGER.info(f"{len(addCollection)} to be added to destination instance")
+        uniqueIds = addCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for addName in uniqueIds:
+            LOGGER.debug(f"adding user: {addName}")
+            addRecord = addCollection.getRecordByUniqueId(addName)
+            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+            # TODO:For consistency sake should move the password insertion to
+            #      a custom transformer for ADD / UPDATE operations
+            addStruct['password'] = os.environ[constants.CKAN_ONETIME_PASSWORD]
+            self.CKANWrap.addUser(addStruct)
 
-            # user add specific.. generate and populate a password field
-            addData['password'] = os.environ[constants.CKAN_ONETIME_PASSWORD]
-            self.CKANWrap.addUser(addData)
-
-    def doDeletes(self, delStruct):
+    def doDeletes(self, delCollection):
         """list of usernames or ids to delete
 
         :param delStruct: list of user names or ids to delete
@@ -168,35 +181,42 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         """
         #TODO: Thinking again deletes are likely something we do not want to do
         #      for some accounts.  Example demo accounts set up for testing.
-        LOGGER.info(f"{len(delStruct)} to be deleted to destination instance")
-        delStruct.sort()
+        LOGGER.info(f"{len(delCollection)} to be deleted to destination instance")
+        uniqueIds = delCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
 
-        for deleteUser in delStruct:
+        for deleteUser in uniqueIds:
             LOGGER.info(f"removing the user: {deleteUser} from the destination")
             self.CKANWrap.deleteUser(deleteUser)
 
-    def doUpdates(self, updtStruct):
+    def doUpdates(self, updtCollection):
         """Gets a list of user data that is used to updated a CKAN instance
         with.
 
         :param updtStruct: list of user data to be used to update users
         :type updtStruct: list
         """
-        updateNames = list(updtStruct.keys())
-        updateNames.sort()
-        for updt in updateNames:
-            LOGGER.info(f"updating the user : {updt}")
+        LOGGER.debug(f"number of updates: {len(updtCollection)}")
+        uniqueIds = updtCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+
+        for updateName in uniqueIds:
+            LOGGER.info(f"updating the user : {updateName}")
+            updtRecord = updtCollection.getRecordByUniqueId(updateName)
+            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+
+
             # updtStruct is comming from a delta obj
             # delta obj is used to keep track of:
             #   - adds
             #   - deletes
             #   - updates
-            if updtStruct[updt]['email'] is not None:
 
-                self.CKANWrap.updateUser(updtStruct[updt])
+            # TODO: This logic should be moved to a custom transformer
+            if updtStruct['email'] is not None:
+                self.CKANWrap.updateUser(updtStruct)
             else:
-                LOGGER.info(f"skipping this record as email is null: {updtStruct}")
-
+                LOGGER.info(f"skipping this record as email is null: {updateName}")
         LOGGER.debug("updates complete")
 
 class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
@@ -212,47 +232,56 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
 
-    def doAdds(self, addStruct):
+    def doAdds(self, addCollection):
         """gets a list of group structs that describe groups that are to be added
         to a CKAN instance
 
-        :param addStruct: list of group data structs
-        :type addStruct: list
+        :param addCollection: a CKANRecordCollection object which contains the
+            CKAN records that need to be added
+        :type addCollection: CKANData.CKANRecordCollection
         """
-        LOGGER.info(f"{len(addStruct)} to be added to destination instance")
-        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
-        for addData in sortedList:
-            LOGGER.debug(f"adding group: {addData['name']}")
-            # todo, this is working but am commenting out
-            self.CKANWrap.addGroup(addData)
+        LOGGER.info(f"{len(addCollection)} groups to be added to destination instance")
+        uniqueIds = addCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for addName in uniqueIds:
+            LOGGER.debug(f"adding group: {addName}")
 
-    def doDeletes(self, delStruct):
-        """Gets a list of group names or ids that are to be deleted
+            addRecord = addCollection.getRecordByUniqueId(addName)
+            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+            self.CKANWrap.addGroup(addStruct)
 
-        :param delStruct: list of group names or ids that are to be deleted
-        :type delStruct: list
+    def doDeletes(self, delCollection):
+        """performs deletes of all the groups contained in the delCollection
+
+        :param delCollection: a CKANRecordCollection object which contains the CKAN
+            records that need to be deleted
+        :type delCollection: CKANData.CKANRecordCollection
         """
-        LOGGER.error("still need to implement this {delStruct}")
-        LOGGER.info(f"number of groups: {len(delStruct)} to be deleted to " + \
+        LOGGER.info(f"number of groups: {len(delCollection)} to be deleted to " + \
                     "destination instance")
-        delStruct.sort()
+        uniqueIds = delCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for deleteGroupName in uniqueIds:
+            LOGGER.info(f"removing the group: {deleteGroupName} from the destination")
+            self.CKANWrap.deleteGroup(deleteGroupName)
 
-        for deleteGroup in delStruct:
-            LOGGER.info(f"removing the group: {deleteGroup} from the destination")
-            self.CKANWrap.deleteGroup(deleteGroup)
-
-    def doUpdates(self, updtStruct):
+    def doUpdates(self, updtCollection):
         """Gets a list of group data that needs to be updated
 
         :param updates: list of dictionaries with the data to be used to update a group
         :type updates: list of dict
         """
         #LOGGER.error(f"still need to implement this {updtStruct}")
-        updateNames = list(updtStruct.keys())
-        updateNames.sort()
-        for updt in updateNames:
-            LOGGER.info(f"updating the group : {updtStruct[updt]}")
-            self.CKANWrap.updateGroup(updtStruct[updt])
+        LOGGER.debug(f"number of group updates: {len(updtCollection)}")
+        uniqueIds = updtCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for updateName in uniqueIds:
+            LOGGER.info(f"updating the group : {updateName}")
+            updtRecord = updtCollection.getRecordByUniqueId(updateName)
+            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache,
+                constants.UPDATE_TYPES.UPDATE)
+            self.CKANWrap.updateGroup(updtStruct)
         LOGGER.debug("updates complete")
 
 class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
@@ -270,48 +299,55 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
         self.CKANTransformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
 
-    def doAdds(self, addStruct):
+    def doAdds(self, addCollection):
         """adds the orgs described in the param addStruct
 
-        :param addStruct: dictionary where the key is the name of the org to be added
-            and the value is the struct that can be passed directly to the ckan api
-            to add this org
-        :type addStruct: dict
+        :param addCollection: a CKANRecordCollection object which contains the
+            CKAN records that need to be added
+        :type addCollection: CKANData.CKANRecordCollection
         """
         #LOGGER.debug(f"adds: {addStruct}")
-        LOGGER.info(f"{len(addStruct)}: number of orgs to be added to destination instance")
-        sortedList = sorted(addStruct, key=operator.itemgetter('name'))
-        for addData in sortedList:
-            LOGGER.debug(f"adding organization: {addData['name']}")
-            # todo, this is working but am commenting out
-            self.CKANWrap.addOrganization(addData)
+        LOGGER.info(f"{len(addCollection)}: number of orgs to be added to destination instance")
+        uniqueIds = addCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for addName in uniqueIds:
+            LOGGER.debug(f"adding organization: {addName}")
+            addRecord = addCollection.getRecordByUniqueId(addName)
+            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+                       # todo, this is working but am commenting out
+            self.CKANWrap.addOrganization(addStruct)
 
-    def doDeletes(self, delStruct):
-        """does deletes of all the orgs described in the delStruct
+    def doDeletes(self, delCollection):
+        """performs deletes of all the orgs contained in the delCollection
 
-        :param delStruct: a list of org names that should be deleted
-        :type delStruct: str
+        :param delStruct: a CKANRecordCollection object which contains the CKAN
+            records that need to be deleted
+        :type delStruct: CKANData.CKANRecordCollection
         """
-        LOGGER.debug(f"number of deletes: {len(delStruct)}")
-        for org2Del in delStruct:
+        LOGGER.debug(f"number of deletes: {len(delCollection)}")
+        uniqueIds = delCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for org2Del in uniqueIds:
             LOGGER.debug(f"    deleting the org: {org2Del}")
             self.CKANWrap.deleteOrganization(org2Del)
 
-    def doUpdates(self, updtStruct):
-        """Does the org updates
+    def doUpdates(self, updtCollection):
+        """Performs the org updates
 
-        :param updtStruct: dictionary where the key is the name of the org and the
-            value is a dict that can be passed to the CKAN api to update the org
-        :type updtStruct: dict
+        :param updtStruct: a CKANRecordCollection object which contains the CKAN
+            records that need to be deleted
+        :type updtStruct: CKANData.CKANRecordCollection
         """
-        LOGGER.debug(f"number of updates: {len(updtStruct)}")
-        for updateRecord in updtStruct:
-            updateName = updateRecord.getUniqueIdentifier()
-            LOGGER.debug(f"updating the org: {updateName}")
-            data4API = updateRecord.getComparableStructUsedForAddUpdate(
-                self.dataCache, constants.UPDATE_TYPES.UPDATE)
+        LOGGER.debug(f"number of updates: {len(updtCollection)}")
+        uniqueIds = updtCollection.getUniqueIdentifiers()
+        uniqueIds.sort()
+        for updateName in uniqueIds:
+            updtRecord = updtCollection.getRecordByUniqueId(updateName)
+            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
 
-            self.CKANWrap.updateOrganization(data4API)
+            LOGGER.debug(f"updating the org: {updateName}")
+
+            self.CKANWrap.updateOrganization(updtStruct)
 
 class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
     '''

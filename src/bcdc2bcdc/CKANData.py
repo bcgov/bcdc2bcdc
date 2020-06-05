@@ -285,18 +285,7 @@ class CKANRecord:
         return dataCell
 
     def __eq__(self, inputRecord):
-        # LOGGER.debug("_________ EQ CALLED")
         diff = self.getDiff(inputRecord)
-
-        # now need to evaluate the diff object to remove any
-        # differences where type has changed but data continues to be
-        # empty / false
-        # example:
-        #   None vs ""
-        #   None vs []
-        # diff.type_changes = list of dicts
-        #   each dict: 'new_type': None, 'old_type': None
-        #     and vise versa
 
         retVal = True
         if diff:
@@ -406,7 +395,7 @@ class CKANRecord:
         return self.updateableJsonData
 
     def applyIdRemapping(self, dataCache):
-        LOGGER.debug("REMAP FIELDS")
+        #LOGGER.debug("REMAP FIELDS")
 
         methodName = sys._getframe().f_code.co_name
         if methodName not in self.operations:
@@ -483,7 +472,15 @@ class CKANRecord:
         :param customTransformationConfig: [description], defaults to None
         :type customTransformationConfig: [type], optional
         """
+        # custom transformations can be called for different types of updates.
+        # custom transformers are configured so that when they are called for
+        # COMPARE they know to modify the structure that is used for comparison
+        # and when called for ADD / UPDATE they modify a different structure.
+        # Adding the name of the operation type to the method name to keep track
+        # of which custom transformations have been run.
+        #
         methodName = sys._getframe().f_code.co_name
+        methodName = f'{methodName}.{applicationType.name}'
         # has this already been run on this record?
         if methodName not in self.operations:
             # if no customTransformationConfig provided then retrieve one from the
@@ -509,7 +506,7 @@ class CKANRecord:
                 for customTransformer in customTransformationConfig:
                     # run the custom transformer that are configured for the current applicationType
                     if customTransformer[constants.CUSTOM_UPDATE_TYPE] == applicationType.name:
-                        LOGGER.info(f"loading and running the custom transformer : {customTransformer}")
+                        #LOGGER.info(f"loading and running the custom transformer : {customTransformer}")
                         # CustomMethodName
                         customTransformerName = customTransformer[constants.CUSTOM_UPDATE_METHOD_NAME]
                         methodCall = methMap.getCustomMethodCall(customTransformerName)
@@ -590,8 +587,8 @@ class CKANRecord:
                 set_list2 = set(tuple(sorted(d.items())) for d in resource2)
 
                 diff = set_list1.symmetric_difference(set_list2)
-                if diff:
-                    LOGGER.debug(f'resource diff: {diff}')
+                #if diff:
+                #    LOGGER.debug(f'resource diff: {diff}')
 
                 #resDiff = Diff.Diff(resource1, resource2)
                 #diff = resDiff.getDiff()
@@ -599,7 +596,7 @@ class CKANRecord:
                 #LOGGER.debug(f'resource2: {resource2}')
 
             if not diff:
-                LOGGER.debug("resources are the same, checking rest of object")
+                #LOGGER.debug("resources are the same, checking rest of object")
                 diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
                 diff = diffIngoreEmptyTypes.getDiff()
             #diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
@@ -657,28 +654,6 @@ class CKANRecord:
         """
         return json.dumps(self.jsonData)
 
-    # REPLACED by applycustomTransformation
-    # def runCustomTransformations(self, dataCell):
-    #     """Checks to see if a custom transformation has been defined for the
-    #     data type.  If it has then retrieves a reference to the method and runs
-    #     it, returning the resulting data transformation.
-
-    #     :param dataCell: a datacell object to run
-    #     :type dataCell: DataCell
-    #     """
-    #     updtTransConfigurations = TRANSCONF.getCustomUpdateTransformations(self.dataType)
-    #     #LOGGER.debug(f"updtTransConfigurations: {updtTransConfigurations}")
-    #     if updtTransConfigurations:
-    #         methodMapper = CustomTransformers.MethodMapping(self.dataType, updtTransConfigurations)
-    #         for customMethodName in updtTransConfigurations:
-    #             #methodName = customTransformerConfig[constants.CUSTOM_UPDATE_METHOD_NAME]
-    #             methodReference = methodMapper.getCustomMethodCall(customMethodName)
-    #             # this is a bit cludgy.. the custom methods are designed to work with collections
-    #             # so just putting the individual record into a collection so that the
-    #             # method will work.
-    #             dataCell.struct = methodReference([dataCell.struct])[0]
-    #             #LOGGER.debug(f"called custom method: {customMethodName}")
-    #     return dataCell
 
 class DataCell:
     """an object that can be used to wrap a data value and other meta data
@@ -1366,8 +1341,6 @@ class CKANDataSetDeltas:
     #             filteredData.append(compStruct)
     #     return filteredData
 # -------------------- DATASETS --------------------
-
-
 
 
 class CKANRecordCollection:

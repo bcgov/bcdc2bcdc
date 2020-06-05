@@ -42,7 +42,7 @@ def getTransformationConfig(transformConfigFile=None):
     if transformConfigFile is None:
         transformConfigFile = os.path.join(
             os.path.dirname(__file__),
-            "..",
+            "..", '..',
             constants.TRANSFORM_CONFIG_DIR,
             constants.TRANSFORM_CONFIG_FILE_NAME,
         )

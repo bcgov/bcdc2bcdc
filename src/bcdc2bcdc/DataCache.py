@@ -307,7 +307,7 @@ class DataCache:
         #if autoValue in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
         if autoValue in self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
             retVal = True
-            LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the SRC object ")
+            #LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the SRC object ")
         return retVal
 
     def getUserDefinedValue(self, autoFieldName, autoValue, userDefinedFieldName,

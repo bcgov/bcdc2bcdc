@@ -16,7 +16,7 @@
             "name": "main.py (CAT)",
             "type": "python",
             "request": "launch",
-            "program": "src/main.py",
+            "program": "src/bcdc2bcdc/main.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env_cat"
         },
