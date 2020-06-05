@@ -80,6 +80,12 @@ class CKANWrapper:
         self.CKANUrl = url
         self.cacheFilePaths = CacheFiles.CKANCacheFiles()
 
+        # most of the requests use the ckanapi.RemoteCKAN howe ver there are some
+        # requests that require features of requests module.  For this reason
+        # a session object is created here to help with those requests.
+        self.rsession = requests.Session()
+        self.rsession.headers.update(self.CKANHeader)
+
         if self.CKANUrl[len(self.CKANUrl) - 1] != "/":
             self.CKANUrl = self.CKANUrl + "/"
 
@@ -376,7 +382,7 @@ class CKANWrapper:
         LOGGER.debug(f"creating a new user with the data: {userData}")
         try:
             LOGGER.warning("actual user add api call commented out")
-            #retVal = self.remoteapi.action.user_create(**userData)
+            retVal = self.remoteapi.action.user_create(**userData)
         except ckanapi.errors.ValidationError:
             # usually because the user already exists but is in an deleted
             # state.  To resolve retrieve the user, update the user defs
@@ -389,7 +395,7 @@ class CKANWrapper:
             # LOGGER.debug(f"retVal: {retVal}")
             userData["id"] = userData["name"]
             LOGGER.warning("actual user add api call commented out")
-            #retVal = self.remoteapi.action.user_update(**userData)
+            retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
@@ -408,7 +414,7 @@ class CKANWrapper:
             del userData["name"]
         LOGGER.debug(f"trying to update a user using the data: {userData}")
         LOGGER.warning("actual api commented out")
-        #retVal = self.remoteapi.action.user_update(**userData)
+        retVal = self.remoteapi.action.user_update(**userData)
         LOGGER.debug(f"User Updated: {retVal}")
 
     def getUser(self, userId):
@@ -481,7 +487,7 @@ class CKANWrapper:
         userParams = {"id": userId} # noqa
         LOGGER.warning("actual user delete api call commented out")
         # TODO: uncomment when craig available to verify that ignore configs are working
-        #retVal = self.remoteapi.action.user_delete(**userParams)
+        retVal = self.remoteapi.action.user_delete(**userParams)
         LOGGER.debug(f"User Deleted: {retVal}")
 
     def getGroups(self, includeData=False):
@@ -573,85 +579,46 @@ class CKANWrapper:
             # del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
-        with open('updt_group.json', 'w') as grpfh:
-            json.dump(groupData, grpfh)
+        with open('updt_group.json', 'w') as groupFileHandle:
+            json.dump(groupData, groupFileHandle)
 
         retVal = self.remoteapi.action.group_update(**groupData)
         retValStr = json.dumps(retVal)
         LOGGER.debug(f"Group Updated: {retValStr[0:100]} ...")
 
     def updatePackage(self, packageData, retry=False):
+        """[summary]
 
+        Changed this method to use requests because it was freezing up during
+        runs.  Origional code can be seen here:
+
+        https://github.com/bcgov/bcdc2bcdc/blob/31f9bcd09b619268c8de8b7b37455cb666b485c7/src/CKAN.py#L583
+
+        This link includes logic that was put in place for the cati update, which
+        detects problems with the more_info field and corrects them.  This is now
+        missing from this impleemntation.  If required again link above
+
+        :param packageData: [description]
+        :type packageData: [type]
+        :param retry: [description], defaults to False
+        :type retry: bool, optional
+        """
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
         LOGGER.debug(f"trying to update a package using the data: {packageJsonStr[0:100]} ...")
-        try:
-            retVal = self.remoteapi.action.package_update(**packageData)
-            retValStr = json.dumps(retVal)
-            LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
-        except ckanapi.errors.CKANAPIError as e:
-            LOGGER.debug("CAUGHT CKANAPIError EXCEPTION")
-            if retry:
-                raise
-            errMatchPattern = (
-                r'^\s*Only\s+lists\s+of\s+dicts\s+can\s+be\s+placed\s+agains'
-                r't\s+subschema\s+\(\'more_info\'\,\)\,\s+not\s+\<type\s+\'u'
-                r'nicode\'\>\s*$'
-            )
-            # catching stringified issue
-            args = e.args
-            #print(f'args: {args}, {type(args)}, {len(args)}')
-            raiseErr = True
-            if len(args) > 0:
-                errMsgs = literal_eval(args[0])
-                ckanErrMsgs = json.loads(errMsgs[2])
-                ckanErrMsg = ckanErrMsgs['error']['message']
-                if re.match(errMatchPattern, ckanErrMsg):
-                    # caught the issue of more_info being expected as a non
-                    # stringified obj
-                    packageData['more_info'] = json.loads(packageData['more_info'])
-                    raiseErr = False
-                    self.updatePackage(packageData, retry=True)
-            if raiseErr:
-                raise
 
-        except ckanapi.errors.ValidationError as e: # noqa
-            LOGGER.debug("CAUGHT ValidationError EXCEPTION")
-            if retry:
-                raise
-            # Discovered that there is inconsistency in how ckan handles the
-            # more_info field.  Sometimes it wants it as a stringified object
-            # other times it wants it as a regular json object.
-            # Here we are trying to catch the exception, determine if it is
-            # associated with the more_info field, and if it is then stringify
-            # the contents of that field and send the request back to the api.
-            # if this is not a more_info related error, then just re-raise
-            # the exception
-            args = e.args
-            # example of what the e.args looks like if its a more_info related
-            # exception:
-            #
-            # ({'__type': 'Validation Error', '__junk': ["The input field [('more_info',
-            #   0, 'link'), ('more_info', 0, 'delete')] was not expected."]},)
-            if ((len(args) > 0) and "__junk" in e.args[0]) and len(e.args[0]['__junk'] > 0) and \
-                    re.match(r'^The\s+input\s+field\s+\[\(\'more_info\'.+was\s+not\s+expected\.$', e.args[0]['__junk'][0]):
-                msg = (
-                    'The update object contains a non stringified more_info '
-                    'field, and for some unknown reason it wants it as a '
-                    'stringified field for this update situation.... going '
-                    'to stringify the more_info property and resubmit the '
-                    'request'
-                )
-                LOGGER.warning(msg)
-                LOGGER.info("modifying the more_info field so it stringified")
-                packageData['more_info'] = json.dumps(packageData['more_info'])
-                LOGGER.debug(f"stringified version: {packageData['more_info']}")
-                LOGGER.debug("resubmit request")
-                self.updatePackage(packageData, retry=True)
-                LOGGER.info("SUCCESS")
-            else:
-                LOGGER.error("Failed after attempt to catch exception", exc_info=True)
-                raise
+        # send the data as a request.post
+        requestTimeOut = 120
+        packageUpdateEndPoint = "api/3/action/package_update"
+        packageUpdateCall = f"{self.CKANUrl}{packageUpdateEndPoint}"
+
+        #resp = requests.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
+        resp = self.rsession.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
+
+        responseStruct = resp.json()
+        retValStr = json.dumps(responseStruct)
+        LOGGER.info(f"package_update status_code: {resp.status_code}")
+        LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
 
     def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only
@@ -774,12 +741,24 @@ class CKANWrapper:
         retValJson = json.dumps(retVal)
         LOGGER.debug(f"Organization Updated: {retValJson[0:100]} ...")
 
-    def addPackage(self, packageData):
+    def addPackage(self, packageData, retries=0):
         self.checkUrl()
+        try:
+            LOGGER.debug("adding the package data")
+            retVal = self.remoteapi.action.package_create(**packageData)
+            LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
+        except (requests.exceptions.ConnectionError, ckanapi.errors.CKANAPIError):
+            LOGGER.error("Error when adding package...", exc_info=True)
+            LOGGER.warning("skipping this package")
+            time.sleep(2)
+            # if retries >= 5:
+            #     raise
+            # LOGGER.warning(f'connection error raised on instance: {self.CKANUrl} retry {retries} of 5')
+            # LOGGER.info(f'pause-ing for {retries * 2}')
+            # time.sleep(retries * 2)
+            # retries += 1
 
-        LOGGER.debug("adding the package data")
-        retVal = self.remoteapi.action.package_create(**packageData)
-        LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
+            # self.addPackage(packageData, retries)
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg
@@ -835,7 +814,7 @@ class CKANAsyncWrapper:
         self.currentRetry = 0
         self.maxRetries = 5
 
-    def packageRequestTask(self, url):
+    def packageRequestTask(self, url, retries=0):
         """retrieves the data associated with the url.
 
         :param url: url to call using get to get an individual ckan package
@@ -844,11 +823,22 @@ class CKANAsyncWrapper:
         :rtype: dict
         """
         #LOGGER.debug(f"url: {url}")
-        resp = self.requestSession.get(url, headers=self.header)
-        if resp.status_code != 200:
-            LOGGER.debug(f"status code: {resp.status_code}")
-        packageData = resp.json()
-        return packageData['result']
+        maxRetries = 5
+        retVal = None
+        try:
+            resp = self.requestSession.get(url, headers=self.header)
+            if resp.status_code != 200:
+                LOGGER.debug(f"status code: {resp.status_code}, {url}")
+            packageData = resp.json()
+            retVal = packageData['result']
+        except requests.exceptions.ConnectionError:
+            if retries > maxRetries:
+                raise
+            retries += 1
+            LOGGER.warning(f"non 200 status, trying again... retries: {retries} of 5")
+            time.sleep(5)
+            retVal = self.packageRequestTask(url, retries)
+        return retVal
 
     def getPackages(self, packageNameList):
         """Retrieves the list of packages described in the arg: packageNameList
@@ -989,21 +979,21 @@ class AsyncPackagesGetError(Exception):
 
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
 
 
-#     LOGGER = logging.getLogger()
-#     LOGGER.setLevel(logging.DEBUG)
-#     hndlr = logging.StreamHandler()
-#     formatter = logging.Formatter(
-#         "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
-#     )
-#     hndlr.setFormatter(formatter)
-#     LOGGER.addHandler(hndlr)
-#     LOGGER.debug("test")
+    LOGGER = logging.getLogger()
+    LOGGER.setLevel(logging.DEBUG)
+    hndlr = logging.StreamHandler()
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s"
+    )
+    hndlr.setFormatter(formatter)
+    LOGGER.addHandler(hndlr)
+    LOGGER.debug("test")
 
-#     lg = logging.getLogger('urllib3.connectionpool')
-#     lg.setLevel(logging.INFO)
+    lg = logging.getLogger('urllib3.connectionpool')
+    lg.setLevel(logging.INFO)
 
 
 
@@ -1020,8 +1010,16 @@ class AsyncPackagesGetError(Exception):
 #         pkgList = json.load(fh)
 #     LOGGER.debug(f"numpkgs: {len(pkgList)}")
 
-#     destUrl = os.environ[constants.CKAN_URL_DEST]
-#     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
-#     asyncWrap = CKANAsyncWrapper(destUrl, destAPIKey)
-#     pkgs = asyncWrap.getPackages(pkgList)
-#     LOGGER.debug(f"packages returned {len(pkgs)}")
+    destUrl = os.environ[constants.CKAN_URL_DEST]
+    destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
+
+    # asyncWrap = CKANAsyncWrapper(destUrl, destAPIKey)
+    # pkgs = asyncWrap.getPackages(pkgList)
+    # LOGGER.debug(f"packages returned {len(pkgs)}")
+
+    wrapper = CKANWrapper()
+    testDataPath = 'updt_package_test.json'
+    with open(testDataPath) as fh:
+        pkgStruct = json.load(fh)
+
+    wrapper.updatePackage(pkgStruct)

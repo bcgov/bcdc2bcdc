@@ -4,6 +4,7 @@
         "ignore_list": [
             "cati",
             "idir-aeliving",
+            "aeliving",
             "idir-bsharrat",
             "p1",
             "idir-jchurchi",
@@ -20,7 +21,17 @@
             "dwelf",
             "idir-jerho",
             "idir-loneil",
-            "knetherton"
+            "knetherton",
+            "bsharrat@idir",
+            "crigdon@idir",
+            "jchurchi@idir",
+            "nanyang@idir",
+            "stchapma@idir",
+            "yusotoza@idir",
+            "mdwilkie",
+            "visitor",
+            "stchapma",
+            "logged_in"
         ],
         "field_mapping": [
             {
@@ -86,9 +97,10 @@
     "organizations": {
         "unique_id_field": "name",
         "user_populated_properties": {
-            "sector": true,
+            "sector": false,
             "approval_status": true,
             "image_display_url": false,
+            "url": false,
             "title": true,
             "name": true,
             "is_organization": true,
@@ -123,21 +135,50 @@
     },
     "packages": {
         "unique_id_field": "name",
+        "ignore_list": [
+            "__duplicate__motor-vehicle-hospitalizations-by-region",
+            "__duplicate__motor-vehicle-hospitalizations-by-road-user-type",
+            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006"
+        ],
         "field_mapping": [
             {
                 "user_populated_field": "name",
                 "auto_populated_field": "id"
             }
         ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "orgAndSubOrgToNames"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "addStrangeFields"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "addStrangeFields"
+            }
+        ],
         "user_populated_properties": {
-            "license_title": true,
+            "iso_topic_string": true,
+            "retention_expiry_date": true,
+            "license_title": false,
             "maintainer": true,
             "publish_state": false,
             "relationships_as_object": true,
             "view_audience": true,
             "private": true,
             "maintainer_email": true,
-            "num_tags": true,
+            "num_tags": false,
             "id": false,
             "metadata_created": false,
             "metadata_modified": false,
@@ -147,7 +188,37 @@
             "version": true,
             "license_id": true,
             "type": true,
-            "resources": false,
+            "resources": [
+                {
+                    "cache_last_updated": false,
+                    "package_id": false,
+                    "resource_storage_access_method": true,
+                    "datastore_active": false,
+                    "id": false,
+                    "size": false,
+                    "format": true,
+                    "state": true,
+                    "edc_resource_type": true,
+                    "hash": true,
+                    "description": true,
+                    "cache_url": false,
+                    "projection_name": true,
+                    "tracking_summary": false,
+                    "last_modified": false,
+                    "url_type": false,
+                    "mimetype": false,
+                    "resource_storage_location": true,
+                    "name": true,
+                    "created": false,
+                    "url": true,
+                    "ofi": true,
+                    "mimetype_inner": false,
+                    "resource_update_cycle": true,
+                    "position": false,
+                    "revision_id": false,
+                    "resource_type": true
+                }
+            ],
             "more_info": true,
             "num_resources": false,
             "tags": [
@@ -169,19 +240,7 @@
             "relationships_as_subject": true,
             "security_class": true,
             "dates": false,
-            "organization": {
-                "description": true,
-                "created": false,
-                "title": true,
-                "name": true,
-                "is_organization": true,
-                "state": true,
-                "image_url": true,
-                "revision_id": false,
-                "type": true,
-                "id": false,
-                "approval_status": true
-            },
+            "organization": false,
             "name": true,
             "isopen": true,
             "url": true,
@@ -192,43 +251,35 @@
             "license_url": true,
             "metadata_visibility": true,
             "title": true,
-            "revision_id": false
+            "revision_id": false,
+            "tag_string": false,
+            "org": true
         },
         "update_fields_to_include": [
-            "resources",
-            "owner_org",
             "tags"
         ],
         "add_fields_to_include": [
-            "resources",
             "owner_org",
             "tags",
-            "edc_state"
+            "edc_state",
+            "sub_org"
         ],
         "data_type_enforcement": {
-            "more_info": [],
             "resources": []
         },
         "required_default_values": {
-            "tag_string": "TEST",
             "org": "databc",
-            "owner_org": "databc",
-            "iso_topic_string": "TBD",
             "retention_expiry_date": "2300-01-01",
             "resources": [
                 {
-                    "bcdc_type": "bcdc_dataset",
-                    "projection_name": "crap crap crap",
+                    "edc_resource_type": "Data",
+                    "format": "other",
+                    "url": "https://www.zoomquilt.org/",
+                    "resource_update_cycle": "unknown",
                     "resource_storage_access_method": "Indirect Access",
+                    "projection_name": "EPSG_3005 - NAD83 BC Albers",
                     "resource_storage_location": "External"
                 }
-            ],
-            "test": [
-                "value",
-                "someother",
-                [
-                    "another list"
-                ]
             ]
         },
         "transformations": {
@@ -237,17 +288,11 @@
                     "property": "owner_org",
                     "obj_type": "organizations",
                     "obj_field": "id"
-                }
-            ],
-            "field_remapping": [
+                },
                 {
-                    "property": "object_name",
-                    "remapped_property": {
-                        "resources": {
-                            "object_name": "some value"
-                        }
-                    },
-                    "type": null
+                    "property": "sub_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
                 }
             ]
         }

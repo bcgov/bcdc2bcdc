@@ -13,12 +13,12 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "name": "main.py",
+            "name": "main.py (CAT)",
             "type": "python",
             "request": "launch",
-            "program": "src/main.py",
+            "program": "src/bcdc2bcdc/main.py",
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env_cat"
         },
         {
             "name": "Python: test_CKANData: test",

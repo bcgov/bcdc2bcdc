@@ -52,7 +52,7 @@ CUSTOM_UPDATE_METHOD_NAME = 'CustomMethodName'
 class UPDATE_TYPES(enum.Enum):
     ADD = 1
     UPDATE = 2
-
+    COMPARE = 3
 
 # other misc property references
 # property's of field_mapping type
@@ -84,10 +84,10 @@ CKAN_SHOW_IDENTIFIER = 'id'
 TRANSFORM_TYPE_USERS = 'users'
 TRANSFORM_TYPE_GROUPS = 'groups'
 TRANSFORM_TYPE_ORGS = 'organizations'
-TRANSFORM_TYPE_RESOURCES = 'resources'
+TRANSFORM_TYPE_RESOURCES = 'resources' # not implemented yet
 TRANSFORM_TYPE_PACKAGES = 'packages'
 VALID_TRANSFORM_TYPES = [TRANSFORM_TYPE_USERS, TRANSFORM_TYPE_GROUPS,
-                         TRANSFORM_TYPE_ORGS, TRANSFORM_TYPE_RESOURCES,
+                         TRANSFORM_TYPE_ORGS,
                          TRANSFORM_TYPE_PACKAGES]
 
 # LOGGING config file name
