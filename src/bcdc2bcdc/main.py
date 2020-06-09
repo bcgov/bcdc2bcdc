@@ -57,8 +57,15 @@ class RunUpdate:
         srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
         destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache, constants.DATA_SOURCE.DEST)
 
+        # specific to users, implemented a method to augment the ignore list
+        # for duplicate users
+        dupEmails = srcUserCKANDataSet.getDuplicateEmailAddresses()
+
+
+
         self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
+
 
         # use CKANDataset functionality to determine if differences
         if srcUserCKANDataSet != destUserCKANDataSet:
@@ -236,8 +243,7 @@ if __name__ == "__main__":
     # This is complete, commented out while work on group
     # not running user update for now
 
-    #updater.updateUsers(useCache=True)
-    updater.updateGroups(useCache=True)
-
-    updater.updateOrganizations(useCache=True)
-    updater.updatePackages(useCache=True)
+    updater.updateUsers(useCache=True)
+    # updater.updateGroups(useCache=True)
+    # updater.updateOrganizations(useCache=True)
+    # updater.updatePackages(useCache=True)
