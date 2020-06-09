@@ -74,7 +74,7 @@ class RunUpdate:
 
             deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANUserUpdate(ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANUserUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
     def updateGroups(self, useCache=False):
@@ -115,7 +115,7 @@ class RunUpdate:
             LOGGER.info("found differences between group data in src an dest")
             deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANGroupUpdate(ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANGroupUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
         else:
             LOGGER.info("no differences found for groups between src and dest")

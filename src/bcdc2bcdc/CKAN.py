@@ -383,6 +383,13 @@ class CKANWrapper:
         try:
             LOGGER.warning("actual user add api call commented out")
             retVal = self.remoteapi.action.user_create(**userData)
+        except ckanapi.errors.CKANAPIError:
+            # try as a requests call
+            userCreateEndPoint = "api/3/action/user_create"
+            userCreateURL = f"{self.CKANUrl}{userCreateEndPoint}"
+            LOGGER.debug(f"url end point: {userCreateURL}")
+            resp = requests.post(userCreateURL, headers=self.CKANHeader, json=userData)
+            LOGGER.debug(f"response status code: {resp.status_code}")
         except ckanapi.errors.ValidationError:
             # usually because the user already exists but is in an deleted
             # state.  To resolve retrieve the user, update the user defs
@@ -414,7 +421,15 @@ class CKANWrapper:
             del userData["name"]
         LOGGER.debug(f"trying to update a user using the data: {userData}")
         LOGGER.warning("actual api commented out")
-        retVal = self.remoteapi.action.user_update(**userData)
+        try:
+            retVal = self.remoteapi.action.user_update(**userData)
+        except ckanapi.errors.CKANAPIError:
+            # redo request using requests.
+            userUpdtEndPoint = "api/3/action/user_update"
+            userUpdtURL = f"{self.CKANUrl}{userUpdtEndPoint}"
+            LOGGER.debug(f"url end point: {userUpdtURL}")
+            resp = requests.post(userUpdtURL, headers=self.CKANHeader, json=userData)
+            LOGGER.debug(f"response status code: {resp.status_code}")
         LOGGER.debug(f"User Updated: {retVal}")
 
     def getUser(self, userId):

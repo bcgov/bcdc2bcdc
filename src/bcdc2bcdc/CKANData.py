@@ -1457,7 +1457,6 @@ class CKANDataSet(CKANRecordCollection):
             #pickle.dump( updateCollection, open(updtPcl, "wb"))
         return updateCollection
 
-
     def getDelta(self, destDataSet):
         """Compares this dataset with the provided 'ckanDataSet' dataset and
         returns a CKANDatasetDelta object that identifies
@@ -1724,6 +1723,40 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         #         addCollection.addRecord(addRecord)
         # return addCollection
 
+    def calcUpdatesCollection(self, destDataSet):
+        # TODO: working on this
+        self.populateDataSets(destDataSet)
+
+        # modify so the intersection between the two sets of data is
+        # calcuated based on eamial addresses.
+        self.calcEmailLut()
+        destDataSet.calcEmailLut()
+
+        emailDiff = self.emailSet.intersection(destDataSet.emailSet)
+        emails2Check4Update = list(emailDiff)
+        emails2Check4Update.sort()
+
+        # make sure that the ignore list has been augmented with any accounts
+        # that have duplicate emails on the source side
+        ignoreList = self.getIgnoreList()
+
+        updateCollection = CKANRecordCollection(self.dataType)
+
+        for email in emails2Check4Update:
+            srcUserName = self.email2NameLUT[email]
+            destUserName = destDataSet.email2NameLUT[email]
+            srcRecord = self.getRecordByUniqueId(srcUserName)
+            destRecord = destDataSet.getRecordByUniqueId(destUserName)
+            if not srcRecord.isIgnore(srcRecord):
+                srcRecord.setDestRecord(destRecord)
+                if srcRecord != destRecord:
+                    updateStruct = srcRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+                    updtJson = json.dumps(updateStruct)
+                    LOGGER.debug(f"update struct: {updtJson[0:100]} ...")
+
+                    updateCollection.addRecord(srcRecord)
+
+        return updateCollection
 
 class CKANGroupDataSet(CKANRecordParserMixin, CKANDataSet):
     def __init__(self, jsonData, dataCache, origin):
