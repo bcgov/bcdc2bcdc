@@ -326,7 +326,7 @@ class CKANWrapper:
         params = {"all_fields": includeData}
         try:
             users = self.remoteapi.action.user_list(**params)
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, ckanapi.errors.CKANAPIError):
             # try manually using the api end point
             LOGGER.warning("caught error with ckanapi module call, trying directly")
             userListendPoint = "api/3/action/user_list"

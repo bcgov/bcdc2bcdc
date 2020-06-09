@@ -117,33 +117,7 @@ class MethodMapping:
         method = getattr(obj, methodName)
         return method
 
-
-# names of specific classes need to align with the names in
-# constants.VALID_TRANSFORM_TYPES
-class packages:
-    def __init__(self, updateType):
-        self.customTransformations = []
-        self.updateType = updateType
-
-    def packageTransform(self, record):
-        """ The custom transformer with misc logic to be applied to packages
-
-        :param inputDataStruct: input data struct that will be sent to the api,
-            this struct will be modified and returned by this method.
-        :type inputDataStruct: dict
-        """
-        # LOGGER.debug("packageTransform has been called")
-        self.fixResourceStatus(record)
-        self.fixDownloadAudience(record)
-        self.fixMoreInfo(record)
-        self.fixSecurityClass(record)
-
-        recordStruct = self.getStructToUpdate(record)
-
-            # always set the type to 'bcdc_dataset'
-
-        recordStruct["type"] = "bcdc_dataset"
-
+class ckanObjectUpdateMixin:
     def getStructToUpdate(self, record):
         """using self.updateType parameter determines the update type
         that was defined for this custom transformation.
@@ -170,6 +144,50 @@ class packages:
                 self.updateType == constants.UPDATE_TYPES.UPDATE:
             updateStruct = record.updateableJsonData
         return updateStruct
+
+class users(ckanObjectUpdateMixin):
+    def __init__(self, updateType):
+        self.updateType = updateType
+
+    def removeNameField(self, record):
+        """for comparison do not want to consider the name field
+
+        :param record: [description]
+        :type record: [type]
+        :return: [description]
+        :rtype: [type]
+        """
+        recordStruct = self.getStructToUpdate(record)
+        if 'name' in  recordStruct:
+            del recordStruct['name']
+
+# names of specific classes need to align with the names in
+# constants.VALID_TRANSFORM_TYPES
+class packages(ckanObjectUpdateMixin):
+    def __init__(self, updateType):
+        self.customTransformations = []
+        self.updateType = updateType
+
+    def packageTransform(self, record):
+        """ The custom transformer with misc logic to be applied to packages
+
+        :param inputDataStruct: input data struct that will be sent to the api,
+            this struct will be modified and returned by this method.
+        :type inputDataStruct: dict
+        """
+        # LOGGER.debug("packageTransform has been called")
+        self.fixResourceStatus(record)
+        self.fixDownloadAudience(record)
+        self.fixMoreInfo(record)
+        self.fixSecurityClass(record)
+
+        recordStruct = self.getStructToUpdate(record)
+
+            # always set the type to 'bcdc_dataset'
+
+        recordStruct["type"] = "bcdc_dataset"
+
+
 
     def fixSecurityClass(self, record):
         """ The security class for a dataset must be one of the following:

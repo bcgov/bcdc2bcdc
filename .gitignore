@@ -17,5 +17,5 @@ src_users.json
 add_package.json
 updt_package.json
 updt_group.json
-.env_cat
+.env*
 logs/bcdc2bcdc.log

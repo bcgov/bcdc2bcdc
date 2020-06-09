@@ -654,7 +654,6 @@ class CKANRecord:
         """
         return json.dumps(self.jsonData)
 
-
 class DataCell:
     """an object that can be used to wrap a data value and other meta data
     about it from the perspective of a change
@@ -726,30 +725,35 @@ class DataCell:
                     self.include = False
         return newCell
 
-
 class CKANUserRecord(CKANRecord):
     def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_USERS
         CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
+        self.duplicateEmail = False
 
+    def isIgnore(self, inputRecord):
+        # calls the parent isIgnore method then adds additional logic that
+        # will check to see if the record's email is duplicated by other emails.
+        isIgnore = super().isIgnore(inputRecord)
+        #isIgnore = super(CKANRecord, self).isIgnore(inputRecord)
+        if not isIgnore and self.duplicateEmail:
+            isIgnore = True
+        return isIgnore
 
 class CKANGroupRecord(CKANRecord):
     def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_GROUPS
         CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
-
 class CKANOrganizationRecord(CKANRecord):
     def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_ORGS
         CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
 
-
 class CKANPackageRecord(CKANRecord):
     def __init__(self, jsonData, origin, dataCache):
         recordType = constants.TRANSFORM_TYPE_PACKAGES
         CKANRecord.__init__(self, jsonData, recordType, origin, dataCache)
-
 
 # -------------------- DATASET DELTA ------------------
 
@@ -777,66 +781,6 @@ class CKANDataSetDeltas:
 
         self.srcCKANDataset = srcCKANDataset
         self.destCKANDataset = destCKANDataset
-
-        # self.transConf = self.srcCKANDataset.transConf
-
-    # def setAddDataset(self, addDataObj):
-    #     """Adds a object to the list of objects that are identified as adds
-
-    #     Adds are objects that exist in the source but not the destination
-
-    #     :param addDataObj: data that is to be added
-    #     :type addDataObj: dict
-    #     :raises TypeError: raised if the input data is not type dict
-    #     """
-    #     if not isinstance(addDataObj, CKANRecord):
-    #         msg = (
-    #             "addDataObj parameter needs to be type dict.  You passed "
-    #             + f"{type(addDataObj)}"
-    #         )
-    #         raise TypeError(msg)
-    #     self.adds.append(addDataObj)
-
-    # def setDeleteDataset(self, deleteName):
-    #     """Adds an object to the list of data that has been identified as a
-    #     Delete.
-
-    #     Deletes are records that exist in the destination but not the source.
-
-    #     :param deleteName: [description]
-    #     :type deleteName: [type]
-    #     :raises TypeError: [description]
-    #     """
-    #     if not isinstance(deleteName, str):
-    #         msg = (
-    #             "deleteName parameter needs to be type str.  You passed "
-    #             + f"{type(deleteName)}"
-    #         )
-    #         raise TypeError(msg)
-    #     self.deletes.append(deleteName)
-
-    # def setUpdateDataSet(self, updateObj):
-    #     """Adds a new dataset that is to be updated.  When comparison of two
-    #     objects identifies that there is a difference, the object that passed to
-    #     this method is the src object with the data that should be copied to dest.
-
-    #     Updates are datasets that exist in source and destination however not all
-    #     the data is the same between them.
-
-    #     :param updateObj: the data that is to be updated
-    #     :type updateObj: dict
-    #     :raises TypeError: object must be type 'dict', raise if it is not.
-    #     :raises ValueError: object must have a 'name' property
-    #     """
-    #     if not isinstance(updateObj, CKANRecord):
-    #         msg = (
-    #             "updateObj parameter needs to be type dict.  You passed "
-    #             + f"{type(updateObj)}"
-    #         )
-    #         raise TypeError(msg)
-    #     LOGGER.debug(f"adding update for {updateObj.getUniqueIdentifier()}")
-    #     self.updates.append(updateObj)
-
 
     def setAddCollection(self, addCollection, replace=True):
         """adds a list of data to the adds property.  The adds property
@@ -1288,60 +1232,7 @@ class CKANDataSetDeltas:
         )
         return msg
 
-    # def filterNonUserGeneratedFields(self, ckanDataSet):
-    #     """
-    #     Receives either a dict or list:
-    #        * dict: key is the unique id for the dataset
-    #        * list: a list of dicts describing a list of data
-    #                objects.
-
-    #     Iterates over all the data in the ckanDataSet struct, removing non
-    #     user generated fields and returns a json struct (dict) with only
-    #     fields that are user defined
-
-    #     :param ckanDataSet: a ckan data set
-    #     :type ckanDataSet: CKANDataSet or an object that subclasses it
-    #     """
-    #     # get the unique id for this dataset type
-    #     # uniqueIdentifier = self.srcCKANDataset.transConf.getUniqueField(
-    #     #    self.srcCKANDataset.dataType)
-    #     uniqueIdentifier = TRANSCONF.getUniqueField(self.srcCKANDataset.dataType)
-
-    #     # if generating a dataset to be used to update a dataset, then check to
-    #     # see if there are machine generated fields that should be included in the
-    #     # update
-    #     LOGGER.debug(f"uniqueIdentifier: {uniqueIdentifier}")
-
-    #     if isinstance(ckanDataSet, dict):
-    #         filteredData = {}
-    #         uniqueIds = ckanDataSet.keys()
-    #     elif isinstance(ckanDataSet, list):
-    #         filteredData = []
-    #         # below is wrong as it returns all unique ids, we only want the
-    #         # unique ids provided in the struct ckanDataSet
-    #         # uniqueIds = self.srcCKANDataset.getUniqueIdentifiers()
-    #         uniqueIds = []
-    #         for record in ckanDataSet:
-    #             uniqueIds.append(record[uniqueIdentifier])
-    #     else:
-    #         msg = f"type received is {type(ckanDataSet)}, expecting list or dict"
-    #         raise IncompatibleTypesException(msg)
-
-    #     for uniqueId in uniqueIds:
-    #         # LOGGER.debug(f"uniqueId: {uniqueId}")
-    #         ckanRec = self.srcCKANDataset.getRecordByUniqueId(uniqueId)
-    #         compStruct = ckanRec.getComparableStruct()
-
-    #         # Adding this code in to accommodate resources in packages.  When
-    #         # updating resources
-
-    #         if isinstance(ckanDataSet, dict):
-    #             filteredData[uniqueId] = compStruct
-    #         elif isinstance(ckanDataSet, list):
-    #             filteredData.append(compStruct)
-    #     return filteredData
 # -------------------- DATASETS --------------------
-
 
 class CKANRecordCollection:
     """Used to store a bunch of CKAN Records
@@ -1447,6 +1338,10 @@ class CKANDataSet(CKANRecordCollection):
         if self.destUniqueIdSet is None:
             self.destUniqueIdSet = set(destDataSet.getUniqueIdentifiers())
 
+    def getIgnoreList(self):
+        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        return ignoreList
+
     def calcDeleteCollection(self, destDataSet):
         """gets a set of unique ids from the source and destination ckan instances,
         compares the two lists and generates a list of ids that should be deleted
@@ -1460,7 +1355,8 @@ class CKANDataSet(CKANRecordCollection):
         :type srcUniqueIdSet: set
         """
         self.populateDataSets(destDataSet)
-        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        #ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        ignoreList = self.getIgnoreList()
         deleteDataCollection = CKANRecordCollection(self.dataType)
 
         deleteSet = self.destUniqueIdSet.difference(self.srcUniqueIdSet)
@@ -1496,8 +1392,8 @@ class CKANDataSet(CKANRecordCollection):
         # in source but not in dest, ie adds
         addSet = self.srcUniqueIdSet.difference(self.destUniqueIdSet)
 
-        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
-
+        #ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        ignoreList= self.getIgnoreList()
         addList = []
         addCollection = CKANRecordCollection(self.dataType)
 
@@ -1519,8 +1415,8 @@ class CKANDataSet(CKANRecordCollection):
         #else:
         self.populateDataSets(destDataSet)
 
-        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
-
+        #ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        ignoreList = self.getIgnoreList()
         chkForUpdateIds = self.srcUniqueIdSet.intersection(self.destUniqueIdSet)
         chkForUpdateIds = list(chkForUpdateIds)
         chkForUpdateIds.sort()
@@ -1561,19 +1457,6 @@ class CKANDataSet(CKANRecordCollection):
             #pickle.dump( updateCollection, open(updtPcl, "wb"))
         return updateCollection
 
-    def parseDataIntoRecords(self, jsonData):
-        LOGGER.debug("parsing list of dicts into CKANRecord objects")
-        includeType = True
-        constructor = CKANRecord
-        if hasattr(self, 'recordConstructor'):
-            constructor = self.recordConstructor
-            includeType = False
-        for recordJson in jsonData:
-            if includeType:
-                record = constructor(recordJson, self.dataType, self.origin, self.dataCache)
-            else:
-                record = constructor(recordJson, self.origin, self.dataCache)
-            self.addRecord(record)
 
     def getDelta(self, destDataSet):
         """Compares this dataset with the provided 'ckanDataSet' dataset and
@@ -1653,7 +1536,23 @@ class CKANDataSet(CKANRecordCollection):
             retVal = False
         return retVal
 
-class CKANUsersDataSet(CKANDataSet):
+class CKANRecordParserMixin:
+    def parseDataIntoRecords(self, jsonData):
+        LOGGER.debug("parsing list of dicts into CKANRecord objects")
+        includeType = True
+        constructor = CKANRecord
+        if hasattr(self, 'recordConstructor'):
+            constructor = self.recordConstructor
+            includeType = False
+        for recordJson in jsonData:
+            if includeType:
+                record = constructor(recordJson, self.dataType, self.origin, self.dataCache)
+            else:
+                record = constructor(recordJson, self.origin, self.dataCache)
+            self.addRecord(record)
+
+
+class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
     """Used to represent a collection of CKAN user data.
 
     :param CKANData: [description]
@@ -1661,23 +1560,182 @@ class CKANUsersDataSet(CKANDataSet):
     """
 
     def __init__(self, jsonData, dataCache, origin):
-        CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS, dataCache, origin)
         self.recordConstructor = CKANUserRecord
+        CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_USERS, dataCache, origin)
+        self.duplicateEmails = {}
+        self.email2NameLUT = {}
+        self.name2emailLUT = {}
+        self.emailSet = None
+
+    def getDuplicateEmailAddresses(self):
+        """Will iterate over this dataset and search for records that have
+        duplicate email addresses.
+
+        populates duplicateEmails with a list of the emails that are duplicated
+        by more than one record.
+
+        individual CKANRecord objects are updated with a duplicate email flag.
+        That flag is checked, and records with this flag get added to the ignore
+        list.
+
+        TODO: Should modify how ignores are handled so that they get tagged
+               at the record level
+
+        :return: [description]
+        :rtype: [type]
+        """
+        # first scan through all the records looking for duplicate emails.
+        # then create a list that omits any records that correspond with duplicate
+        # email addresses, and finally replace the self.recordList with the
+        # new list that does not include the dups
+        #
+        # find duplicates...
+
+        # email addresses that are ignored ignores!
+        ignoreEmailList = ['data@gov.bc.ca']
+        if not self.duplicateEmails:
+            for userRecord in self:
+                emailProperty = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
+                if emailProperty in self.duplicateEmails and emailProperty not in ignoreEmailList:
+                    self.duplicateEmails[emailProperty] += 1
+                else:
+                    self.duplicateEmails[emailProperty] = 1
+
+        # rebuild collection without duplicates
+        newRecordList = []
+        for userRecord in self:
+            emailProperty = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
+            if (emailProperty in self.duplicateEmails) and self.duplicateEmails[emailProperty] >= 2:
+                msg = (
+                    f'found {self.duplicateEmails[emailProperty]} records with this email '
+                    f'address: {emailProperty}, All records with this email '
+                    'address will be omitted from the update.'
+                )
+                LOGGER.warning(msg)
+                userRecord.duplicateEmail = True
+                recordName = userRecord.getUniqueIdentifier()
+                newRecordList.append(recordName)
+        return newRecordList
+
+    def getIgnoreList(self):
+        ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        recordNamesWithDuplicateEmails = self.getDuplicateEmailAddresses()
+        # for users need to get the duplicate email list and add that to the
+        # ignore list
+        for userId in recordNamesWithDuplicateEmails:
+            #userId = userRecord.getUniqueIdentifier()
+            if userId not in ignoreList:
+                ignoreList.append(userId)
+        LOGGER.debug(f"users 2 ignore: {ignoreList}")
+        return ignoreList
+
+    def calcDeleteCollection(self, destDataSet):
+        """Over riding the default method because users need to work differently
+        due to the way that openid authentication was implemented.
+
+        This method uses email as the unique id between the source and
+        destination objects.
+
+        :param destUniqueIdSet: a set of unique ids found the destination ckan
+            instance
+        :type destUniqueIdSet: set
+        :param srcUniqueIdSet: a set of the unique ids in the source ckan instance
+        :type srcUniqueIdSet: set
+        """
+        self.populateDataSets(destDataSet)
+        #ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        ignoreList = self.getIgnoreList()
+        deleteDataCollection = CKANRecordCollection(self.dataType)
+
+        # need to:
+        #   1. create a dict with email as the key, unique id as the value
+        #   2. create an email set
+        #   3. identify the difference
+        #   4. for the difference map emails back to original unique id.
+
+        # create email dict
+        self.calcEmailLut()
+        destDataSet.calcEmailLut()
+
+        # calculate diff
+        emailDiff = destDataSet.emailSet.difference(self.emailSet)
+
+        # now map emails back to uniqueids:
+        for email in emailDiff:
+            userName = destDataSet.email2NameLUT[email]
+            record = destDataSet.getRecordByUniqueId(userName)
+            if not record.isIgnore(record):
+                LOGGER.debug(f"delete user email: {email} / name: {userName}")
+                deleteDataCollection.addRecord(record)
+        LOGGER.debug(f"records in delete collection: {len(deleteDataCollection)}")
+        return deleteDataCollection
+
+    def calcEmailLut(self):
+
+        #self.email2NameLUT = {}
+        #self.name2emailLUT = {}
+
+        if not self.email2NameLUT:
+            self.name2emailLUT = {}
+            for userRecord in self:
+                email = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
+                uniId = userRecord.getUniqueIdentifier()
+                self.email2NameLUT[email] = uniId
+                self.name2emailLUT[uniId] = email
+            self.emailSet = set(list(self.email2NameLUT.keys()))
+
+    def calcAddCollection(self, destDataSet):
+        """Same issue as the Deletes...
+
+        """
+        self.populateDataSets(destDataSet)
+
+        # create email dict
+        self.calcEmailLut()
+        destDataSet.calcEmailLut()
+
+        # calculate diff
+        emailDiff = self.emailSet.difference(destDataSet.emailSet)
+        addCollection = CKANRecordCollection(self.dataType)
+
+        # now map emails back to uniqueids:
+        for email in emailDiff:
+            userName = self.email2NameLUT[email]
+            record = self.getRecordByUniqueId(userName)
+            if not record.isIgnore(record):
+                LOGGER.debug(f"add user email: {email} / name: {userName}")
+                addCollection.addRecord(record)
+        LOGGER.debug(f"records in add collection: {len(addCollection)}")
+        return addCollection
+
+        # # in source but not in dest, ie adds
+        # addSet = self.srcUniqueIdSet.difference(self.destUniqueIdSet)
+
+        # #ignoreList = TRANSCONF.getIgnoreList(self.dataType)
+        # ignoreList= self.getIgnoreList()
+        # addList = []
+        # addCollection = CKANRecordCollection(self.dataType)
+
+        # for addRecordUniqueName in addSet:
+        #     # LOGGER.debug(f"addRecord: {addRecordUniqueName}")
+        #     if addRecordUniqueName not in ignoreList:
+        #         addRecord = self.getRecordByUniqueId(addRecordUniqueName)
+        #         #addDataStruct = addRecord.getComparableStruct()
+        #         addCollection.addRecord(addRecord)
+        # return addCollection
 
 
-class CKANGroupDataSet(CKANDataSet):
+class CKANGroupDataSet(CKANRecordParserMixin, CKANDataSet):
     def __init__(self, jsonData, dataCache, origin):
         CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_GROUPS, dataCache, origin)
         self.recordConstructor = CKANGroupRecord
 
-
-class CKANOrganizationDataSet(CKANDataSet):
+class CKANOrganizationDataSet(CKANRecordParserMixin, CKANDataSet):
     def __init__(self, jsonData, dataCache, origin):
         CKANDataSet.__init__(self, jsonData, constants.TRANSFORM_TYPE_ORGS, dataCache, origin)
         self.recordConstructor = CKANGroupRecord
 
-
-class CKANPackageDataSet(CKANDataSet):
+class CKANPackageDataSet(CKANRecordParserMixin, CKANDataSet):
     def __init__(self, jsonData, dataCache, origin):
         CKANDataSet.__init__(
             self, jsonData, constants.TRANSFORM_TYPE_PACKAGES, dataCache, origin
@@ -1785,9 +1843,7 @@ class DataPopulator:
             raise ValueError(msg)
         return inputData
 
-
 # ----------------- EXCEPTIONS
-
 
 class UserDefinedFieldDefinitionError(Exception):
     """Raised when the transformation configuration encounters an unexpected
@@ -1799,18 +1855,15 @@ class UserDefinedFieldDefinitionError(Exception):
         LOGGER.error(f"error message: {message}")
         self.message = message
 
-
 class IncompatibleTypesException(Exception):
     def __init__(self, message):
         LOGGER.error(f"error message: {message}")
         self.message = message
 
-
 class IllegalArgumentTypeError(ValueError):
     def __init__(self, message):
         LOGGER.error(f"error message: {message}")
         self.message = message
-
 
 class InvalidDataRecordOrigin(ValueError):
     def __init__(self, message):

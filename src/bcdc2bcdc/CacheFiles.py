@@ -34,7 +34,7 @@ class CKANCacheFiles:
         :rtype: str (path)
         """
         curDir = os.path.dirname(__file__)
-        cacheDirRelative = os.path.join(curDir, "..", constants.CACHE_TMP_DIR)
+        cacheDirRelative = os.path.join(curDir, "..", "..", constants.CACHE_TMP_DIR)
         cacheDir = os.path.normpath(cacheDirRelative)
         LOGGER.debug(f"cache dir: {cacheDir}")
 

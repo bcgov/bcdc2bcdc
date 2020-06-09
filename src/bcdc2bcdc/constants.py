@@ -126,3 +126,5 @@ def getCachedDir():
 class DATA_SOURCE(enum.Enum):
     SRC = 1
     DEST = 2
+
+USER_EMAIL_PROPERTY = 'email'
