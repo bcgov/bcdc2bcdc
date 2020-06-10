@@ -141,7 +141,7 @@ class CKANRecord:
             self.comparableJsonData = self.filterNonUserGeneratedFields()
 
             # remove embedded ignores
-            dataCell = DataCell(self.comparableJsonData)
+            dataCell = DataCell(self.comparableJsonData, self.dataCache, self.origin)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
             self.comparableJsonData = dataCellNoIgnores.struct
 
@@ -659,8 +659,10 @@ class DataCell:
     about it from the perspective of a change
     """
 
-    def __init__(self, struct, include=True):
+    def __init__(self, struct, dataCache, origin, include=True):
         self.struct = struct
+        self.dataCache = dataCache
+        self.origin = origin
         self.include = include
         self.ignoreList = None
         self.ignoreFld = None
@@ -698,7 +700,7 @@ class DataCell:
         :param key: a key of struct property
         :type key: str
         """
-        newCell = DataCell(self.struct[key])
+        newCell = DataCell(self.struct[key], self.dataCache, self.origin)
         newCell.parent = self
         newCell.parentKey = key
         # copy the attributes from parent to child
@@ -718,7 +720,10 @@ class DataCell:
             if (newCell.ignoreFld) and key == newCell.ignoreFld:
                 # example key is 'name' and the ignore field is name
                 # now check to see if the value is in the ignore list
-                if newCell.struct in newCell.ignoreList:
+                # also check that not in the datacache ignore list
+                # dataType in parentType, value in struct
+                if newCell.struct in newCell.ignoreList or \
+                        newCell.dataCache.ignores.isIgnored(newCell.parentType, newCell.origin, newCell.struct):
                     # continue with example.. now the value for the key name
                     # is in the ignore list.  Set the enclosing object... self
                     # to not be included.
@@ -1591,6 +1596,7 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         # find duplicates...
 
         # email addresses that are ignored ignores!
+        cachedIgnores = self.dataCache.ignores
         ignoreEmailList = ['data@gov.bc.ca']
         if not self.duplicateEmails:
             for userRecord in self:
@@ -1613,6 +1619,7 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
                 LOGGER.warning(msg)
                 userRecord.duplicateEmail = True
                 recordName = userRecord.getUniqueIdentifier()
+                cachedIgnores.addIgnore(self.dataType, userRecord.origin, recordName)
                 newRecordList.append(recordName)
         return newRecordList
 

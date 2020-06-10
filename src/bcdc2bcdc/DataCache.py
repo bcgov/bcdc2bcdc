@@ -4,7 +4,11 @@ to other objects. For example a group or organization relates to different users
 or a package can be owned by an organization
 
 This class is developed on an as needed basis to help store and retrieve these
-relationships
+relationships.
+
+Using this class also to retain the augemented ignore list used for user objects.
+User records with duplicate emails on the source side are ignored for update.
+The results are cached in this class.
 
 """
 import constants
@@ -99,6 +103,7 @@ class DataCache:
         #    self.cacheStruct['id']['organizations']['dest']['BCGOV_organization'] = 'klsdjjfonvuweoiisdfxoi3o89kjsk'
         self.cacheStruct = {}
         self.reverseStruct = {}
+        self.ignores = CachedIgnores()
 
     def initCacheStruct(self, autoGenFieldName):
         """inits the data struct for a mapping field.  Sets up the struct
@@ -274,23 +279,6 @@ class DataCache:
         :type userDefinedValue: str
         """
         self.cacheLoader.loadSingleValue(self, objType, dataOrigin, autoFieldName, userDefinedValue)
-
-    # def idValueExistsInDest(self, autoFieldName, objType, autoValue):
-    #     retVal = False
-    #     userValue = self.getDestUserDefValueFromAutoId(autoFieldName, objType, autoValue)
-    #     if userValue:
-    #         retVal = True
-    #     return retVal
-
-    # def getDestUserDefValueFromAutoId(self, autoFieldName, objType, autoValue):
-    #     retVal = None
-    #     # srcUserValue = self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC][autoValue]
-    #     dataPointer = self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]
-    #     for userDefKey in dataPointer:
-    #         if dataPointer[userDefKey] == autoValue:
-    #             retVal = dataPointer[userDefKey]
-    #             break
-    #     return retVal
 
     def isAutoValueInDest(self, autoFieldName, objType, autoValue):
         retVal = False
@@ -479,6 +467,38 @@ class CacheLoader:
     def loadSingleResource(self, dataOrigin, query):
         return self.wrapperMap[dataOrigin].getResource(query)
 
+class CachedIgnores:
+    """ up until recently was hard coding ignores into the config file.  This is
+    still required, however when working on the new datamodel translation found
+    that it was necessary to query the source, identify users with duplicate emails
+    and add them to the ignore list.
+
+    Subsequent updates need to know about this ignore list when removing embedded
+    ignores.  This class is created to cache and retrieve that data
+    """
+    def __init__(self):
+        self.struct = {}
+
+    def addIgnore(self, dataType, origin, value):
+        if dataType not in self.struct:
+            self.struct[dataType] = {}
+        if origin not in self.struct[dataType]:
+            self.struct[dataType][origin] = {}
+        if value not in self.struct[dataType]:
+            self.struct[dataType][origin][value] = 1
+
+    def isIgnored(self, dataType, origin, value):
+        retVal = False
+        if (
+                (
+                    (
+                        dataType in self.struct
+                    )
+                    and origin in self.struct[dataType]
+                ) and  value in self.struct[dataType][origin]
+        ):
+            retVal = True
+        return retVal
 
 class inValidDataType(ValueError):
     """Raised when the DataCacheFactory configuration encounters an unexpected

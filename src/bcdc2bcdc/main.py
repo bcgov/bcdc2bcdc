@@ -61,8 +61,6 @@ class RunUpdate:
         # for duplicate users
         dupEmails = srcUserCKANDataSet.getDuplicateEmailAddresses()
 
-
-
         self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
 
@@ -244,6 +242,6 @@ if __name__ == "__main__":
     # not running user update for now
 
     updater.updateUsers(useCache=True)
-    # updater.updateGroups(useCache=True)
-    # updater.updateOrganizations(useCache=True)
+    #updater.updateGroups(useCache=True)
+    updater.updateOrganizations(useCache=True)
     # updater.updatePackages(useCache=True)
