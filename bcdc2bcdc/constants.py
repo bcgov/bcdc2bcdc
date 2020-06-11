@@ -106,6 +106,7 @@ CACHE_SRC_GROUPS_FILE = 'src_groups.json'
 CACHE_DEST_GROUPS_FILE = 'dest_groups.json'
 CACHE_DEST_PKGS_FILE = 'dest_pkgs.json'
 CACHE_SRC_PKGS_FILE = 'src_pkgs.json'
+CACHE_SCHEMING_FILE = 'scheming.json'
 
 TEST_USER_DATA_FILE = "users_src.json" # defines dummy users that are used in testing
 TEST_USER_DATA_POSITION = 0 # when a single user is required this is the one used.

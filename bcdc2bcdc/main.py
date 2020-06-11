@@ -1,14 +1,16 @@
+import json
 import logging
 import logging.config
 import os
 import posixpath
 
-import CacheFiles
-import CKAN
-import CKANData
-import CKANUpdate
-import constants
-import DataCache
+import bcdc2bcdc.CacheFiles as CacheFiles
+import bcdc2bcdc.CKAN as CKAN
+import bcdc2bcdc.CKANData as CKANData
+import bcdc2bcdc.CKANScheming as CKANScheming
+import bcdc2bcdc.CKANUpdate as CKANUpdate
+import bcdc2bcdc.constants as constants
+import bcdc2bcdc.DataCache as DataCache
 
 # pylint: disable=logging-format-interpolation
 
@@ -207,6 +209,21 @@ class RunUpdate:
             updater = CKANUpdate.CKANPackagesUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
             updater.update(deltaObj)
 
+    def refreshSchemingDefs(self):
+        """Every time the update runs it will download the scheming definitions.
+        These are used later when transforming the packages for update.
+        """
+        # check for scheming file, and delete it, then create a ckanschemoing
+        # object, cache it in the datacache
+        cacheFiles = CacheFiles.CKANCacheFiles()
+        schemingCacheFile = cacheFiles.getSchemingCacheFilePath()
+        if os.path.exists(schemingCacheFile):
+            LOGGER.info(f"deleting the scheming cache file: {schemingCacheFile}")
+            os.remove(schemingCacheFile)
+
+        scheming = CKANScheming.Scheming()
+        self.dataCache.setScheming(scheming)
+
 
 if __name__ == "__main__":
 
@@ -215,14 +232,14 @@ if __name__ == "__main__":
     # LOG config file
     logConfigFile = os.path.join(
         appDir,
-        "..", "..",
+        "..",
         constants.TRANSFORM_CONFIG_DIR,
         constants.LOGGING_CONFIG_FILE_NAME,
     )
     logConfigFile = os.path.abspath(logConfigFile)
 
     # output log file for roller if implemented... not implemented atm
-    logOutputsDir = os.path.join(appDir, "..", "..", constants.LOGGING_OUTPUT_DIR)
+    logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
     if not os.path.exists(logOutputsDir):
         os.mkdir(logOutputsDir)
@@ -238,10 +255,11 @@ if __name__ == "__main__":
 
     # ----- RUN SCRIPT -----
     updater = RunUpdate()
+    updater.refreshSchemingDefs()
     # This is complete, commented out while work on group
     # not running user update for now
 
     updater.updateUsers(useCache=True)
     #updater.updateGroups(useCache=True)
     updater.updateOrganizations(useCache=True)
-    # updater.updatePackages(useCache=True)
+    updater.updatePackages(useCache=True)

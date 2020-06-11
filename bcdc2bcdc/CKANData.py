@@ -21,11 +21,11 @@ import sys
 import os.path
 import pickle
 
-import CKANTransform
-import constants
-import CustomTransformers
-import DataCache
-import Diff
+import bcdc2bcdc.CKANTransform as CKANTransform
+import bcdc2bcdc.constants as constants
+import bcdc2bcdc.CustomTransformers as CustomTransformers
+import bcdc2bcdc.DataCache as DataCache
+import bcdc2bcdc.Diff as Diff
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -576,6 +576,10 @@ class CKANRecord:
                 del thisComparable['resources']
                 del inputComparable['resources']
 
+                #LOGGER.debug(f'resource: {resource1}')
+                #LOGGER.debug(f'resource: {resource2}')
+
+
                 # if the value for a specific property is 'None' convert it to None
                 for inputResource in [resource1, resource2]:
                     for cnt in range(0, len(inputResource)):
@@ -583,10 +587,14 @@ class CKANRecord:
                             if inputResource[cnt][key] == 'None':
                                 inputResource[cnt][key] = None
 
-                set_list1 = set(tuple(sorted(d.items())) for d in resource1)
-                set_list2 = set(tuple(sorted(d.items())) for d in resource2)
+                resDiffIngoreEmptyTypes = Diff.Diff(resource1, resource2)
+                diff = resDiffIngoreEmptyTypes.getDiff()
 
-                diff = set_list1.symmetric_difference(set_list2)
+
+                #set_list1 = set(tuple(sorted(d.items())) for d in resource1)
+                #set_list2 = set(tuple(sorted(d.items())) for d in resource2)
+                #diff = set_list1.symmetric_difference(set_list2)
+
                 #if diff:
                 #    LOGGER.debug(f'resource diff: {diff}')
 
@@ -1597,7 +1605,8 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
 
         # email addresses that are ignored ignores!
         cachedIgnores = self.dataCache.ignores
-        ignoreEmailList = ['data@gov.bc.ca']
+        #ignoreEmailList = ['data@gov.bc.ca']
+        ignoreEmailList = []
         if not self.duplicateEmails:
             for userRecord in self:
                 emailProperty = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
