@@ -6,12 +6,13 @@ valid data types are described in constants.VALID_TRANSFORM_TYPES
 """
 
 
-import logging
-import constants
-import sys
-import os.path
 import inspect
 import json
+import logging
+import os.path
+import sys
+
+import bcdc2bcdc.constants as constants
 
 # pylint: disable=logging-format-interpolation
 
@@ -161,6 +162,60 @@ class users(ckanObjectUpdateMixin):
         if 'name' in  recordStruct:
             del recordStruct['name']
 
+class organizations(ckanObjectUpdateMixin):
+    def __init__(self, updateType):
+        self.updateType = updateType
+
+    def remapUserNames(self, record):
+        # if the record is a source record, get the corresponding dest record
+        # swap out the username using the data cache,
+        recordStruct = self.getStructToUpdate(record)
+        if record.origin == constants.DATA_SOURCE.SRC:
+            modifiedUsers = []
+            users = recordStruct['users']
+            # iterate over each of the users
+            #   retrieve the users email,
+            #   map the email to the dest record and
+            #   sub in that value for the comparable struct
+            #
+            #                "user_populated_field": "email",
+            #                "auto_populated_field": "name"
+            for user in users:
+                currentName = user['name']
+                userSrcEmail = record.dataCache.getUserDefinedValue('name',
+                        currentName, 'email', 'users', constants.DATA_SOURCE.SRC)
+                userDestName = record.dataCache.getAutoDefinedValue('name',
+                        userSrcEmail, 'users', constants.DATA_SOURCE.DEST)
+                #LOGGER.debug(f"userDestName: {userDestName}")
+                if not userDestName:
+                    LOGGER.error("Cannot find a corresponding user for the "
+                        f"source user: {currentName}, email: {userSrcEmail}")
+                user['name'] = userDestName
+                modifiedUsers.append(user)
+            recordStruct['users'] = modifiedUsers
+
+    def revertUserName(self, record):
+        # swap the username back to how it was
+        recordStruct = self.getStructToUpdate(record)
+        if record.origin == constants.DATA_SOURCE.SRC:
+            modifiedUsers = []
+            users = recordStruct['users']
+            for user in users:
+                currentName = user['name']
+                # need to find current name in dest, translate to email
+                # find the equivalent email in src, translate back to name
+
+                userDestEmail = record.dataCache.getUserDefinedValue('name',
+                        currentName, 'email', 'users', constants.DATA_SOURCE.DEST)
+                userSrcName = record.dataCache.getAutoDefinedValue('name',
+                        userDestEmail, 'users', constants.DATA_SOURCE.SRC)
+                user['name'] = userSrcName
+                modifiedUsers.append(user)
+            recordStruct['users'] = modifiedUsers
+
+    def noMethod(self, record):
+        pass
+
 # names of specific classes need to align with the names in
 # constants.VALID_TRANSFORM_TYPES
 class packages(ckanObjectUpdateMixin):
@@ -168,26 +223,159 @@ class packages(ckanObjectUpdateMixin):
         self.customTransformations = []
         self.updateType = updateType
 
-    def packageTransform(self, record):
-        """ The custom transformer with misc logic to be applied to packages
+    def fixPackageType(self, record):
+        """older versions of bcdc used to have different types, now all
+        records are bcdc_dataset, this transformer is making sure that all
+        'type' values are set to bcdc_dataset
 
-        :param inputDataStruct: input data struct that will be sent to the api,
-            this struct will be modified and returned by this method.
-        :type inputDataStruct: dict
+        this change is made on both the DEST and the SRC records
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
         """
-        # LOGGER.debug("packageTransform has been called")
-        self.fixResourceStatus(record)
-        self.fixDownloadAudience(record)
-        self.fixMoreInfo(record)
-        self.fixSecurityClass(record)
-
         recordStruct = self.getStructToUpdate(record)
-
-            # always set the type to 'bcdc_dataset'
-
         recordStruct["type"] = "bcdc_dataset"
 
+    def fixResourceBCDC_TYPE(self, record):
+        """ the property bcdc_type of a Resources that is part of a bcdc
+        package can be can be populated with an incorrect value on the source
+        side.  When this occurs and we try to update the package via the api
+        it will generate an error.
 
+        When this property is detected as having a value that is outside of its
+        allowable range it will get populated with a default value.
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        # TODO: should really get these from the scheming end point
+        propertyName = 'bcdc_type'
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
+        defaultValue = 'geographic'
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateResourceProperty(record, allowableValues, propertyName)
+
+    def fixResourceAccessMethod(self, record):
+        propertyName = 'resource_access_method'
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
+        defaultValue = 'direct access'
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateResourceProperty(record, allowableValues, propertyName)
+
+    def fixResourceStorageFormat(self, record):
+        """resource_storage_format
+        """
+        propertyName = 'resource_storage_format'
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
+        defaultValue = 'oracle_sde'
+        # allowableValues = ["arcgis_rest", "atom","cded", "csv","e00","fgdb", "geojson",
+        #                    "georss", "gft", "html","json","kml","kmz",
+        #                    "openapi-json","oracle_sde", "other","pdf","rdf",
+        #                    "shp", "tsv", "txt","wms", "wmts", "xls", "xlsx",
+        #                    "xml","zip"]
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateResourceProperty(record, allowableValues, propertyName)
+
+    def fixResourceType(self, record):
+        propertyName = 'resource_type'
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
+        defaultValue = 'data'
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateResourceProperty(record, allowableValues, propertyName)
+
+    def fixResoureStorageLocation(self, record):
+        """Checks that the resource storage location (resource_storage_location)
+        is populated and contains a valid value
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        # TODO: Should get these validations from the
+
+        propertyName = 'resource_storage_location'
+        defaultValue = 'bc geographic warehouse'
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
+        # allowableValues = ["bc geographic warehouse","catalogue data store",
+        #                    "esri arcgis online","file system",
+        #                    "ministry or other database", "unspecified",
+        #                    "web or ftp site", "pub.data.gov.bc.ca" ]
+
+        # only perform if the record is a source object.
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+
+    def fixPublishState(self, record):
+        """ checks to make sure that the packages 'publish_state' contains a
+        valid value.
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+
+        defaultValue = 'PUBLISHED'
+        propertyName = 'publish_state'
+        allowableValues = record.dataCache.scheming.getDatasetDomain(propertyName)
+        #allowableValues = ['DRAFT', 'PUBLISHED', 'PENDING', 'ARCHIVE', 'REJECTED']
+        # only perform if the record is a source object.
+        if record.origin == constants.DATA_SOURCE.SRC:
+            self.__validateProperty(record, allowableValues, propertyName,
+                                    defaultValue)
+
+    def __validateResourceProperty(self, record, validationDomainList, propertyName, defaultValue=None):
+        """a generic method that will check to see if the current value associated
+        with a property of the resources that make up the current package are
+        valid, and if not then assigns the default value.  If no default value
+        is provided then the default value becomes the first value in the
+        validationDomainList
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        :param validationDomainList: a list of the values that are valid for the
+            'propertyName'
+        :type validationDomainList: list
+        :param propertyName: name of the property that is to be validated
+        :type propertyName: str
+        :param defaultValue: Optional default value to set the 'propertyName' to
+            if the current value violates the validationDomainList.  if no value
+            is provided defaults to the first value in the validationDomainList
+        :type defaultValue: str
+        """
+        recordStruct = self.getStructToUpdate(record)
+        if defaultValue is None:
+            defaultValue = validationDomainList[0]
+        if defaultValue not in validationDomainList:
+            msg = (f'method is configured with a default value of {defaultValue} '
+                   f'which is not part of the domain for the property {propertyName}. '
+                   f'allowable values: {allowableValues}')
+            raise ValueError(msg)
+        if 'resources' in recordStruct:
+            for resourceCnt in range(0, len(recordStruct['resources'])):
+                if (propertyName in recordStruct['resources'][resourceCnt]):
+                    if recordStruct['resources'][resourceCnt][propertyName] not in validationDomainList:
+                        recordStruct['resources'][resourceCnt][propertyName] = defaultValue
+                else:
+                    recordStruct['resources'][resourceCnt][propertyName] = defaultValue
+
+    def __validateProperty(self, record, validationDomainList, propertyName, defaultValue=None):
+        """validate that the value associated with the packages 'propertyName'
+        contains a valid value as defined by validationDomainList.
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        :param validationDomainList: [description]
+        :type validationDomainList: [type]
+        :param propertyName: [description]
+        :type propertyName: [type]
+        :param defaultValue: [description], defaults to None
+        :type defaultValue: [type], optional
+        """
+        recordStruct = self.getStructToUpdate(record)
+        if defaultValue is None:
+            defaultValue = validationDomainList[0]
+
+        if propertyName in recordStruct:
+            if recordStruct[propertyName] not in validationDomainList:
+                recordStruct[propertyName] = defaultValue
 
     def fixSecurityClass(self, record):
         """ The security class for a dataset must be one of the following:
@@ -217,13 +405,14 @@ class packages(ckanObjectUpdateMixin):
         defaultClass = "HIGH-SENSITIVITY"
 
         recordStruct = self.getStructToUpdate(record)
-
-        if ("security_class" in record) and recordStruct["security_class"]:
-            if recorecordStructrd["security_class"] not in validSecurityClasses:
-                if recordStruct["security_class"] == "HIGH-CONFIDENTIAL":
-                    recordStruct["security_class"] = "HIGH-CLASSIFIED"
-                else:
-                    recordStruct["security_class"] = defaultClass
+        # only perform if the record is a source object.
+        if record.origin == constants.DATA_SOURCE.SRC:
+            if ("security_class" in recordStruct) and recordStruct["security_class"]:
+                if recordStruct["security_class"] not in validSecurityClasses:
+                    if recordStruct["security_class"] == "HIGH-CONFIDENTIAL":
+                        recordStruct["security_class"] = "HIGH-CLASSIFIED"
+                    else:
+                        recordStruct["security_class"] = defaultClass
 
     def fixResourceStatus(self, record):
         """ Records that have their properties 'resource_status' set to
@@ -235,15 +424,12 @@ class packages(ckanObjectUpdateMixin):
         :param record: input package data struct that will be sent to the api
         :type record: dict
         """
-        recordStruct = self.getStructToUpdate(record)
-
-        if (
-            ("resource_status" in recordStruct)
-            and recordStruct["resource_status"] == "historicalArchive"
-            and "retention_expiry_date" not in recordStruct
-        ):
-
-            recordStruct["retention_expiry_date"] = "2222-02-02"
+        if record.origin == constants.DATA_SOURCE.SRC:
+            recordStruct = self.getStructToUpdate(record)
+            if ( ("resource_status" in recordStruct) and
+                    recordStruct["resource_status"] == "historicalArchive" and
+                    "retention_expiry_date" not in recordStruct):
+                recordStruct["retention_expiry_date"] = "2222-02-02"
 
     def fixDownloadAudience(self, record):
         """download_audience must be set to something other than null,
@@ -254,14 +440,14 @@ class packages(ckanObjectUpdateMixin):
         :type record: dict
         """
         recordStruct = self.getStructToUpdate(record)
-
-        validDownloadAudiences = ["Government", "Named users", "Public"]
-        defaultValue = "Public"
-        if "download_audience" in recordStruct:
-            if recordStruct["download_audience"] is None:
-                recordStruct["download_audience"] = defaultValue
-            elif recordStruct["download_audience"] not in validDownloadAudiences:
-                recordStruct["download_audience"] = defaultValue
+        if record.origin == constants.DATA_SOURCE.SRC:
+            validDownloadAudiences = ["Government", "Named users", "Public"]
+            defaultValue = "Public"
+            if "download_audience" in recordStruct:
+                if recordStruct["download_audience"] is None:
+                    recordStruct["download_audience"] = defaultValue
+                elif recordStruct["download_audience"] not in validDownloadAudiences:
+                    recordStruct["download_audience"] = defaultValue
 
     def fixMoreInfo(self, record):
         """ fixes the 'more_info' field so that it can be consistently compared
@@ -317,10 +503,10 @@ class packages(ckanObjectUpdateMixin):
         :rtype: dict, ckan package
         """
         recordStruct = self.getStructToUpdate(record)
-
-        if ("more_info" in recordStruct) and recordStruct['more_info'] \
-                is None:
-            del recordStruct['more_info']
+        if record.origin == constants.DATA_SOURCE.SRC:
+            if ("more_info" in recordStruct) and recordStruct['more_info'] \
+                    is None:
+                del recordStruct['more_info']
 
     def addStrangeFields(self, record):
         """ These are fields that are "required" for update / add
@@ -363,7 +549,7 @@ class packages(ckanObjectUpdateMixin):
         }
         existsMethod = existsMethodMap[record.origin]
 
-        for orgTypeKey in ['owner_org', 'sub_org']:
+        for orgTypeKey in ['owner_org']:
             # type is 'organizataion'
             # org map field is 'id'
             # Get the struct value for orgs from the original unmodified data

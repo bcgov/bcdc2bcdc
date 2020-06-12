@@ -6,7 +6,7 @@ from API.
 import logging
 import os
 
-import constants
+import bcdc2bcdc.constants as constants
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class CKANCacheFiles:
         :rtype: str (path)
         """
         curDir = os.path.dirname(__file__)
-        cacheDirRelative = os.path.join(curDir, "..", "..", constants.CACHE_TMP_DIR)
+        cacheDirRelative = os.path.join(curDir, "..", constants.CACHE_TMP_DIR)
         cacheDir = os.path.normpath(cacheDirRelative)
         LOGGER.debug(f"cache dir: {cacheDir}")
 
@@ -110,3 +110,12 @@ class CKANCacheFiles:
         :rtype: str
         """
         return os.path.join(self.dir, constants.CACHE_DEST_PKGS_FILE)
+
+    def getSchemingCacheFilePath(self):
+        """The destination 'packages' cache file. Cache file where packages
+        data retrieved from the destination CKAN instance is cached.
+
+        :return: cache file that will be used for 'packages' data from destination
+        :rtype: str
+        """
+        return os.path.join(self.dir, constants.CACHE_SCHEMING_FILE)

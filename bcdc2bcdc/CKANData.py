@@ -21,11 +21,11 @@ import sys
 import os.path
 import pickle
 
-import CKANTransform
-import constants
-import CustomTransformers
-import DataCache
-import Diff
+import bcdc2bcdc.CKANTransform as CKANTransform
+import bcdc2bcdc.constants as constants
+import bcdc2bcdc.CustomTransformers as CustomTransformers
+import bcdc2bcdc.DataCache as DataCache
+import bcdc2bcdc.Diff as Diff
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -141,7 +141,7 @@ class CKANRecord:
             self.comparableJsonData = self.filterNonUserGeneratedFields()
 
             # remove embedded ignores
-            dataCell = DataCell(self.comparableJsonData)
+            dataCell = DataCell(self.comparableJsonData, self.dataCache, self.origin)
             dataCellNoIgnores = self.removeEmbeddedIgnores(dataCell)
             self.comparableJsonData = dataCellNoIgnores.struct
 
@@ -576,6 +576,10 @@ class CKANRecord:
                 del thisComparable['resources']
                 del inputComparable['resources']
 
+                #LOGGER.debug(f'resource: {resource1}')
+                #LOGGER.debug(f'resource: {resource2}')
+
+
                 # if the value for a specific property is 'None' convert it to None
                 for inputResource in [resource1, resource2]:
                     for cnt in range(0, len(inputResource)):
@@ -583,10 +587,14 @@ class CKANRecord:
                             if inputResource[cnt][key] == 'None':
                                 inputResource[cnt][key] = None
 
-                set_list1 = set(tuple(sorted(d.items())) for d in resource1)
-                set_list2 = set(tuple(sorted(d.items())) for d in resource2)
+                resDiffIngoreEmptyTypes = Diff.Diff(resource1, resource2)
+                diff = resDiffIngoreEmptyTypes.getDiff()
 
-                diff = set_list1.symmetric_difference(set_list2)
+
+                #set_list1 = set(tuple(sorted(d.items())) for d in resource1)
+                #set_list2 = set(tuple(sorted(d.items())) for d in resource2)
+                #diff = set_list1.symmetric_difference(set_list2)
+
                 #if diff:
                 #    LOGGER.debug(f'resource diff: {diff}')
 
@@ -659,8 +667,10 @@ class DataCell:
     about it from the perspective of a change
     """
 
-    def __init__(self, struct, include=True):
+    def __init__(self, struct, dataCache, origin, include=True):
         self.struct = struct
+        self.dataCache = dataCache
+        self.origin = origin
         self.include = include
         self.ignoreList = None
         self.ignoreFld = None
@@ -698,7 +708,7 @@ class DataCell:
         :param key: a key of struct property
         :type key: str
         """
-        newCell = DataCell(self.struct[key])
+        newCell = DataCell(self.struct[key], self.dataCache, self.origin)
         newCell.parent = self
         newCell.parentKey = key
         # copy the attributes from parent to child
@@ -718,7 +728,10 @@ class DataCell:
             if (newCell.ignoreFld) and key == newCell.ignoreFld:
                 # example key is 'name' and the ignore field is name
                 # now check to see if the value is in the ignore list
-                if newCell.struct in newCell.ignoreList:
+                # also check that not in the datacache ignore list
+                # dataType in parentType, value in struct
+                if newCell.struct in newCell.ignoreList or \
+                        newCell.dataCache.ignores.isIgnored(newCell.parentType, newCell.origin, newCell.struct):
                     # continue with example.. now the value for the key name
                     # is in the ignore list.  Set the enclosing object... self
                     # to not be included.
@@ -1457,7 +1470,6 @@ class CKANDataSet(CKANRecordCollection):
             #pickle.dump( updateCollection, open(updtPcl, "wb"))
         return updateCollection
 
-
     def getDelta(self, destDataSet):
         """Compares this dataset with the provided 'ckanDataSet' dataset and
         returns a CKANDatasetDelta object that identifies
@@ -1592,7 +1604,9 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         # find duplicates...
 
         # email addresses that are ignored ignores!
-        ignoreEmailList = ['data@gov.bc.ca']
+        cachedIgnores = self.dataCache.ignores
+        #ignoreEmailList = ['data@gov.bc.ca']
+        ignoreEmailList = []
         if not self.duplicateEmails:
             for userRecord in self:
                 emailProperty = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
@@ -1614,6 +1628,7 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
                 LOGGER.warning(msg)
                 userRecord.duplicateEmail = True
                 recordName = userRecord.getUniqueIdentifier()
+                cachedIgnores.addIgnore(self.dataType, userRecord.origin, recordName)
                 newRecordList.append(recordName)
         return newRecordList
 
@@ -1724,6 +1739,40 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         #         addCollection.addRecord(addRecord)
         # return addCollection
 
+    def calcUpdatesCollection(self, destDataSet):
+        # TODO: working on this
+        self.populateDataSets(destDataSet)
+
+        # modify so the intersection between the two sets of data is
+        # calcuated based on eamial addresses.
+        self.calcEmailLut()
+        destDataSet.calcEmailLut()
+
+        emailDiff = self.emailSet.intersection(destDataSet.emailSet)
+        emails2Check4Update = list(emailDiff)
+        emails2Check4Update.sort()
+
+        # make sure that the ignore list has been augmented with any accounts
+        # that have duplicate emails on the source side
+        ignoreList = self.getIgnoreList()
+
+        updateCollection = CKANRecordCollection(self.dataType)
+
+        for email in emails2Check4Update:
+            srcUserName = self.email2NameLUT[email]
+            destUserName = destDataSet.email2NameLUT[email]
+            srcRecord = self.getRecordByUniqueId(srcUserName)
+            destRecord = destDataSet.getRecordByUniqueId(destUserName)
+            if not srcRecord.isIgnore(srcRecord):
+                srcRecord.setDestRecord(destRecord)
+                if srcRecord != destRecord:
+                    updateStruct = srcRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+                    updtJson = json.dumps(updateStruct)
+                    LOGGER.debug(f"update struct: {updtJson[0:100]} ...")
+
+                    updateCollection.addRecord(srcRecord)
+
+        return updateCollection
 
 class CKANGroupDataSet(CKANRecordParserMixin, CKANDataSet):
     def __init__(self, jsonData, dataCache, origin):

@@ -18,15 +18,15 @@ Functionality that can:
 # pylint: disable=logging-format-interpolation, logging-not-lazy
 
 import abc
+import json
 import logging
 import operator
-import json
-
-import constants
-import CKAN
-import CKANData
-import CKANTransform
 import os
+
+import bcdc2bcdc.CKAN as CKAN
+import bcdc2bcdc.CKANData as CKANData
+import bcdc2bcdc.CKANTransform as CKANTransform
+import bcdc2bcdc.constants as constants
 
 LOGGER = logging.getLogger(__name__)
 
@@ -385,7 +385,8 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.info(f"adding package: {addDataSetName}")
             jsonStr = json.dumps(addStruct)
             LOGGER.debug(f"pkg Struct: {jsonStr[0:100]} ...")
-            self.CKANWrap.addPackage(addStruct)
+            # TODO: uncomment
+            #self.CKANWrap.addPackage(addStruct)
 
     def doDeletes(self, delCollection):
         """does deletes of all the orgs described in the delStruct

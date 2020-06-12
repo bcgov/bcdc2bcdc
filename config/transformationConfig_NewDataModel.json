@@ -43,12 +43,16 @@
             "name"
         ],
         "update_fields_to_include": [
-            "tags"
+            "name"
         ],
         "field_mapping": [
             {
                 "user_populated_field": "name",
                 "auto_populated_field": "id"
+            },
+            {
+                "user_populated_field": "email",
+                "auto_populated_field": "name"
             }
         ],
         "user_populated_properties": {
@@ -108,6 +112,13 @@
     },
     "organizations": {
         "unique_id_field": "name",
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "remapUserNames"
+            }
+        ],
+
         "user_populated_properties": {
             "sector": false,
             "approval_status": true,
@@ -150,7 +161,8 @@
         "ignore_list": [
             "__duplicate__motor-vehicle-hospitalizations-by-region",
             "__duplicate__motor-vehicle-hospitalizations-by-road-user-type",
-            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006"
+            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006",
+            "-archived-fish-related-datasets-cariboo-region"
         ],
         "field_mapping": [
             {
@@ -161,23 +173,47 @@
         "custom_transformation_methods": [
             {
                 "UpdateType": "COMPARE",
-                "CustomMethodName": "orgAndSubOrgToNames"
+                "CustomMethodName": "fixResourceStatus"
             },
             {
-                "UpdateType": "ADD",
-                "CustomMethodName": "noNullMoreInfo"
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixDownloadAudience"
             },
             {
-                "UpdateType": "UPDATE",
-                "CustomMethodName": "noNullMoreInfo"
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixMoreInfo"
             },
             {
-                "UpdateType": "ADD",
-                "CustomMethodName": "addStrangeFields"
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixSecurityClass"
             },
             {
-                "UpdateType": "UPDATE",
-                "CustomMethodName": "addStrangeFields"
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceBCDC_TYPE"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixPackageType"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResoureStorageLocation"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixPublishState"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceStorageFormat"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceAccessMethod"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceType"
             }
         ],
         "user_populated_properties": {
@@ -185,7 +221,7 @@
             "retention_expiry_date": true,
             "license_title": false,
             "maintainer": true,
-            "publish_state": false,
+            "publish_state": true,
             "relationships_as_object": true,
             "view_audience": true,
             "private": true,
@@ -202,29 +238,36 @@
             "type": true,
             "resources": [
                 {
+                    "resource_description": true,
                     "cache_last_updated": false,
+                    "resource_storage_format": true,
                     "package_id": false,
+                    "json_table_schema": true,
                     "resource_storage_access_method": true,
-                    "datastore_active": false,
+                    "datastore_active": true,
                     "id": false,
                     "size": false,
-                    "format": true,
+                    "spatial_datatype": true,
+                    "iso_topic_category": true,
+                    "temporal_extent": true,
                     "state": true,
+                    "bcdc_type": true,
+                    "resource_access_method": true,
                     "edc_resource_type": true,
                     "hash": true,
                     "description": true,
-                    "cache_url": false,
+                    "format": true,
                     "projection_name": true,
-                    "tracking_summary": false,
-                    "last_modified": false,
-                    "url_type": false,
-                    "mimetype": false,
+                    "cache_url": false,
+                    "mimetype_inner": false,
+                    "url_type": true,
+                    "mimetype": true,
                     "resource_storage_location": true,
                     "name": true,
                     "created": false,
                     "url": true,
                     "ofi": true,
-                    "mimetype_inner": false,
+                    "last_modified": false,
                     "resource_update_cycle": true,
                     "position": false,
                     "revision_id": false,
@@ -272,9 +315,7 @@
         ],
         "add_fields_to_include": [
             "owner_org",
-            "tags",
-            "edc_state",
-            "sub_org"
+            "tags"
         ],
         "data_type_enforcement": {
             "resources": []
@@ -290,7 +331,8 @@
                     "resource_update_cycle": "unknown",
                     "resource_storage_access_method": "Indirect Access",
                     "projection_name": "EPSG_3005 - NAD83 BC Albers",
-                    "resource_storage_location": "External"
+                    "resource_storage_location": "External",
+                    "bcdc_type": "geographic"
                 }
             ]
         },
@@ -298,11 +340,6 @@
             "id_fields": [
                 {
                     "property": "owner_org",
-                    "obj_type": "organizations",
-                    "obj_field": "id"
-                },
-                {
-                    "property": "sub_org",
                     "obj_type": "organizations",
                     "obj_field": "id"
                 }
