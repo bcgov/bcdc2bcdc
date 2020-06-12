@@ -1,8 +1,12 @@
+
 import json
 import logging
 import logging.config
 import os
+import sys
 import posixpath
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 import bcdc2bcdc.CacheFiles as CacheFiles
 import bcdc2bcdc.CKAN as CKAN

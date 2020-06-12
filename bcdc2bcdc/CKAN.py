@@ -756,7 +756,7 @@ class CKANWrapper:
         LOGGER.info(f"package_update status_code: {resp.status_code}")
         LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
         if resp.status_code < 200 or resp.status_code >= 300:
-            raise InvalidRequestError(retValStr)
+             raise InvalidRequestError(retValStr)
 
     def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only

@@ -10,13 +10,14 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env"
+            "envFile": "${workspaceFolder}/.env",
+            "env": { "PYTHONPATH": "${workspaceFolder}" }
         },
         {
             "name": "main.py (CAT)",
             "type": "python",
             "request": "launch",
-            "program": "src/bcdc2bcdc/main.py",
+            "program": "bin/main.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env_newmodel"
         },

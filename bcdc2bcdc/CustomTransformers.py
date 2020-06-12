@@ -250,14 +250,14 @@ class packages(ckanObjectUpdateMixin):
         """
         # TODO: should really get these from the scheming end point
         propertyName = 'bcdc_type'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'geographic'
         if record.origin == constants.DATA_SOURCE.SRC:
             self.__validateResourceProperty(record, allowableValues, propertyName)
 
     def fixResourceAccessMethod(self, record):
         propertyName = 'resource_access_method'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'direct access'
         if record.origin == constants.DATA_SOURCE.SRC:
             self.__validateResourceProperty(record, allowableValues, propertyName)
@@ -266,7 +266,7 @@ class packages(ckanObjectUpdateMixin):
         """resource_storage_format
         """
         propertyName = 'resource_storage_format'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'oracle_sde'
         # allowableValues = ["arcgis_rest", "atom","cded", "csv","e00","fgdb", "geojson",
         #                    "georss", "gft", "html","json","kml","kmz",
@@ -278,12 +278,10 @@ class packages(ckanObjectUpdateMixin):
 
     def fixResourceType(self, record):
         propertyName = 'resource_type'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'data'
         if record.origin == constants.DATA_SOURCE.SRC:
             self.__validateResourceProperty(record, allowableValues, propertyName)
-
-
 
     def fixResoureStorageLocation(self, record):
         """Checks that the resource storage location (resource_storage_location)
@@ -296,7 +294,7 @@ class packages(ckanObjectUpdateMixin):
 
         propertyName = 'resource_storage_location'
         defaultValue = 'bc geographic warehouse'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         # allowableValues = ["bc geographic warehouse","catalogue data store",
         #                    "esri arcgis online","file system",
         #                    "ministry or other database", "unspecified",
@@ -316,11 +314,11 @@ class packages(ckanObjectUpdateMixin):
 
         defaultValue = 'PUBLISHED'
         propertyName = 'publish_state'
-        allowableValues = record.scheming.getDomain(propertyName)
+        allowableValues = record.dataCache.scheming.getDatasetDomain(propertyName)
         #allowableValues = ['DRAFT', 'PUBLISHED', 'PENDING', 'ARCHIVE', 'REJECTED']
         # only perform if the record is a source object.
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateProperty(record, validationDomainList, propertyName,
+            self.__validateProperty(record, allowableValues, propertyName,
                                     defaultValue)
 
     def __validateResourceProperty(self, record, validationDomainList, propertyName, defaultValue=None):
@@ -345,14 +343,17 @@ class packages(ckanObjectUpdateMixin):
         recordStruct = self.getStructToUpdate(record)
         if defaultValue is None:
             defaultValue = validationDomainList[0]
-        if defaultValue not in allowableValues:
+        if defaultValue not in validationDomainList:
             msg = (f'method is configured with a default value of {defaultValue} '
                    f'which is not part of the domain for the property {propertyName}. '
                    f'allowable values: {allowableValues}')
             raise ValueError(msg)
         if 'resources' in recordStruct:
             for resourceCnt in range(0, len(recordStruct['resources'])):
-                if recordStruct['resources'][resourceCnt][propertyName] not in validationDomainList:
+                if (propertyName in recordStruct['resources'][resourceCnt]):
+                    if recordStruct['resources'][resourceCnt][propertyName] not in validationDomainList:
+                        recordStruct['resources'][resourceCnt][propertyName] = defaultValue
+                else:
                     recordStruct['resources'][resourceCnt][propertyName] = defaultValue
 
     def __validateProperty(self, record, validationDomainList, propertyName, defaultValue=None):

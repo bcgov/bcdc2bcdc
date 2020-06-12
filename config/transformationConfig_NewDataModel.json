@@ -206,8 +206,15 @@
             {
                 "UpdateType": "COMPARE",
                 "CustomMethodName": "fixResourceStorageFormat"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceAccessMethod"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceType"
             }
-
         ],
         "user_populated_properties": {
             "iso_topic_string": true,
