@@ -37,8 +37,38 @@ class CKANCacheFiles:
         cacheDirRelative = os.path.join(curDir, "..", constants.CACHE_TMP_DIR)
         cacheDir = os.path.normpath(cacheDirRelative)
         LOGGER.debug(f"cache dir: {cacheDir}")
-
         return cacheDir
+
+    def getDebugDataDumpDir(self):
+        retDir = os.path.join(self.dir, 'details')
+        retDir = os.path.normpath(retDir)
+        return retDir
+
+    def getDebugDataPath(self, pkgName, origin, keyword):
+        cnt = 1
+        resDir = self.getDebugDataDumpDir()
+        if not os.path.exists(resDir):
+            os.mkdir(resDir)
+        while True:
+            resPath = os.path.join(resDir, f'{pkgName}_{keyword}_{origin}_{cnt}.json')
+            if not os.path.exists(resPath):
+                break
+            else:
+                cnt += 1
+        return resPath
+
+    def getResourceFilePath(self, pkgName, origin):
+        """using the input package name appends _res_{cnt} to the end
+        of the path and adds a .json suffix.
+
+        If the cnt exists then it increments until it finds a path that
+        does not exist
+
+        :param pkgName: [description]
+        :type pkgName: [type]
+        """
+        tmpPath = self.getDebugDataPath(pkgName, origin, 'RES')
+        return tmpPath
 
     def getSrcUserJsonPath(self):
         """Gets the cache file for the source instance 'user' cache file

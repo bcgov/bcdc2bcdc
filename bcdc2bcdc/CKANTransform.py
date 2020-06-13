@@ -48,47 +48,18 @@ def getTransformationConfig(transformConfigFile=None):
         )
         if constants.CKAN_TRANS_CONF_FILE in os.environ:
             LOGGER.info(
-                "using the transformation config file defined in env " +
-                f"var {constants.CKAN_TRANS_CONF_FILE}"
+                "using the transformation config file defined in env "
+                + f"var {constants.CKAN_TRANS_CONF_FILE}"
             )
             transformConfigFile = os.path.join(
                 os.path.dirname(transformConfigFile),
-                os.environ[constants.CKAN_TRANS_CONF_FILE])
+                os.environ[constants.CKAN_TRANS_CONF_FILE],
+            )
 
     LOGGER.info(f"tranform config file being read: {transformConfigFile}")
     with open(transformConfigFile) as json_file:
         transConfData = json.load(json_file)
     return transConfData
-
-
-# TODO: Idea of transform data set is going to be moved to its own module
-# class TransformDataSet:
-#     """Ties together a transform config with the data allowing you to apply
-#     transformations to the dataset as a whole.  Includes a record iterator
-#     allowing you to iterate over each record in the dataset.
-#     :raises InValidTransformationData: [description]
-#     """
-
-#     def __init__(self, dataType, transformData, transformConfigFile=None):
-#         self.validateType(dataType)
-#         self.dataType = dataType
-#         self.transformData = transformData
-
-#         if not isinstance(self.transformData, list):
-#             msg = (
-#                 "transformation data needs to be a list data type, "
-#                 + f"transformData provided is type: {type(transformData)}"
-#             )
-#             raise InValidTransformationData(msg)
-
-    # def getComparisonData(self):
-    #     """removed machine generated data from the data allowing for comparison
-    #     between two instances.
-    #     """
-    #     comparisonData = []
-    #     for datasetItem in self.transformData:
-    #         # TODO: Logic that goes here
-    #         pass
 
 
 class TransformationConfig:
@@ -97,7 +68,7 @@ class TransformationConfig:
     """
 
     def __init__(self, transformationConfigFile=None):
-        #LOGGER.debug(f"trans conf file: {transformationConfigFile}")
+        # LOGGER.debug(f"trans conf file: {transformationConfigFile}")
         self.transConf = getTransformationConfig(transformationConfigFile)
 
     def __parseNestForBools(self, data, boolVal, parsedData=None):
@@ -272,7 +243,7 @@ class TransformationConfig:
                 + f"ignore values: {retVal}"
             )
         else:
-            #LOGGER.info(f"no ignore values found for type: {datatype}")
+            # LOGGER.info(f"no ignore values found for type: {datatype}")
             pass
         return retVal
 
@@ -312,7 +283,7 @@ class TransformationConfig:
                 + f"include fields are: {retVal}"
             )
         else:
-            #LOGGER.info(f"no ignore values found for type: {datatype}")
+            # LOGGER.info(f"no ignore values found for type: {datatype}")
             pass
         return retVal
 
@@ -452,10 +423,10 @@ class TransformationConfig:
 
                 if updateType not in validTypesStrList:
                     msg = (
-                        f'The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer' +
-                        "type found in the transformation config file defines an " +
-                        f"update type that is unknown: ({updateType}) valid types " +
-                        f"are: {validTypesStrList}"
+                        f"The {constants.TRANSFORM_PARAM_CUSTOM_TRANFORMERS} transformer"
+                        + "type found in the transformation config file defines an "
+                        + f"update type that is unknown: ({updateType}) valid types "
+                        + f"are: {validTypesStrList}"
                     )
                     LOGGER.error(msg)
 
@@ -493,7 +464,10 @@ class TransformationConfig:
         retVal = None
         allCustomTransformations = self.getCustomTranformations(datatype)
         for customTransformation in allCustomTransformations:
-            if customTransformation[constants.CUSTOM_UPDATE_TYPE] == constants.UPDATE_TYPES.UPDATE.name:
+            if (
+                customTransformation[constants.CUSTOM_UPDATE_TYPE]
+                == constants.UPDATE_TYPES.UPDATE.name
+            ):
                 if retVal is None:
                     retVal = []
                 retVal.append(customTransformation)
@@ -505,11 +479,15 @@ class TransformationConfig:
         retVal = None
         allCustomTransformations = self.getCustomTranformations(datatype)
         for customTransformation in allCustomTransformations:
-            if customTransformation[constants.CUSTOM_UPDATE_TYPE] == constants.UPDATE_TYPES.ADD.name:
+            if (
+                customTransformation[constants.CUSTOM_UPDATE_TYPE]
+                == constants.UPDATE_TYPES.ADD.name
+            ):
                 if retVal is None:
                     retVal = []
                 retVal.append(customTransformation)
         return retVal
+
 
 class InvalidTransformationConfiguration(AttributeError):
     """Raised when values cannot be found or incorrect values are found in the
@@ -531,22 +509,3 @@ class InValidTransformationTypeError(AttributeError):
 class InValidTransformationData(AttributeError):
     def __init__(self, message):
         self.message = message
-
-
-# if __name__ == '__main__':
-#     LOGGER = logging.getLogger()
-#     LOGGER.setLevel(logging.DEBUG)
-#     hndlr = logging.StreamHandler()
-#     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(lineno)d - %(message)s')
-#     hndlr.setFormatter(formatter)
-#     LOGGER.addHandler(hndlr)
-#     LOGGER.debug("test")
-
-#     confFile = os.path.join('config', os.environ['CKAN_TRANSFORMATION_CONFIG'])
-#     transConff = TransformationConfig(confFile)
-#     allTrans = transConff.getCustomTranformations('packages')
-#     LOGGER.debug(f"allTrans: {allTrans}")
-#     adds = transConff.getCustomAddTransformations('packages')
-#     LOGGER.debug(f"adds: {adds}")
-#     updates = transConff.getCustomUpdateTransformations('packages')
-#     LOGGER.debug(f"updates: {updates}")

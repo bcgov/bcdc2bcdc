@@ -236,6 +236,37 @@ class packages(ckanObjectUpdateMixin):
         recordStruct = self.getStructToUpdate(record)
         recordStruct["type"] = "bcdc_dataset"
 
+    def checkJsonTableSchemaForNone(self, record):
+        """json table schema is getting returned as None on one instance and
+        {} in another.  This difference should not result in the script thinking
+        the object has changed.  This method will check for None and convert to
+        {}
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        # apply this on both source and destination records
+        self.__checkForNoneInResource(record, 'json_table_schema', {})
+
+    def checkSpatialDatatypeForNone(self, record):
+        self.__checkForNoneInResource(record, 'spatial_datatype', '')
+
+    def checkTemporalExtentForNone(self, record):
+        self.__checkForNoneInResource(record, 'temporal_extent', {}, otherNulls=[''])
+
+    def checkIsoTopicCategoryForNone(self, record):
+        self.__checkForNoneInResource(record, 'iso_topic_category', [])
+
+    def __checkForNoneInResource(self, record, property2Check, sub4NoneValue, otherNulls=None):
+        recordStruct = self.getStructToUpdate(record)
+        if 'resources' in recordStruct:
+            for resCnt in range(0, len(recordStruct['resources'])):
+                if (property2Check not in recordStruct['resources'][resCnt]) or \
+                        recordStruct['resources'][resCnt][property2Check] is None:
+                    recordStruct['resources'][resCnt][property2Check] = sub4NoneValue
+                elif otherNulls is not None and recordStruct['resources'][resCnt][property2Check] in otherNulls:
+                    recordStruct['resources'][resCnt][property2Check] = sub4NoneValue
+
     def fixResourceBCDC_TYPE(self, record):
         """ the property bcdc_type of a Resources that is part of a bcdc
         package can be can be populated with an incorrect value on the source
@@ -253,14 +284,14 @@ class packages(ckanObjectUpdateMixin):
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'geographic'
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName)
+            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
 
     def fixResourceAccessMethod(self, record):
         propertyName = 'resource_access_method'
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'direct access'
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName)
+            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
 
     def fixResourceStorageFormat(self, record):
         """resource_storage_format
@@ -274,16 +305,29 @@ class packages(ckanObjectUpdateMixin):
         #                    "shp", "tsv", "txt","wms", "wmts", "xls", "xlsx",
         #                    "xml","zip"]
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName)
+            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+
+    def fixFormat(self, record):
+
 
     def fixResourceType(self, record):
         propertyName = 'resource_type'
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         defaultValue = 'data'
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName)
+            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
 
-    def fixResoureStorageLocation(self, record):
+    def fixIsoTopicCategory(self, record):
+        # Take any spaces out of the iso topics on the SRC side
+        recordStruct = self.getStructToUpdate(record)
+        if record.origin == constants.DATA_SOURCE.SRC:
+            if 'resources' in recordStruct:
+                for resCnt in range(0, len(recordStruct['resources'])):
+                    if 'iso_topic_category' in recordStruct['resources'][resCnt]:
+                        for isoTopicCnt in range(0, len(recordStruct['resources'][resCnt]['iso_topic_category'])):
+                            recordStruct['resources'][resCnt]['iso_topic_category'][isoTopicCnt] = recordStruct['resources'][resCnt]['iso_topic_category'][isoTopicCnt].strip()
+
+    def fixResourceStorageLocation(self, record):
         """Checks that the resource storage location (resource_storage_location)
         is populated and contains a valid value
 
@@ -346,7 +390,7 @@ class packages(ckanObjectUpdateMixin):
         if defaultValue not in validationDomainList:
             msg = (f'method is configured with a default value of {defaultValue} '
                    f'which is not part of the domain for the property {propertyName}. '
-                   f'allowable values: {allowableValues}')
+                   f'allowable values: {validationDomainList}')
             raise ValueError(msg)
         if 'resources' in recordStruct:
             for resourceCnt in range(0, len(recordStruct['resources'])):

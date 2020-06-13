@@ -197,7 +197,7 @@
             },
             {
                 "UpdateType": "COMPARE",
-                "CustomMethodName": "fixResoureStorageLocation"
+                "CustomMethodName": "fixResourceStorageLocation"
             },
             {
                 "UpdateType": "COMPARE",
@@ -214,6 +214,26 @@
             {
                 "UpdateType": "COMPARE",
                 "CustomMethodName": "fixResourceType"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkJsonTableSchemaForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkSpatialDatatypeForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkTemporalExtentForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkIsoTopicCategoryForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixIsoTopicCategory"
             }
         ],
         "user_populated_properties": {
@@ -256,7 +276,7 @@
                     "edc_resource_type": true,
                     "hash": true,
                     "description": true,
-                    "format": true,
+                    "format": false,
                     "projection_name": true,
                     "cache_url": false,
                     "mimetype_inner": false,
@@ -265,7 +285,7 @@
                     "resource_storage_location": true,
                     "name": true,
                     "created": false,
-                    "url": true,
+                    "url": false,
                     "ofi": true,
                     "last_modified": false,
                     "resource_update_cycle": true,
@@ -308,20 +328,15 @@
             "title": true,
             "revision_id": false,
             "tag_string": false,
-            "org": true
+            "org": false
         },
-        "update_fields_to_include": [
-            "tags"
-        ],
         "add_fields_to_include": [
-            "owner_org",
-            "tags"
+            "owner_org"
         ],
         "data_type_enforcement": {
             "resources": []
         },
         "required_default_values": {
-            "org": "databc",
             "retention_expiry_date": "2300-01-01",
             "resources": [
                 {

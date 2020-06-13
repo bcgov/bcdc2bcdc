@@ -28,6 +28,7 @@ LOGGER = logging.getLogger(__name__)
 # TODO: remove the requirement of the ckanapi module.  Doesn't always calculate
 #       the correct url.  Just use requests, gives more control anyway
 
+
 class CKANParams:
     def __init__(self):
         if constants.CKAN_URL_SRC not in os.environ:
@@ -57,6 +58,7 @@ class CKANParams:
     def getDestWrapper(self):
         destCKANWrapper = CKANWrapper(self.destUrl, self.destAPIKey)
         return destCKANWrapper
+
 
 class CKANWrapper:
     def __init__(self, url=None, apiKey=None):
@@ -160,7 +162,7 @@ class CKANWrapper:
             LOGGER.debug(f"status_code: {resp.status_code}")
             if resp.status_code >= 200 and resp.status_code < 300:
                 respStruct = resp.json()
-                if ('success' in respStruct) and respStruct['success']:
+                if ("success" in respStruct) and respStruct["success"]:
                     retVal = True
         return retVal
 
@@ -179,7 +181,7 @@ class CKANWrapper:
             LOGGER.debug(f"response status code: {resp.status_code}")
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                orgList = respJson['result']
+                orgList = respJson["result"]
             else:
                 raise InvalidRequestError(respJson)
         return orgList
@@ -210,7 +212,7 @@ class CKANWrapper:
             LOGGER.info(f"    - page: {pageCnt} {offset} {elemCnt}")
             # offset=0, pageSize
             pageData = self.getSinglePagePackageNames(offset=offset, pageSize=elemCnt)
-            #params = {"limit": elemCnt, "offset": offset}
+            # params = {"limit": elemCnt, "offset": offset}
             # pageData = self.remoteapi.action.package_list(limit=elemCnt,
             #                                              offset=offset)
             # pageData = self.remoteapi.action.package_list(context=params)
@@ -340,7 +342,7 @@ class CKANWrapper:
             LOGGER.debug(f"response status code: {resp.status_code}")
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                orgList = respJson['result']
+                orgList = respJson["result"]
             else:
                 raise InvalidRequestError(respJson)
         return orgList
@@ -379,7 +381,7 @@ class CKANWrapper:
             resp = requests.get(userListUrl, headers=self.CKANHeader)
             if self.__isResponseSuccess(resp):
                 userJson = resp.json()
-                users = userJson['result']
+                users = userJson["result"]
             else:
                 raise InvalidRequestError(resp)
         LOGGER.info(f"retrieved {len(users)} users")
@@ -398,8 +400,9 @@ class CKANWrapper:
             prodHostFromEnvVar = urllib.parse.urlparse(doNotWriteInstance)
             hostInDestUrl = urllib.parse.urlparse(self.CKANUrl)
             LOGGER.debug(
-                f'host in DestURL: {hostInDestUrl.netloc} vs prod host: '
-                f'{prodHostFromEnvVar.netloc}')
+                f"host in DestURL: {hostInDestUrl.netloc} vs prod host: "
+                f"{prodHostFromEnvVar.netloc}"
+            )
             if prodHostFromEnvVar == hostInDestUrl:
                 msg = (
                     f"Attempting to perform an operation that writes to an "
@@ -410,9 +413,9 @@ class CKANWrapper:
             LOGGER.debug(f"safe destination instance: {self.CKANUrl}")
         else:
             msg = (
-                f'The environment variable: {constants.CKAN_DO_NOT_WRITE_URL} '
-                'has not been defined.  Define and re-run'
-                )
+                f"The environment variable: {constants.CKAN_DO_NOT_WRITE_URL} "
+                "has not been defined.  Define and re-run"
+            )
             raise ValueError(msg)
 
     def addUser(self, userData):
@@ -436,7 +439,7 @@ class CKANWrapper:
             resp = requests.post(userCreateURL, headers=self.CKANHeader, json=userData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
             LOGGER.debug(f"response status code: {resp.status_code}")
@@ -481,7 +484,7 @@ class CKANWrapper:
             resp = requests.post(userUpdtURL, headers=self.CKANHeader, json=userData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
             LOGGER.debug(f"response status code: {resp.status_code}")
@@ -517,7 +520,7 @@ class CKANWrapper:
             resp = requests.get(apiUrl, headers=self.CKANHeader, json=userData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
             LOGGER.debug(f"response status code: {resp.status_code}")
@@ -566,7 +569,7 @@ class CKANWrapper:
         self.checkUrl()
         retVal = None
         LOGGER.debug(f"trying to delete the user: {userId}")
-        userParams = {"id": userId} # noqa
+        userParams = {"id": userId}  # noqa
         LOGGER.warning("actual user delete api call commented out")
         # TODO: uncomment when craig available to verify that ignore configs are working
         try:
@@ -578,7 +581,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=userParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         LOGGER.debug(f"User Deleted: {retVal}")
@@ -592,9 +595,7 @@ class CKANWrapper:
         :return: list of groups
         :rtype: list (struct)
         """
-        groupConfig = {
-            "order_by": "name"
-        }
+        groupConfig = {"order_by": "name"}
         if includeData:
             groupConfig = {
                 "order_by": "name",
@@ -614,7 +615,7 @@ class CKANWrapper:
             resp = requests.get(apiUrl, headers=self.CKANHeader, params=groupConfig)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         return retVal
@@ -641,8 +642,8 @@ class CKANWrapper:
         LOGGER.debug(f"groupData: {groupData}")
         LOGGER.debug(f"creating a new Group with the data: {groupData}")
 
-        if 'id' not in groupData and 'name' in groupData:
-            groupData['id'] = groupData['name']
+        if "id" not in groupData and "name" in groupData:
+            groupData["id"] = groupData["name"]
         try:
             retVal = self.remoteapi.action.group_create(**groupData)
         except ckanapi.errors.CKANAPIError:
@@ -652,7 +653,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=groupData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
 
@@ -686,7 +687,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         LOGGER.debug("group delete return val: %s", retVal)
@@ -705,7 +706,7 @@ class CKANWrapper:
             # del groupData['name']
             pass
         LOGGER.debug(f"trying to update a group using the data: {groupData}")
-        with open('updt_group.json', 'w') as groupFileHandle:
+        with open("updt_group.json", "w") as groupFileHandle:
             json.dump(groupData, groupFileHandle)
         try:
             retVal = self.remoteapi.action.group_update(**groupData)
@@ -716,7 +717,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=groupData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         retValStr = json.dumps(retVal)
@@ -741,22 +742,38 @@ class CKANWrapper:
         """
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
-        LOGGER.debug(f"trying to update a package using the data: {packageJsonStr[0:100]} ...")
+        LOGGER.debug(
+            f"trying to update a package using the data: {packageJsonStr[0:100]} ..."
+        )
 
         # send the data as a request.post
         requestTimeOut = 120
         packageUpdateEndPoint = "api/3/action/package_update"
         packageUpdateCall = f"{self.CKANUrl}{packageUpdateEndPoint}"
 
-        #resp = requests.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
-        resp = self.rsession.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
+        # resp = requests.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
+        try:
+            resp = self.rsession.post(
+                packageUpdateCall,
+                json=packageData,
+                headers=self.CKANHeader,
+                timeout=requestTimeOut,
+            )
 
-        responseStruct = resp.json()
-        retValStr = json.dumps(responseStruct)
-        LOGGER.info(f"package_update status_code: {resp.status_code}")
-        LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
-        if resp.status_code < 200 or resp.status_code >= 300:
-             raise InvalidRequestError(retValStr)
+            responseStruct = resp.json()
+            retValStr = json.dumps(responseStruct)
+            LOGGER.info(f"package_update status_code: {resp.status_code}")
+            LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
+            if resp.status_code < 200 or resp.status_code >= 300:
+                raise InvalidRequestError(retValStr)
+        except requests.exceptions.ReadTimeout:
+            if retry:
+                LOGGER.error("have already tried resending this requiest")
+                raise
+            else:
+                LOGGER.warning("got a timeout on this request.. trying again!")
+                self.updatePackage(packageData, retry=True)
+
 
     def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only
@@ -792,29 +809,33 @@ class CKANWrapper:
             LOGGER.debug(f"OrgConfig is {orgConfig}")
             LOGGER.debug(f"pagecount is {pageCnt}")
             try:
-                #retVal = self.remoteapi.action.organization_list(**orgConfig)
+                # retVal = self.remoteapi.action.organization_list(**orgConfig)
                 endPoint = "api/3/action/organization_list"
                 apiUrl = f"{self.CKANUrl}{endPoint}"
                 LOGGER.debug(f"url end point: {apiUrl}")
                 resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgConfig)
                 if self.__isResponseSuccess(resp):
                     respJson = resp.json()
-                    retVal = respJson['result']
+                    retVal = respJson["result"]
                 else:
                     raise InvalidRequestError(resp)
 
             except ckanapi.errors.CKANAPIError as err:
                 LOGGER.error(err)
                 # catch 504 errors raised by ckanapi, otherwise re-raise
-                if ((((attempts < maxRetries) and
-                        hasattr(err, 'extra_msg')) and
-                        len(literal_eval(err.extra_msg)) >= 2) and
-                            literal_eval(err.extra_msg)[1] == 504):
+                if (
+                    ((attempts < maxRetries) and hasattr(err, "extra_msg"))
+                    and len(literal_eval(err.extra_msg)) >= 2
+                ) and literal_eval(err.extra_msg)[1] == 504:
                     attempts += 1
-                    LOGGER.warning(f"organization_list: status: 504, retry {attempts} of {maxRetries} ")
-                    retVal = self.getOrganizations(includeData=includeData,
-                                                   attempts=attempts,
-                                                   currentPosition=currentPosition)
+                    LOGGER.warning(
+                        f"organization_list: status: 504, retry {attempts} of {maxRetries} "
+                    )
+                    retVal = self.getOrganizations(
+                        includeData=includeData,
+                        attempts=attempts,
+                        currentPosition=currentPosition,
+                    )
                     # if gets here then succeeded, reset attempts
                     attempts = 0
 
@@ -861,7 +882,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         LOGGER.debug("org delete return val: %s", retVal)
@@ -883,7 +904,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=organizationData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         except ckanapi.errors.ValidationError:
@@ -915,7 +936,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=organizationData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
 
@@ -935,7 +956,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=packageData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
         except requests.exceptions.ConnectionError:
@@ -969,7 +990,7 @@ class CKANWrapper:
             resp = requests.post(apiUrl, headers=self.CKANHeader, json=packageParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
-                retVal = respJson['result']
+                retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
 
@@ -988,23 +1009,25 @@ class CKANWrapper:
         LOGGER.debug(f"retriving the scheming definitions...")
         # {{DOMAIN}}api/3/action/scheming_dataset_schema_show?type=bcdc_dataset
         endPoint = "api/3/action/scheming_dataset_schema_show"
-        params = {'type': 'bcdc_dataset'}
+        params = {"type": "bcdc_dataset"}
         apiUrl = f"{self.CKANUrl}{endPoint}"
         LOGGER.debug(f"url end point: {apiUrl}")
         resp = requests.post(apiUrl, headers=self.CKANHeader, params=params)
         if self.__isResponseSuccess(resp):
             respJson = resp.json()
-            retVal = respJson['result']
+            retVal = respJson["result"]
         else:
             raise InvalidRequestError(resp)
         LOGGER.debug(f"Retrieved scheming defs: ")
         return retVal
 
+
 class CKANAsyncWrapper:
-    '''
+    """
     trying to implement this pattern
     https://alexwlchan.net/2019/10/adventures-with-concurrent-futures/
-    '''
+    """
+
     def __init__(self, baseUrl, apiKey=None, header=None):
         self.baseUrl = baseUrl.strip()
         self.header = header
@@ -1013,7 +1036,7 @@ class CKANAsyncWrapper:
                 self.header = {}
             self.header["X-CKAN-API-KEY"] = apiKey
 
-        self.packageShowEndPoint = '/api/3/action/package_show?id='
+        self.packageShowEndPoint = "/api/3/action/package_show?id="
 
         self.packages = []
 
@@ -1035,7 +1058,7 @@ class CKANAsyncWrapper:
         :return: the ckan package that was requested
         :rtype: dict
         """
-        #LOGGER.debug(f"url: {url}")
+        # LOGGER.debug(f"url: {url}")
         maxRetries = 5
         retVal = None
         try:
@@ -1043,7 +1066,7 @@ class CKANAsyncWrapper:
             if resp.status_code != 200:
                 LOGGER.debug(f"status code: {resp.status_code}, {url}")
             packageData = resp.json()
-            retVal = packageData['result']
+            retVal = packageData["result"]
         except requests.exceptions.ConnectionError:
             if retries > maxRetries:
                 raise
@@ -1067,7 +1090,9 @@ class CKANAsyncWrapper:
         self.spoolRequests(packageNameList)
         return self.packages
 
-    def spoolRequests(self, packageList, missingPackages=None): # pylint: disable=too-many-locals
+    def spoolRequests(
+        self, packageList, missingPackages=None
+    ):  # pylint: disable=too-many-locals
         """where the async calls are created.  Gets the list of package names
         and spools up a number of requests, monitors the requests, retrieves the
         data from the requests and stuffs them into self.packages.
@@ -1081,7 +1106,7 @@ class CKANAsyncWrapper:
         :type missingPackages: list of package names that failed, optional
         """
         # trim training / from baseUrl
-        if self.baseUrl[-1] == '/':
+        if self.baseUrl[-1] == "/":
             self.baseUrl = self.baseUrl[0:-1]
         pkgShowUrl = f"{self.baseUrl}{self.packageShowEndPoint}"
         completed = 0
@@ -1092,7 +1117,9 @@ class CKANAsyncWrapper:
 
         packageIterator = iter(pkgs2Get)
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_CONCURRENT_TASKS) as executor:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.MAX_CONCURRENT_TASKS
+        ) as executor:
             # Schedule the first N futures.  We don't want to schedule them all
             # at once, to avoid consuming excessive amounts of memory.  Also
             # allows finer grained monitoring of tasks
@@ -1112,8 +1139,10 @@ class CKANAsyncWrapper:
                 )
                 completed += len(done)
                 if not completed % 200:
-                    LOGGER.debug(f"total completed: {completed} of {len(pkgs2Get)} (pkgs in loop: {len(done)})")
-                    #LOGGER.debug(f" num done in this loop: {len(done)}")
+                    LOGGER.debug(
+                        f"total completed: {completed} of {len(pkgs2Get)} (pkgs in loop: {len(done)})"
+                    )
+                    # LOGGER.debug(f" num done in this loop: {len(done)}")
                 for fut in done:
                     original_task = futures.pop(fut)
                     # can add error catching and re-add to executor here
@@ -1144,11 +1173,15 @@ class CKANAsyncWrapper:
             if self.currentRetry < self.maxRetries:
                 self.currentRetry += 1
                 numMissingPkgs = len(packageList) - len(self.packages)
-                LOGGER.warning(f'missing: {numMissingPkgs} packages')
+                LOGGER.warning(f"missing: {numMissingPkgs} packages")
 
                 # iterate through self.pkgData and populate with just names
-                pkgNamesInReturnData = [pkg['name'] for pkg in self.packages]
-                missingPkgNames = [pkgName for pkgName in packageList if pkgName not in pkgNamesInReturnData]
+                pkgNamesInReturnData = [pkg["name"] for pkg in self.packages]
+                missingPkgNames = [
+                    pkgName
+                    for pkgName in packageList
+                    if pkgName not in pkgNamesInReturnData
+                ]
 
                 LOGGER.debug(f"missingPkgNames: {missingPkgNames}")
                 LOGGER.info(f"re-requesting {len(missingPkgNames)} missing packages...")
@@ -1156,12 +1189,13 @@ class CKANAsyncWrapper:
                 self.spoolRequests(packageList, missingPkgNames)
             else:
                 msg = (
-                    f'after {self.maxRetries} attempts to retrieve all the '
-                    'packages has failed, raising this exception, have retrieved'
-                    f'{len(self.packages)} of {len(packageList)} requested '
-                    'packages'
+                    f"after {self.maxRetries} attempts to retrieve all the "
+                    "packages has failed, raising this exception, have retrieved"
+                    f"{len(self.packages)} of {len(packageList)} requested "
+                    "packages"
                 )
                 raise AsyncPackagesGetError(msg)
+
 
 # ----------------- EXCEPTIONS
 class CKANPackagesGetError(Exception):
@@ -1190,6 +1224,7 @@ class AsyncPackagesGetError(Exception):
         LOGGER.error(message)
         self.message = message
 
+
 class InvalidRequestError(Exception):
     def __init__(self, message):
         if isinstance(message, requests.Response):
@@ -1197,8 +1232,8 @@ class InvalidRequestError(Exception):
         LOGGER.error(message)
         self.message = message
 
-if __name__ == '__main__':
 
+if __name__ == "__main__":
 
     LOGGER = logging.getLogger()
     LOGGER.setLevel(logging.DEBUG)
@@ -1210,23 +1245,20 @@ if __name__ == '__main__':
     LOGGER.addHandler(hndlr)
     LOGGER.debug("test")
 
-    lg = logging.getLogger('urllib3.connectionpool')
+    lg = logging.getLogger("urllib3.connectionpool")
     lg.setLevel(logging.INFO)
+    #     pkgList = ["aircraft-emissions-2000-5-km-grid",
+    #         "airfields-trim-enhanced-base-map-ebm",
+    #         "airphoto-centroids",
+    #         "airphoto-flightlines",
+    #         "air-photo-system-air-photo-polygons",
+    #         "air-photo-system-air-photo-polygons-spatial-view",
+    #         "air-photo-system-centre-points"]
 
-
-
-#     pkgList = ["aircraft-emissions-2000-5-km-grid",
-#         "airfields-trim-enhanced-base-map-ebm",
-#         "airphoto-centroids",
-#         "airphoto-flightlines",
-#         "air-photo-system-air-photo-polygons",
-#         "air-photo-system-air-photo-polygons-spatial-view",
-#         "air-photo-system-centre-points"]
-
-#     pkgListPath = 'temp/pkgNames.json'
-#     with open(pkgListPath) as fh:
-#         pkgList = json.load(fh)
-#     LOGGER.debug(f"numpkgs: {len(pkgList)}")
+    #     pkgListPath = 'temp/pkgNames.json'
+    #     with open(pkgListPath) as fh:
+    #         pkgList = json.load(fh)
+    #     LOGGER.debug(f"numpkgs: {len(pkgList)}")
 
     destUrl = os.environ[constants.CKAN_URL_DEST]
     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
@@ -1236,7 +1268,7 @@ if __name__ == '__main__':
     # LOGGER.debug(f"packages returned {len(pkgs)}")
 
     wrapper = CKANWrapper()
-    testDataPath = 'updt_package_test.json'
+    testDataPath = "updt_package_test.json"
     with open(testDataPath) as fh:
         pkgStruct = json.load(fh)
 
