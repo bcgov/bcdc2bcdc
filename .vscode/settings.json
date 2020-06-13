@@ -29,8 +29,10 @@
         "cludgy",
         "datastruct",
         "dels",
+        "fgdb",
         "flds",
         "fullname",
+        "hndlr",
         "idir",
         "ints",
         "isclass",
@@ -58,7 +60,8 @@
         "uniqueid",
         "updt",
         "updts",
-        "veryhigh"
+        "veryhigh",
+        "xlsx"
     ],
     "python.formatting.provider": "black",
     "workbench.editor.enablePreview": false,

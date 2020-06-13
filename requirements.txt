@@ -7,3 +7,4 @@ pytest==5.4.1
 black>=19.*
 pylint==2.4.4
 prospector==1.2.0
+json_delta==2.0

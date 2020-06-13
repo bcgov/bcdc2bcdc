@@ -1,12 +1,14 @@
+"""[summary]
+"""
+# pylint: disable=logging-format-interpolation, wrong-import-position
 
-import json
 import logging
 import logging.config
 import os
-import sys
 import posixpath
+import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 import bcdc2bcdc.CacheFiles as CacheFiles
 import bcdc2bcdc.CKAN as CKAN
@@ -15,8 +17,6 @@ import bcdc2bcdc.CKANScheming as CKANScheming
 import bcdc2bcdc.CKANUpdate as CKANUpdate
 import bcdc2bcdc.constants as constants
 import bcdc2bcdc.DataCache as DataCache
-
-# pylint: disable=logging-format-interpolation
 
 # set scope for the logger
 LOGGER = None
@@ -60,8 +60,12 @@ class RunUpdate:
 
         # wrap the data with CKANDataset class
         # cache is populated when delta obj is requested!
-        srcUserCKANDataSet = CKANData.CKANUsersDataSet(userDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
-        destUserCKANDataSet = CKANData.CKANUsersDataSet(userDataDest, self.dataCache, constants.DATA_SOURCE.DEST)
+        srcUserCKANDataSet = CKANData.CKANUsersDataSet(
+            userDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
+        )
+        destUserCKANDataSet = CKANData.CKANUsersDataSet(
+            userDataDest, self.dataCache, constants.DATA_SOURCE.DEST
+        )
 
         # specific to users, implemented a method to augment the ignore list
         # for duplicate users
@@ -70,7 +74,6 @@ class RunUpdate:
         self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
 
-
         # use CKANDataset functionality to determine if differences
         if srcUserCKANDataSet != destUserCKANDataSet:
             # perform the update
@@ -78,7 +81,9 @@ class RunUpdate:
 
             deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANUserUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANUserUpdate(
+                self.dataCache, ckanWrapper=self.destCKANWrapper
+            )
             updater.update(deltaObj)
 
     def updateGroups(self, useCache=False):
@@ -109,8 +114,12 @@ class RunUpdate:
         # groupDataDest = self.destCKANWrapper.getGroups(includeData=True)
         # LOGGER.debug(f"Groupdata is: {groupDataProd}")
 
-        srcGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
-        destGroupCKANDataSet = CKANData.CKANGroupDataSet(groupDataDest, self.dataCache, constants.DATA_SOURCE.DEST)
+        srcGroupCKANDataSet = CKANData.CKANGroupDataSet(
+            groupDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
+        )
+        destGroupCKANDataSet = CKANData.CKANGroupDataSet(
+            groupDataDest, self.dataCache, constants.DATA_SOURCE.DEST
+        )
 
         self.dataCache.addData(srcGroupCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destGroupCKANDataSet, constants.DATA_SOURCE.DEST)
@@ -119,7 +128,9 @@ class RunUpdate:
             LOGGER.info("found differences between group data in src an dest")
             deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
             LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANGroupUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANGroupUpdate(
+                self.dataCache, ckanWrapper=self.destCKANWrapper
+            )
             updater.update(deltaObj)
         else:
             LOGGER.info("no differences found for groups between src and dest")
@@ -150,10 +161,11 @@ class RunUpdate:
         # orgDataDest = self.destCKANWrapper.getOrganizations(includeData=True)
         # LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
 
-        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(orgDataSrc, self.dataCache, constants.DATA_SOURCE.SRC)
+        srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
+            orgDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
+        )
         destOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
-            orgDataDest, self.dataCache,
-            constants.DATA_SOURCE.DEST
+            orgDataDest, self.dataCache, constants.DATA_SOURCE.DEST
         )
 
         self.dataCache.addData(srcOrgCKANDataSet, constants.DATA_SOURCE.SRC)
@@ -164,8 +176,7 @@ class RunUpdate:
             deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
             LOGGER.info(f"Delta obj for orgs: {deltaObj}")
             updater = CKANUpdate.CKANOrganizationUpdate(
-                dataCache=self.dataCache,
-                ckanWrapper=self.destCKANWrapper
+                dataCache=self.dataCache, ckanWrapper=self.destCKANWrapper
             )
             updater.update(deltaObj)
 
@@ -198,8 +209,12 @@ class RunUpdate:
         # srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
         # destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
 
-        srcPkgDataSet = CKANData.CKANPackageDataSet(srcPkgList, self.dataCache, constants.DATA_SOURCE.SRC)
-        destPkgDataSet = CKANData.CKANPackageDataSet(destPkgList, self.dataCache, constants.DATA_SOURCE.DEST)
+        srcPkgDataSet = CKANData.CKANPackageDataSet(
+            srcPkgList, self.dataCache, constants.DATA_SOURCE.SRC
+        )
+        destPkgDataSet = CKANData.CKANPackageDataSet(
+            destPkgList, self.dataCache, constants.DATA_SOURCE.DEST
+        )
 
         self.dataCache.addData(srcPkgDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
@@ -210,7 +225,9 @@ class RunUpdate:
 
             deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
             LOGGER.info(f"Delta obj for packages: {deltaObj}")
-            updater = CKANUpdate.CKANPackagesUpdate(self.dataCache, ckanWrapper=self.destCKANWrapper)
+            updater = CKANUpdate.CKANPackagesUpdate(
+                self.dataCache, ckanWrapper=self.destCKANWrapper
+            )
             updater.update(deltaObj)
 
     def refreshSchemingDefs(self):
@@ -242,6 +259,12 @@ if __name__ == "__main__":
     )
     logConfigFile = os.path.abspath(logConfigFile)
 
+    # Adding a new "verbose" log level, to use: logger.debugv
+    # DEBUG_LEVELV_NUM = 9
+    # logging.addLevelName(DEBUG_LEVELV_NUM, "DEBUGV")
+    # def debugv(self, message, *args, **kws):
+    #     self._log(DEBUG_LEVELV_NUM, message, args, **kws)
+
     # output log file for roller if implemented... not implemented atm
     logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
@@ -264,6 +287,6 @@ if __name__ == "__main__":
     # not running user update for now
 
     updater.updateUsers(useCache=True)
-    #updater.updateGroups(useCache=True)
+    # updater.updateGroups(useCache=True)
     updater.updateOrganizations(useCache=True)
     updater.updatePackages(useCache=True)
