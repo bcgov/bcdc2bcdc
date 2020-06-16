@@ -618,11 +618,13 @@ class CKANRecord:
 
                     resPath1 = cacheFiles.getResourceFilePath(name, self.origin)
                     with open(resPath1, 'w') as fh1:
-                        json.dump(resource1, fh1)
+                        json.dump(resource1, fh1, sort_keys=True)
 
-                    resPath2 = cacheFiles.getResourceFilePath(name, inputRecord.origin)
-                    with open(resPath2, 'w') as fh2:
-                        json.dump(resource2, fh2)
+                    #resPath2 = cacheFiles.getResourceFilePath(name, inputRecord.origin)
+                    with open(resPath1, 'a') as fh2:
+                        dumpStr = json.dumps(resource2, sort_keys=True)
+                        #
+                        fh2.write(f'\n{dumpStr}\n')
 
                     #LOGGER.debug(f"resource 1: {resource1}")
                     #LOGGER.debug(f"resource 2: {resource2}")
@@ -648,12 +650,13 @@ class CKANRecord:
 
                 pkgPath1 = cacheFiles.getDebugDataPath(recordName, self.origin, 'PKG')
                 with open(pkgPath1, 'w') as fh1:
-                    json.dump(thisComparable, fh1)
+                    json.dump(thisComparable, fh1, sort_keys=True)
 
-                pkgPath2 = cacheFiles.getDebugDataPath(recordName, self.origin, 'PKG')
-                with open(pkgPath2, 'w') as fh2:
-                    json.dump(inputComparable, fh2)
-
+                #pkgPath2 = cacheFiles.getDebugDataPath(recordName, self.origin, 'PKG')
+                with open(pkgPath1, 'a') as fh2:
+                    pkgStr = json.dumps(inputComparable, sort_keys=True)
+                    fh2.write(f'\n{pkgStr}\n')
+                diff = pkgDiff
                 # LOGGER.debug(f"formatted diff:\n {formattedDiff}")
         return diff
 

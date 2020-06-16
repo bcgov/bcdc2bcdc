@@ -27,10 +27,14 @@ class RunUpdate:
         params = CKAN.CKANParams()
         self.srcCKANWrapper = params.getSrcWrapper()
         self.destCKANWrapper = params.getDestWrapper()
+
         # verify that destination is not prod
         self.destCKANWrapper.checkUrl()
         self.dataCache = DataCache.DataCache()
         self.cachedFilesPaths = CacheFiles.CKANCacheFiles()
+
+        # create the directory for detailed data dumps
+        self.cachedFilesPaths.getCreateDataDumpDir()
 
     def updateUsers(self, useCache=False):
 

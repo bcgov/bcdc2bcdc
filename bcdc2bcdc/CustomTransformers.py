@@ -11,6 +11,7 @@ import json
 import logging
 import os.path
 import sys
+import urllib.parse
 
 import bcdc2bcdc.constants as constants
 
@@ -146,6 +147,8 @@ class ckanObjectUpdateMixin:
             updateStruct = record.updateableJsonData
         return updateStruct
 
+
+
 class users(ckanObjectUpdateMixin):
     def __init__(self, updateType):
         self.updateType = updateType
@@ -248,6 +251,74 @@ class packages(ckanObjectUpdateMixin):
         # apply this on both source and destination records
         self.__checkForNoneInResource(record, 'json_table_schema', {})
 
+    def fixOFI(self, record):
+        """OFI was comming accross as a str bool on source and then an actual boolean
+        field on the Dest.  This method checks the source side for 'true' or
+        'false' values and converts them to bool,
+
+        Not currently being used! Marked OFI to be a non user populated field.
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        if record.origin == constants.DATA_SOURCE.SRC:
+            recordStruct = self.getStructToUpdate(record)
+            if 'ofi' in recordStruct:
+                ofiValue = recordStruct['ofi']
+                if (isinstanceof(ofiValue, str)) and ofiValue.lower() in ['true', 'false']:
+                    if ofiValue.lower() == 'true':
+                        recordStruct['ofi'] = True
+                    else:
+                        recordStruct['ofi'] = False
+
+    def adjustURLDomain(self, record):
+        """Looks at the URL field that is part of each packages resources.  The
+        If the URL field does not exist it is replaced with the "defaultURL" which
+        is currently set to "https://www.zoomquilt.org/"
+
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        defaultURL = "https://www.zoomquilt.org/"
+        # only apply on the source
+        if record.origin == constants.DATA_SOURCE.SRC:
+            recordStruct = self.getStructToUpdate(record)
+            for resCnt in range(0, len(recordStruct['resources'])):
+                if 'url' in recordStruct['resources'][resCnt]:
+                    # extract the domain, for the record and compare against
+                    # the domain of the env var for SRC, if those are the
+                    # same then swap it to DEST.
+                    curUrl = recordStruct['resources'][resCnt]['url']
+                    curUrlParser = urllib.parse.urlparse(curUrl)
+
+                    # src url parser
+                    srcUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_SRC])
+                    if curUrlParser.hostname == srcUrlParser.hostname:
+                        # swap it to the DEST host as CKAN will do that once the
+                        # record is updated.  This allows change detection to not
+                        # flag a change.
+                        destUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_DEST])
+                        newUrl = curUrl.replace(srcUrlParser.hostname, destUrlParser.hostname)
+                        LOGGER.debug(f"new url: {newUrl}")
+                        recordStruct['resources'][resCnt]['url'] = newUrl
+                else:
+                    recordStruct['resources'][resCnt]['url'] = defaultURL
+
+
+
+            # # also patch the url in the package
+            # if ('url' in recordStruct) and recordStruct['url']:
+            #     curUrl = recordStruct['url']
+            #     curUrlParser = urllib.parse.urlparse(curUrl)
+
+            #     # src url parser
+            #     srcUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_SRC])
+            #     if curUrlParser.hostname == srcUrlParser.hostname:
+            #             destUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_DEST])
+            #             newUrl = curUrl.replace(srcUrlParser.hostname, destUrlParser.hostname)
+            #             LOGGER.debug(f"new url: {newUrl}")
+            #             recordStruct['url'] = newUrl
+
     def checkSpatialDatatypeForNone(self, record):
         self.__checkForNoneInResource(record, 'spatial_datatype', '')
 
@@ -307,7 +378,7 @@ class packages(ckanObjectUpdateMixin):
         if record.origin == constants.DATA_SOURCE.SRC:
             self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
 
-    def fixFormat(self, record):
+    #def fixFormat(self, record):
 
 
     def fixResourceType(self, record):
@@ -519,7 +590,7 @@ class packages(ckanObjectUpdateMixin):
             recordStruct["more_info"] = json.dumps(
                 recordStruct["more_info"], sort_keys=True, separators=(",", ":")
             )
-        elif (("more_info" in recordStruct) and recordStruct["more_info"]) and \
+        if (("more_info" in recordStruct) and recordStruct["more_info"]) and \
             isinstance(recordStruct["more_info"], str):
             # more info exists, has a value in it, and its a string.
             # in this situation code will:
@@ -534,6 +605,7 @@ class packages(ckanObjectUpdateMixin):
                 if "link" in moreInfoRecord[listPos]:
                     moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
                     del moreInfoRecord[listPos]["link"]
+
             recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
                     separators=(",", ":"))
 
