@@ -39,10 +39,57 @@ class CKANCacheFiles:
         LOGGER.debug(f"cache dir: {cacheDir}")
         return cacheDir
 
+    def getCreateDataDumpDir(self):
+        """Searches for a sub directory in the temp data directory that does
+        not exist.  Increments a count onto the end of the directory name until
+        it finds a directory that doesn't exist, creates it, and returns that
+        name
+
+        :return: [description]
+        :rtype: [type]
+        """
+        cnt = 1
+        while True:
+            dirName = f'details_{cnt}'
+            cacheDirRelative = os.path.join(self.dir, dirName)
+            cacheDir = os.path.normpath(cacheDirRelative)
+            if not os.path.exists(cacheDir):
+                LOGGER.debug(f"cache dir: {cacheDir}")
+                os.mkdir(cacheDir)
+                break
+            cnt += 1
+        return cacheDir
+
     def getDebugDataDumpDir(self):
-        retDir = os.path.join(self.dir, 'details')
-        retDir = os.path.normpath(retDir)
-        return retDir
+        """Similar to getCreateDataDumpDir() however this method returns the
+        name of the data directory that was most recently created.  Example
+        if there are the following directories:
+            * details_1
+            * details_2
+            * details_3
+
+        This method will return the full path to details_3 as it has the highest
+        number
+
+        :return: full path to the most recently create debug dir
+        :rtype: str (path)
+        """
+        cnt = 1
+        curDir = os.path.dirname(__file__)
+
+        while True:
+            dirName = f'details_{cnt}'
+            cacheDirRelative = os.path.join(self.dir, dirName)
+            cacheDir = os.path.normpath(cacheDirRelative)
+            if not os.path.exists(cacheDir):
+                if cnt != 1:
+                    dirName = f'details_{cnt-1}'
+                    cacheDirRelative = os.path.join(self.dir, dirName)
+                    cacheDir = os.path.normpath(cacheDirRelative)
+                LOGGER.debug(f"current cache dir: {cacheDir}")
+                break
+            cnt += 1
+        return cacheDir
 
     def getDebugDataPath(self, pkgName, origin, keyword):
         cnt = 1

@@ -759,10 +759,9 @@ class CKANWrapper:
                 headers=self.CKANHeader,
                 timeout=requestTimeOut,
             )
-
+            LOGGER.info(f"package_update status_code: {resp.status_code}")
             responseStruct = resp.json()
             retValStr = json.dumps(responseStruct)
-            LOGGER.info(f"package_update status_code: {resp.status_code}")
             LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
             if resp.status_code < 200 or resp.status_code >= 300:
                 raise InvalidRequestError(retValStr)
@@ -773,7 +772,6 @@ class CKANWrapper:
             else:
                 LOGGER.warning("got a timeout on this request.. trying again!")
                 self.updatePackage(packageData, retry=True)
-
 
     def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
         """Gets organizations, if include data is false then will only

@@ -234,10 +234,18 @@
             {
                 "UpdateType": "COMPARE",
                 "CustomMethodName": "fixIsoTopicCategory"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "adjustURLDomain"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "adjustURLDomain"
             }
         ],
         "user_populated_properties": {
-            "iso_topic_string": true,
+            "iso_topic_string": false,
             "retention_expiry_date": true,
             "license_title": false,
             "maintainer": true,
@@ -264,7 +272,7 @@
                     "package_id": false,
                     "json_table_schema": true,
                     "resource_storage_access_method": true,
-                    "datastore_active": true,
+                    "datastore_active": false,
                     "id": false,
                     "size": false,
                     "spatial_datatype": true,
@@ -286,7 +294,7 @@
                     "name": true,
                     "created": false,
                     "url": false,
-                    "ofi": true,
+                    "ofi": false,
                     "last_modified": false,
                     "resource_update_cycle": true,
                     "position": false,
@@ -308,7 +316,16 @@
             "contacts": false,
             "resource_status": true,
             "purpose": true,
-            "groups": true,
+            "groups": [
+                {
+                    "description": false,
+                    "display_name": false,
+                    "id": false,
+                    "image_display_url": false,
+                    "name": true,
+                    "title": false
+                }
+            ],
             "creator_user_id": false,
             "download_audience": true,
             "replacement_record": true,
@@ -318,7 +335,7 @@
             "organization": false,
             "name": true,
             "isopen": true,
-            "url": true,
+            "url": false,
             "source_data_path": true,
             "notes": true,
             "owner_org": false,
@@ -341,8 +358,6 @@
             "resources": [
                 {
                     "edc_resource_type": "Data",
-                    "format": "other",
-                    "url": "https://www.zoomquilt.org/",
                     "resource_update_cycle": "unknown",
                     "resource_storage_access_method": "Indirect Access",
                     "projection_name": "EPSG_3005 - NAD83 BC Albers",
