@@ -5,13 +5,13 @@ from API.
 """
 import logging
 import os
+import sys
 
 import bcdc2bcdc.constants as constants
 
 LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=logging-format-interpolation
-
 
 class CKANCacheFiles:
     """
@@ -75,7 +75,6 @@ class CKANCacheFiles:
         :rtype: str (path)
         """
         cnt = 1
-        curDir = os.path.dirname(__file__)
 
         while True:
             dirName = f'details_{cnt}'
@@ -91,13 +90,20 @@ class CKANCacheFiles:
             cnt += 1
         return cacheDir
 
-    def getDebugDataPath(self, pkgName, origin, keyword):
+    def getDebugDataPath(self, pkgName, origin=None, keyword=None):
         cnt = 1
         resDir = self.getDebugDataDumpDir()
         if not os.path.exists(resDir):
             os.mkdir(resDir)
         while True:
-            resPath = os.path.join(resDir, f'{pkgName}_{keyword}_{origin}_{cnt}.json')
+            #fileName = f'{pkgName}_{keyword}_{origin}_{cnt}.json'
+            fileName = f'{pkgName}'
+            if keyword:
+                fileName = f'{fileName}_{keyword}'
+            if origin:
+                fileName = f'{fileName}_{origin}'
+            fileName = f'{fileName}_{cnt}.json'
+            resPath = os.path.join(resDir, fileName)
             if not os.path.exists(resPath):
                 break
             else:
@@ -114,7 +120,20 @@ class CKANCacheFiles:
         :param pkgName: [description]
         :type pkgName: [type]
         """
-        tmpPath = self.getDebugDataPath(pkgName, origin, 'RES')
+        tmpPath = self.getDebugDataPath(pkgName, origin=origin, keyword='RES')
+        return tmpPath
+
+    def getDataTypeFilePath(self, name, dataType, origin=None):
+        """[summary]
+
+        :param name: [description]
+        :type name: [type]
+        :param dataType: [description]
+        :type dataType: [type]
+        :param origin: [description], defaults to None
+        :type origin: [type], optional
+        """
+        tmpPath = self.getDebugDataPath(name, keyword=dataType.upper())
         return tmpPath
 
     def getSrcUserJsonPath(self):

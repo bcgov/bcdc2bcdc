@@ -147,7 +147,24 @@ class ckanObjectUpdateMixin:
             updateStruct = record.updateableJsonData
         return updateStruct
 
+    def fixNoneAsString(self, record):
+        """Looks at all values associated with all the resource properties.
+        Replaces any values that are set to "None" to actual python None
+        value that gets translated to json null.
 
+        This method is implemented in the mixin because it needs to be available
+        to be applied to all objects.
+
+        :param record: The input record who's data structure that is to be
+            updates will be returned
+        :type record: CKANData.CKANRecord
+        """
+        recordStruct = self.getStructToUpdate(record)
+        if 'resources' in recordStruct:
+            for resCnt in range(0, len(recordStruct['resources'])):
+                for resourceKey in recordStruct['resources'][resCnt]:
+                    if recordStruct['resources'][resCnt][resourceKey] == "None":
+                        recordStruct['resources'][resCnt][resourceKey] = None
 
 class users(ckanObjectUpdateMixin):
     def __init__(self, updateType):
@@ -216,9 +233,37 @@ class organizations(ckanObjectUpdateMixin):
                 modifiedUsers.append(user)
             recordStruct['users'] = modifiedUsers
 
-    def noMethod(self, record):
-        pass
+class groups(ckanObjectUpdateMixin):
+    def __init__(self, updateType):
+        self.updateType = updateType
 
+    def remapUserNames(self, record):
+        # if the record is a source record, get the corresponding dest record
+        # swap out the username using the data cache,
+        recordStruct = self.getStructToUpdate(record)
+        if record.origin == constants.DATA_SOURCE.SRC:
+            modifiedUsers = []
+            users = recordStruct['users']
+            # iterate over each of the users
+            #   retrieve the users email,
+            #   map the email to the dest record and
+            #   sub in that value for the comparable struct
+            #
+            #                "user_populated_field": "email",
+            #                "auto_populated_field": "name"
+            for user in users:
+                currentName = user['name']
+                userSrcEmail = record.dataCache.getUserDefinedValue('name',
+                        currentName, 'email', 'users', constants.DATA_SOURCE.SRC)
+                userDestName = record.dataCache.getAutoDefinedValue('name',
+                        userSrcEmail, 'users', constants.DATA_SOURCE.DEST)
+                #LOGGER.debug(f"userDestName: {userDestName}")
+                if not userDestName:
+                    LOGGER.error("Cannot find a corresponding user for the "
+                        f"source user: {currentName}, email: {userSrcEmail}")
+                user['name'] = userDestName
+                modifiedUsers.append(user)
+            recordStruct['users'] = modifiedUsers
 # names of specific classes need to align with the names in
 # constants.VALID_TRANSFORM_TYPES
 class packages(ckanObjectUpdateMixin):
@@ -265,7 +310,7 @@ class packages(ckanObjectUpdateMixin):
             recordStruct = self.getStructToUpdate(record)
             if 'ofi' in recordStruct:
                 ofiValue = recordStruct['ofi']
-                if (isinstanceof(ofiValue, str)) and ofiValue.lower() in ['true', 'false']:
+                if (isinstance(ofiValue, str)) and ofiValue.lower() in ['true', 'false']:
                     if ofiValue.lower() == 'true':
                         recordStruct['ofi'] = True
                     else:
@@ -378,8 +423,24 @@ class packages(ckanObjectUpdateMixin):
         if record.origin == constants.DATA_SOURCE.SRC:
             self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
 
-    #def fixFormat(self, record):
+    def check4MissingProperties(self, record):
+        """iterates over the source and destination resources looking for
+        properties described in the fields2Check list.  If these properties
+        exist but are set to False values the are removed.
 
+        :param record: The CKANRecord that is to be updated
+        :type record: CKANData.CKANRecord
+        """
+        fields2Check = ['mimetype', 'name', 'resource_description', 'url_type']
+        recordStruct = self.getStructToUpdate(record)
+
+        # only doing this for resources
+        if 'resources' in recordStruct:
+            for resCnt in range(0, len(recordStruct['resources'])):
+                for fld2Check in fields2Check:
+                    if (fld2Check in recordStruct['resources'][resCnt]) and \
+                            not recordStruct['resources'][resCnt][fld2Check]:
+                        del recordStruct['resources'][resCnt][fld2Check]
 
     def fixResourceType(self, record):
         propertyName = 'resource_type'
@@ -436,7 +497,8 @@ class packages(ckanObjectUpdateMixin):
             self.__validateProperty(record, allowableValues, propertyName,
                                     defaultValue)
 
-    def __validateResourceProperty(self, record, validationDomainList, propertyName, defaultValue=None):
+    def __validateResourceProperty(self, record, validationDomainList,
+                                   propertyName, defaultValue=None):
         """a generic method that will check to see if the current value associated
         with a property of the resources that make up the current package are
         valid, and if not then assigns the default value.  If no default value
@@ -598,16 +660,32 @@ class packages(ckanObjectUpdateMixin):
             # * parse
             # * convert link to url
             # * re-stringify with consistent format
-            moreInfoRecord = json.loads(recordStruct["more_info"])
-            if moreInfoRecord is None:
-                moreInfoRecord = []
-            for listPos in range(0, len(moreInfoRecord)): # noqa
-                if "link" in moreInfoRecord[listPos]:
-                    moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
-                    del moreInfoRecord[listPos]["link"]
 
-            recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
-                    separators=(",", ":"))
+            # moreInfoRecord = json.loads(recordStruct["more_info"])
+            # if moreInfoRecord is None:
+            #     moreInfoRecord = []
+            # for listPos in range(0, len(moreInfoRecord)): # noqa
+            #     if "link" in moreInfoRecord[listPos]:
+            #         moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
+            #         del moreInfoRecord[listPos]["link"]
+
+            # recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
+            #         separators=(",", ":"))
+            recordStruct = self.__fixMoreInfoAsStr(recordStruct)
+
+    def __fixMoreInfoAsStr(self, recordStruct):
+        moreInfoRecord = json.loads(recordStruct["more_info"])
+        if moreInfoRecord is None:
+            moreInfoRecord = []
+        for listPos in range(0, len(moreInfoRecord)): # noqa
+            if "link" in moreInfoRecord[listPos]:
+                moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
+                del moreInfoRecord[listPos]["link"]
+
+        recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
+                separators=(",", ":"))
+        return recordStruct
+
 
     def noNullMoreInfo(self, record):
         """checks to see if moreInfo is set to Null, if it is then it removes
@@ -666,7 +744,7 @@ class packages(ckanObjectUpdateMixin):
         existsMethod = existsMethodMap[record.origin]
 
         for orgTypeKey in ['owner_org']:
-            # type is 'organizataion'
+            # type is 'organization'
             # org map field is 'id'
             # Get the struct value for orgs from the original unmodified data
             if orgTypeKey in record.jsonData:

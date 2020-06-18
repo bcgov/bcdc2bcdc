@@ -6,11 +6,9 @@ Created on Jun. 6, 2019
 using date as versions to simplify
 '''
 import setuptools
-import datetime
 import version
 # Need to move source code into a folder and define a __init__.py file that
 # includes the versions.
-# may want to re-org the entire repo, based on layout provided by pyscaffold
 import bcdc2bcdc
 
 with open("README.md", "r") as fh:
@@ -27,7 +25,7 @@ setuptools.setup(
     version=version.next_version,
     author="Kevin Netherton",
     author_email="kevin.netherton@gov.bc.ca",
-    description="Tool for moving data between CKAN instances using API",
+    description="Utility for moving data between CKAN instances using the API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/bcgov/bcdc2bcdc",
@@ -35,7 +33,7 @@ setuptools.setup(
     python_requires='>=3.6.*, <4',
     install_requires=requires,
     include_package_data=True,
-    scripts=['src/main.py'],
+    scripts=['bin/main.py'],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3.6",

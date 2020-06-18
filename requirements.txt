@@ -2,9 +2,4 @@ requests==2.23.0
 ckanapi==4.3
 deepdiff==4.3.2
 requests-futures==1.0.0
-# dev requirements
-pytest==5.4.1
-black>=19.*
-pylint==2.4.4
-prospector==1.2.0
 json_delta==2.0

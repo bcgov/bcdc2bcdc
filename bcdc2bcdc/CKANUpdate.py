@@ -4,16 +4,14 @@ Functionality that can:
       differences between the two
     * Using the CKAN module, update one or the other.
 
-
-
-
+IDEA:
+Looking at each of the different update classes below... All could
+be deleted.  updates all are identical, the only difference is the
+CKANWrapper method that gets called.  Could create a method map
+like {del: delMethod, updt: updateMethod, ... }, this could even be
+inferred from each record.dataType
 
 """
-# TODO: Looking at each of the different update classes below... All could
-#       be deleted.  updates all are identical, the only difference is the
-#       CKANWrapper method that gets called.  Could create a method map
-#       like {del: delMethod, updt: updtemethod... }, this could even be
-#       inferred from each record.dataType
 
 # pylint: disable=logging-format-interpolation, logging-not-lazy
 
@@ -30,6 +28,7 @@ import bcdc2bcdc.constants as constants
 
 LOGGER = logging.getLogger(__name__)
 
+
 class CKANUpdate_abc(abc.ABC):
     """
     abstract base class used to define the interface for CKANUpdate objects.
@@ -37,6 +36,7 @@ class CKANUpdate_abc(abc.ABC):
     Each different object type in ckan should implement its own version of this
     class.
     """
+
     def __init__(self, dataCache, ckanWrapper=None):
         self.CKANWrap = ckanWrapper
         self.dataCache = dataCache
@@ -59,17 +59,19 @@ class CKANUpdate_abc(abc.ABC):
     def doUpdates(self, updtStruct):
         pass
 
+
 class UpdateMixin:
     """mixin method that can be re-used by all classes that are inheriting
     from the abstract method.
     """
+
     def update(self, deltaObj):
 
         # These are all lists of dicts, each dict is the info
         # that will be sent directly to the api
-        adds = deltaObj.getAddData() # list of dicts
-        dels = deltaObj.getDeleteData() # list of names
-        updts = deltaObj.getUpdateData() # list of dicts
+        adds = deltaObj.getAddData()  # list of dicts
+        dels = deltaObj.getDeleteData()  # list of names
+        updts = deltaObj.getUpdateData()  # list of dicts
 
         # this should have been calculated earlier?
         dels = self.removeIgnored(dels)
@@ -106,13 +108,14 @@ class UpdateMixin:
             recordUniqueId = ckanRecord.getUniqueIdentifier()
             if recordUniqueId not in self.ignoreList:
                 if recordCollection is None:
-                    recordCollection = CKANData.CKANRecordCollection(inputRecordCollection.dataType)
+                    recordCollection = CKANData.CKANRecordCollection(
+                        inputRecordCollection.dataType
+                    )
                 recordCollection.addRecord(ckanRecord)
         retVal = inputRecordCollection
         if recordCollection is not None:
             retVal = recordCollection
         return retVal
-
 
         # if isinstance(inputData, list):
         #     filteredData = []
@@ -135,6 +138,7 @@ class UpdateMixin:
         #     msg = f"received type  {type(inputData)}.  Must be a list or dict"
         #     raise TypeError(msg)
         # return filteredData
+
 
 class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     """implements the abstract base class CKANUpdate_abc to allow user data to
@@ -167,11 +171,46 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         for addName in uniqueIds:
             LOGGER.debug(f"adding user: {addName}")
             addRecord = addCollection.getRecordByUniqueId(addName)
-            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+
+            self.doAdd(addRecord)
+
+    def doAdd(self, addRecord, addStruct=None, retryCnt=None):
+        maxRetries = 5
+        try:
+            if not addStruct:
+                addStruct = addRecord.getComparableStructUsedForAddUpdate(
+                    self.dataCache, constants.UPDATE_TYPES.ADD
+                )
             # TODO:For consistency sake should move the password insertion to
             #      a custom transformer for ADD / UPDATE operations
-            addStruct['password'] = os.environ[constants.CKAN_ONETIME_PASSWORD]
-            self.CKANWrap.addUser(addStruct)
+            addStruct["password"] = os.environ[constants.CKAN_ONETIME_PASSWORD]
+            resp = self.CKANWrap.addUser(addStruct)
+        except CKAN.CKANUserNameUnAvailable:
+            # check that we haven't exceeded the maximum number of retries
+            # get the record unique identifier
+            uniqueId = addRecord.getUniqueIdentifier()
+
+            # check the retry count
+            if retryCnt is None:
+                retryCnt = 1
+            else:
+                retryCnt += 1
+            if retryCnt > maxRetries:
+                LOGGER.error("cannot generate a unique identifier for the user")
+                raise
+
+            # calculate a new unique id
+            if uniqueId[-1].isdigit():
+                nextNum = int(uniqueId[-1]) + 1
+                uniqueId = f"{uniqueId[0:-1]}{nextNum}"
+            else:
+                uniqueId = f"{uniqueId}{1}"
+            addStruct["name"] = uniqueId
+            LOGGER.warning(
+                f"encountered name conflict, creating a new "
+                + f"user with the name: {uniqueId}"
+            )
+            self.doAdd(addRecord, addStruct, retryCnt)
 
     def doDeletes(self, delCollection):
         """list of usernames or ids to delete
@@ -179,7 +218,7 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         :param delStruct: list of user names or ids to delete
         :type delStruct: list
         """
-        #TODO: Thinking again deletes are likely something we do not want to do
+        # TODO: Thinking again deletes are likely something we do not want to do
         #      for some accounts.  Example demo accounts set up for testing.
         LOGGER.info(f"{len(delCollection)} to be deleted to destination instance")
         uniqueIds = delCollection.getUniqueIdentifiers()
@@ -203,8 +242,9 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         for updateName in uniqueIds:
             LOGGER.info(f"updating the user : {updateName}")
             updtRecord = updtCollection.getRecordByUniqueId(updateName)
-            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
-
+            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.UPDATE
+            )
 
             # updtStruct is comming from a delta obj
             # delta obj is used to keep track of:
@@ -213,14 +253,14 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
             #   - updates
 
             # TODO: This logic should be moved to a custom transformer
-            if updtStruct['email'] is not None:
+            if updtStruct["email"] is not None:
                 self.CKANWrap.updateUser(updtStruct)
             else:
                 LOGGER.info(f"skipping this record as email is null: {updateName}")
         LOGGER.debug("updates complete")
 
-class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
 
+class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
     def __init__(self, dataCache, ckanWrapper=None):
         """Gets a list of updates
 
@@ -247,7 +287,9 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.debug(f"adding group: {addName}")
 
             addRecord = addCollection.getRecordByUniqueId(addName)
-            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+            addStruct = addRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.ADD
+            )
             self.CKANWrap.addGroup(addStruct)
 
     def doDeletes(self, delCollection):
@@ -257,8 +299,10 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
             records that need to be deleted
         :type delCollection: CKANData.CKANRecordCollection
         """
-        LOGGER.info(f"number of groups: {len(delCollection)} to be deleted to " + \
-                    "destination instance")
+        LOGGER.info(
+            f"number of groups: {len(delCollection)} to be deleted to "
+            + "destination instance"
+        )
         uniqueIds = delCollection.getUniqueIdentifiers()
         uniqueIds.sort()
         for deleteGroupName in uniqueIds:
@@ -271,7 +315,7 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         :param updates: list of dictionaries with the data to be used to update a group
         :type updates: list of dict
         """
-        #LOGGER.error(f"still need to implement this {updtStruct}")
+        # LOGGER.error(f"still need to implement this {updtStruct}")
         LOGGER.debug(f"number of group updates: {len(updtCollection)}")
         uniqueIds = updtCollection.getUniqueIdentifiers()
         uniqueIds.sort()
@@ -279,19 +323,20 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
             LOGGER.info(f"updating the group : {updateName}")
             updtRecord = updtCollection.getRecordByUniqueId(updateName)
             updtStruct = updtRecord.getComparableStructUsedForAddUpdate(
-                self.dataCache,
-                constants.UPDATE_TYPES.UPDATE)
+                self.dataCache, constants.UPDATE_TYPES.UPDATE
+            )
             self.CKANWrap.updateGroup(updtStruct)
         LOGGER.debug("updates complete")
 
+
 class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
-    '''
+    """
     implements the interface defined by CKANUpdate_abc, the actual update
     method comes from the mixin.
 
     Used to provide a uniform interface that is used by the script to update
     the orgs from one ckan instance to another.
-    '''
+    """
 
     def __init__(self, dataCache, ckanWrapper=None):
         CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
@@ -306,15 +351,19 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
             CKAN records that need to be added
         :type addCollection: CKANData.CKANRecordCollection
         """
-        #LOGGER.debug(f"adds: {addStruct}")
-        LOGGER.info(f"{len(addCollection)}: number of orgs to be added to destination instance")
+        # LOGGER.debug(f"adds: {addStruct}")
+        LOGGER.info(
+            f"{len(addCollection)}: number of orgs to be added to destination instance"
+        )
         uniqueIds = addCollection.getUniqueIdentifiers()
         uniqueIds.sort()
         for addName in uniqueIds:
             LOGGER.debug(f"adding organization: {addName}")
             addRecord = addCollection.getRecordByUniqueId(addName)
-            addStruct = addRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
-                       # todo, this is working but am commenting out
+            addStruct = addRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.ADD
+            )
+            # todo, this is working but am commenting out
             self.CKANWrap.addOrganization(addStruct)
 
     def doDeletes(self, delCollection):
@@ -343,20 +392,23 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
         uniqueIds.sort()
         for updateName in uniqueIds:
             updtRecord = updtCollection.getRecordByUniqueId(updateName)
-            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+            updtStruct = updtRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.UPDATE
+            )
 
             LOGGER.debug(f"updating the org: {updateName}")
 
             self.CKANWrap.updateOrganization(updtStruct)
 
+
 class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
-    '''
+    """
     implements the interface defined by CKANUpdate_abc, the actual update
     method comes from the mixin.
 
     Used to provide a uniform interface that is used by the script to update
     the packages from one ckan instance to another.
-    '''
+    """
 
     def __init__(self, dataCache, ckanWrapper=None):
         CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
@@ -372,13 +424,17 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             to add this org
         :type addStruct: dict
         """
-        LOGGER.info(f"{len(addCollection)}: number of packages to be added to destination instance")
+        LOGGER.info(
+            f"{len(addCollection)}: number of packages to be added to destination instance"
+        )
         uniqueIds = addCollection.getUniqueIdentifiers()
         uniqueIds.sort()
-        #sortedList = sorted(addStruct, key=operator.itemgetter('name'))
+        # sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addDataSetName in uniqueIds:
             addDataRecord = addCollection.getRecordByUniqueId(addDataSetName)
-            addStruct = addDataRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.ADD)
+            addStruct = addDataRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.ADD
+            )
             with open("add_package.json", "w") as fh:
                 json.dump(addStruct, fh)
                 LOGGER.debug("wrote data to: add_package.json")
@@ -386,7 +442,7 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
             jsonStr = json.dumps(addStruct)
             LOGGER.debug(f"pkg Struct: {jsonStr[0:100]} ...")
             # TODO: uncomment
-            #self.CKANWrap.addPackage(addStruct)
+            self.CKANWrap.addPackage(addStruct)
 
     def doDeletes(self, delCollection):
         """does deletes of all the orgs described in the delStruct
@@ -414,9 +470,11 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         uniqueIds.sort()
         for updateName in uniqueIds:
             updtDataRecord = updtCollection.getRecordByUniqueId(updateName)
-            updtStruct = updtDataRecord.getComparableStructUsedForAddUpdate(self.dataCache, constants.UPDATE_TYPES.UPDATE)
+            updtStruct = updtDataRecord.getComparableStructUsedForAddUpdate(
+                self.dataCache, constants.UPDATE_TYPES.UPDATE
+            )
 
-            tmpCacheFileName = 'updt_package.json'
+            tmpCacheFileName = "updt_package.json"
             with open(tmpCacheFileName, "w") as fh:
                 json.dump(updtStruct, fh)
                 LOGGER.debug(f"wrote updt data for {updateName} to: {tmpCacheFileName}")

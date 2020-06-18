@@ -1,0 +1,12 @@
+twine==3.1.1
+distlib==0.3.0
+packaging==20.4
+pylint==2.5.3
+wheel==0.34.2
+requests==2.23.0
+pytest==5.4.1
+black>=19.*
+pylint==2.5.3
+pylama==7.7.1
+radon=4.1.0
+xenon==

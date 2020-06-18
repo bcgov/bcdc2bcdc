@@ -21,6 +21,7 @@ LOGGER = logging.getLogger(__name__)
 
 # pylint: disable=logging-format-interpolation
 
+
 class DataCache:
     """
     <description>:
@@ -93,6 +94,7 @@ class DataCache:
     :return: [description]
     :rtype: [type]
     """
+
     def __init__(self):
         self.transConf = CKANTransform.TransformationConfig()
         self.cacheLoader = CacheLoader()
@@ -184,7 +186,7 @@ class DataCache:
                     ] = autoGenFieldValue
                     self.reverseStruct[autoGenFieldName][dataType][dataOrigin][
                         autoGenFieldValue
-                    ] =  userGenFieldValue
+                    ] = userGenFieldValue
 
     def addRawData(self, rawData, dataType, dataOrigin):
         """[summary]
@@ -210,11 +212,17 @@ class DataCache:
                 self.initCacheStruct(autoGenFieldName)
                 # cacheStruct[autoGenFieldName][dataType][dataOrigin.name] = {}
                 if dataOrigin is constants.DATA_SOURCE.SRC:
-                    self.cacheStruct[autoGenFieldName][dataType][dataOrigin][autoGenFieldValue] = userGenFieldValue
+                    self.cacheStruct[autoGenFieldName][dataType][dataOrigin][
+                        autoGenFieldValue
+                    ] = userGenFieldValue
                 elif dataOrigin is constants.DATA_SOURCE.DEST:
-                    self.cacheStruct[autoGenFieldName][dataType][dataOrigin][userGenFieldValue] = autoGenFieldValue
+                    self.cacheStruct[autoGenFieldName][dataType][dataOrigin][
+                        userGenFieldValue
+                    ] = autoGenFieldValue
 
-    def addRawDataSingleRecord(self, singleRecord, dataType, dataOrigin, autoGenFieldName, identifier):
+    def addRawDataSingleRecord(
+        self, singleRecord, dataType, dataOrigin, autoGenFieldName, identifier
+    ):
         #   (singleRecord, dataType, dataOrigin, autoFieldName, dataValue)
         """Using the identifier parameter makes a query to the CKAN api retrieving
         the data for a particular object type.
@@ -242,9 +250,13 @@ class DataCache:
         autoGenFieldValue = singleRecord[tmpAutoFldName]
 
         if dataOrigin is constants.DATA_SOURCE.SRC:
-            self.cacheStruct[autoGenFieldName][dataType][dataOrigin][autoGenFieldValue] = userGenFieldValue
+            self.cacheStruct[autoGenFieldName][dataType][dataOrigin][
+                autoGenFieldValue
+            ] = userGenFieldValue
         elif dataOrigin is constants.DATA_SOURCE.DEST:
-            self.cacheStruct[autoGenFieldName][dataType][dataOrigin][userGenFieldValue] = autoGenFieldValue
+            self.cacheStruct[autoGenFieldName][dataType][dataOrigin][
+                userGenFieldValue
+            ] = autoGenFieldValue
 
     def isDatatypeLoaded(self, objType, autoFieldName):
         """returns boolean to identify the specified data type has been loaded
@@ -255,13 +267,15 @@ class DataCache:
              loaded / cached
         :type autoFieldName: str
         """
-        retVal =  False
+        retVal = False
         if autoFieldName in self.cacheStruct:
             # cacheStruct['id']['object type'] needs to exist, and also needs
             # to have something other than empty dicts in it for both src and dest.
-            if (objType in self.cacheStruct[autoFieldName]) and \
-                    self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC] and \
-                    self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]:
+            if (
+                (objType in self.cacheStruct[autoFieldName])
+                and self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]
+                and self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]
+            ):
                 retVal = True
         return retVal
 
@@ -289,13 +303,18 @@ class DataCache:
             for this datatype
         :type userDefinedValue: str
         """
-        self.cacheLoader.loadSingleValue(self, objType, dataOrigin, autoFieldName, userDefinedValue)
+        self.cacheLoader.loadSingleValue(
+            self, objType, dataOrigin, autoFieldName, userDefinedValue
+        )
 
     def isAutoValueInDest(self, autoFieldName, objType, autoValue):
         retVal = False
-        if autoValue in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]:
+        if (
+            autoValue
+            in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]
+        ):
             retVal = True
-            #LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the DEST object ")
+            # LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the DEST object ")
         return retVal
 
     def isAutoValueInSrc(self, autoFieldName, objType, autoValue):
@@ -303,14 +322,23 @@ class DataCache:
         #  self.cacheStruct['id']['organizations']['dest']['BCGOV_organization'] = 'klsdjjfonvuweoiisdfxoi3o89kjsk'
         # reverse is auto to user
         # cache is user to auto
-        #if autoValue in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
-        if autoValue in self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
+        # if autoValue in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
+        if (
+            autoValue
+            in self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]
+        ):
             retVal = True
-            #LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the SRC object ")
+            # LOGGER.debug(f"The {autoFieldName} value {autoValue} exists in the SRC object ")
         return retVal
 
-    def getUserDefinedValue(self, autoFieldName, autoValue, userDefinedFieldName,
-            objType, origin=constants.DATA_SOURCE.SRC):
+    def getUserDefinedValue(
+        self,
+        autoFieldName,
+        autoValue,
+        userDefinedFieldName,
+        objType,
+        origin=constants.DATA_SOURCE.SRC,
+    ):
         """for a given autogenerated value, uses the lookup to retrieve
         the corresponding user defined value
 
@@ -334,8 +362,13 @@ class DataCache:
             userValue = struct[autoFieldName][objType][origin][autoValue]
         return userValue
 
-    def getAutoDefinedValue(self, userDefinedFieldName, userDefinedValue,
-            objType, origin=constants.DATA_SOURCE.SRC):
+    def getAutoDefinedValue(
+        self,
+        userDefinedFieldName,
+        userDefinedValue,
+        objType,
+        origin=constants.DATA_SOURCE.SRC,
+    ):
         if origin == constants.DATA_SOURCE.SRC:
             struct = self.reverseStruct
         elif origin == constants.DATA_SOURCE.DEST:
@@ -345,9 +378,13 @@ class DataCache:
         if userDefinedValue in struct[userDefinedFieldName][objType][origin]:
             autoValue = struct[userDefinedFieldName][objType][origin][userDefinedValue]
         return autoValue
-
-
-    def src2DestRemap(self, autoFieldName, objType, autoValue, autoValOrigin=constants.DATA_SOURCE.DEST):
+    def src2DestRemap(
+        self,
+        autoFieldName,
+        objType,
+        autoValue,
+        autoValOrigin=constants.DATA_SOURCE.DEST,
+    ):
         """receives an organizations property name and the autogenerated
         value for that property, returns the equivalent autogenerated property
         that refers to the same object on the destination side
@@ -362,31 +399,47 @@ class DataCache:
         :type autoValue: str
         """
         self.loadData(objType, autoFieldName)
-        #LOGGER.debug("data has been loaded")
+        # LOGGER.debug("data has been loaded")
         if autoValue in self.cacheStruct[autoFieldName][objType][autoValOrigin]:
-            srcUserValue = self.cacheStruct[autoFieldName][objType][autoValOrigin][autoValue]
-        elif autoValue in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]:
-            srcUserValue = self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC][autoValue]
+            srcUserValue = self.cacheStruct[autoFieldName][objType][autoValOrigin][
+                autoValue
+            ]
+        elif (
+            autoValue
+            in self.reverseStruct[autoFieldName][objType][constants.DATA_SOURCE.SRC]
+        ):
+            srcUserValue = self.reverseStruct[autoFieldName][objType][
+                constants.DATA_SOURCE.SRC
+            ][autoValue]
         else:
             msg = (
-                "Cannot locate the corresponding value for the autogenerated " +
-                f"{autoFieldName}: {autoValue} in either the source or the " +
-                f"destination objects ({objType})"
+                "Cannot locate the corresponding value for the autogenerated "
+                + f"{autoFieldName}: {autoValue} in either the source or the "
+                + f"destination objects ({objType})"
             )
             LOGGER.error(msg)
             raise ValueError(msg)
 
-        #LOGGER.debug(f'srcUserValue: {srcUserValue}')
-        if srcUserValue not in self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]:
-            self.loadSingleDataSet(objType, constants.DATA_SOURCE.DEST, autoFieldName, srcUserValue)
-        destAutoValue = self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST][srcUserValue]
+        # LOGGER.debug(f'srcUserValue: {srcUserValue}')
+        if (
+            srcUserValue
+            not in self.cacheStruct[autoFieldName][objType][constants.DATA_SOURCE.DEST]
+        ):
+            self.loadSingleDataSet(
+                objType, constants.DATA_SOURCE.DEST, autoFieldName, srcUserValue
+            )
+        destAutoValue = self.cacheStruct[autoFieldName][objType][
+            constants.DATA_SOURCE.DEST
+        ][srcUserValue]
         return destAutoValue
+
 
 class CacheLoader:
     """This class glues the CKAN api to the cache, if sections of the cache have
     Not been populated then these methods will get called to populate various
     sections of the cache.  This should take place on an as needed basis.
     """
+
     def __init__(self):
         ckanParams = CKAN.CKANParams()
         destCKANWrap = ckanParams.getDestWrapper()
@@ -394,7 +447,7 @@ class CacheLoader:
 
         self.wrapperMap = {
             constants.DATA_SOURCE.SRC: srcCKANWrap,
-            constants.DATA_SOURCE.DEST: destCKANWrap
+            constants.DATA_SOURCE.DEST: destCKANWrap,
         }
 
         self.loadMethodMap = {
@@ -402,7 +455,7 @@ class CacheLoader:
             constants.TRANSFORM_TYPE_USERS: self.loadUsers,
             constants.TRANSFORM_TYPE_GROUPS: self.loadGroups,
             constants.TRANSFORM_TYPE_PACKAGES: self.loadPackages,
-            constants.TRANSFORM_TYPE_RESOURCES: self.loadResources
+            constants.TRANSFORM_TYPE_RESOURCES: self.loadResources,
         }
 
         self.loadSingleRecordMethodMap = {
@@ -410,7 +463,7 @@ class CacheLoader:
             constants.TRANSFORM_TYPE_USERS: self.loadSingleUser,
             constants.TRANSFORM_TYPE_GROUPS: self.loadSingleGroup,
             constants.TRANSFORM_TYPE_PACKAGES: self.loadSinglePackage,
-            constants.TRANSFORM_TYPE_RESOURCES: self.loadSingleResource
+            constants.TRANSFORM_TYPE_RESOURCES: self.loadSingleResource,
         }
 
     def loadType(self, dataCacheObj, dataType, fieldName):
@@ -424,13 +477,16 @@ class CacheLoader:
         for dataOriginEnum in constants.DATA_SOURCE:
             # only load if the data hasn't already been loaded
             if not dataCacheObj.cacheStruct[fieldName][dataType][dataOriginEnum]:
-                LOGGER.debug(f"loading data for field: {fieldName}, "
-                             f"objtype: {dataType}, origin {dataOriginEnum}")
+                LOGGER.debug(
+                    f"loading data for field: {fieldName}, "
+                    f"objtype: {dataType}, origin {dataOriginEnum}"
+                )
                 rawData = self.loadMethodMap[dataType](dataOriginEnum)
                 dataCacheObj.addRawData(rawData, dataType, dataOriginEnum)
 
-    def loadSingleValue(self, dataCacheObj, dataType, dataOrigin, autoFieldName,
-                        dataValue):
+    def loadSingleValue(
+        self, dataCacheObj, dataType, dataOrigin, autoFieldName, dataValue
+    ):
         """Looks up the data origin.
 
         If the origin is source then the data value needs is a autogenerated
@@ -462,7 +518,9 @@ class CacheLoader:
         # the single record load method to execute against the correct
         # ckan wrapper.
         singleRecord = self.loadSingleRecordMethodMap[dataType](dataOrigin, query)
-        dataCacheObj.addRawDataSingleRecord(singleRecord, dataType, dataOrigin, autoFieldName, dataValue)
+        dataCacheObj.addRawDataSingleRecord(
+            singleRecord, dataType, dataOrigin, autoFieldName, dataValue
+        )
 
     def loadOrgs(self, dataOrigin):
         return self.wrapperMap[dataOrigin].getOrganizations(includeData=True)
@@ -494,6 +552,7 @@ class CacheLoader:
     def loadSingleResource(self, dataOrigin, query):
         return self.wrapperMap[dataOrigin].getResource(query)
 
+
 class CachedIgnores:
     """ up until recently was hard coding ignores into the config file.  This is
     still required, however when working on the new datamodel translation found
@@ -503,6 +562,7 @@ class CachedIgnores:
     Subsequent updates need to know about this ignore list when removing embedded
     ignores.  This class is created to cache and retrieve that data
     """
+
     def __init__(self):
         self.struct = {}
 
@@ -517,15 +577,11 @@ class CachedIgnores:
     def isIgnored(self, dataType, origin, value):
         retVal = False
         if (
-                (
-                    (
-                        dataType in self.struct
-                    )
-                    and origin in self.struct[dataType]
-                ) and  value in self.struct[dataType][origin]
-        ):
+            (dataType in self.struct) and origin in self.struct[dataType]
+        ) and value in self.struct[dataType][origin]:
             retVal = True
         return retVal
+
 
 class inValidDataType(ValueError):
     """Raised when the DataCacheFactory configuration encounters an unexpected

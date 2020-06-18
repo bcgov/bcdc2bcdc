@@ -1,4 +1,5 @@
 ve/
+ve_radon/
 .env
 __pycache__
 junk.py
@@ -19,3 +20,5 @@ updt_package.json
 updt_group.json
 .env*
 logs/bcdc2bcdc.log
+build/
+bcdc2bcdc_dev.egg-info/

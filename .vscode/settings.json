@@ -1,12 +1,13 @@
 {
-    "python.pythonPath": "./ve/wsl_ve/bin/python3",
+    "python.pythonPath": "./ve/wsl_ve2/bin/python3",
     "autoDocstring.docstringFormat": "sphinx",
     "editor.rulers": [
         80,
+        100,
         120
     ],
     "editor.hover.enabled": false,
-    "python.linting.prospectorEnabled": true,
+    "python.linting.prospectorEnabled": false,
     "python.linting.enabled": true,
     "python.testing.pytestArgs": [
         "."
@@ -18,10 +19,13 @@
         "Bools",
         "CKAN",
         "IDFLD",
+        "KJNETHER",
+        "Pckg",
         "Struct",
         "VALS",
         "aeliving",
         "apikey",
+        "arcgis",
         "boolval",
         "bsharrat",
         "cati",
@@ -36,6 +40,7 @@
         "idir",
         "ints",
         "isclass",
+        "isdigit",
         "ismethod",
         "itertools",
         "ivar",
@@ -53,7 +58,10 @@
         "pytest",
         "recursed",
         "recusion",
+        "rsession",
         "rtype",
+        "solr",
+        "strftime",
         "stringifies",
         "structs",
         "transformtion",
@@ -67,5 +75,7 @@
     "workbench.editor.enablePreview": false,
     "files.trimTrailingWhitespace": true,
     "files.eol": "\n",
-    "terminal.integrated.scrollback": 20000
+    "terminal.integrated.scrollback": 20000,
+    "python.linting.pylamaEnabled": true,
+    "python.linting.pylamaArgs": ["--options pylama.ini"]
 }

@@ -81,9 +81,9 @@ class CKANWrapper:
         self.CKANUrl = url
         self.cacheFilePaths = CacheFiles.CKANCacheFiles()
 
-        # most of the requests use the ckanapi.RemoteCKAN howe ver there are some
-        # requests that require features of requests module.  For this reason
-        # a session object is created here to help with those requests.
+        # most of the requests use the ckanapi.RemoteCKAN howe ver there are
+        # some requests that require features of requests module.  For this
+        # reason a session object is created here to help with those requests.
         self.rsession = requests.Session()
         self.rsession.headers.update(self.CKANHeader)
 
@@ -92,6 +92,9 @@ class CKANWrapper:
 
         # debug helper
         self.pp = pprint.PrettyPrinter(indent=4)
+
+        self.apiRequestMaxRetries = 4
+        self.requestTimeout = 120
 
     def __packageListPaging(self):
         """
@@ -141,8 +144,9 @@ class CKANWrapper:
                 resp = self.__getWithRetries(endpoint, payload, retries)
             else:
                 msg = (
-                    f"made {retries} attempts to retrieve package data, getting "
-                    + f"status code: {resp.status_code}.  Unable to complete request"
+                    f"made {retries} attempts to retrieve package data, "
+                    f"getting status code: {resp.status_code}.  Unable to "
+                    "complete request"
                 )
                 raise CKANPackagesGetError(msg)
         return resp
@@ -154,7 +158,7 @@ class CKANWrapper:
         :param resp: a requests resp object that is evaluated, returns true if
                      its deemed to have been successful, false if its not
         :type resp: [type]
-        :return: indicates if the reponse is deemed to have been succesful
+        :return: indicates if the response is deemed to have been successful
         :rtype: bool
         """
         retVal = False
@@ -211,7 +215,8 @@ class CKANWrapper:
             offset = pageCnt * elemCnt
             LOGGER.info(f"    - page: {pageCnt} {offset} {elemCnt}")
             # offset=0, pageSize
-            pageData = self.getSinglePagePackageNames(offset=offset, pageSize=elemCnt)
+            pageData = self.getSinglePagePackageNames(offset=offset,
+                                                      pageSize=elemCnt)
             # params = {"limit": elemCnt, "offset": offset}
             # pageData = self.remoteapi.action.package_list(limit=elemCnt,
             #                                              offset=offset)
@@ -220,7 +225,8 @@ class CKANWrapper:
             if not isinstance(pageData, list):
                 LOGGER.debug(f"page data is: {pageData}")
             if packageList:
-                LOGGER.debug(f"last element: {packageList[len(packageList) - 1]}")
+                LOGGER.debug(f"last element: "
+                             f"{packageList[len(packageList) - 1]}")
             if pageData:
                 LOGGER.debug(f"first add element: {pageData[0]}")
             LOGGER.debug(f"pageData len: {len(pageData)}")
@@ -257,8 +263,8 @@ class CKANWrapper:
 
     def getPackagesAndData(self):
         """ Makes a bunch of different calls.  Initially calls package_list and
-        then iterates through each object package name retrieving the data for it
-        using package_show api calls.
+        then iterates through each object package name retrieving the data for
+        it using package_show api calls.
 
         :return: a list of pkgs where each pkg is a python struct describing a
             dataset in ckan.
@@ -267,18 +273,20 @@ class CKANWrapper:
         pkgs = []
         pkgList = self.getPackageNames()
         LOGGER.debug(f"got {len(pkgList)} pkg names")
+        LOGGER.debug(f"first few:  {pkgList[0:3]}")
+
         asyncWrapper = CKANAsyncWrapper(self.CKANUrl, header=self.CKANHeader)
         pkgs = asyncWrapper.getPackages(pkgList)
         return pkgs
 
     def getPackagesAndData_solr(self):
         """Collects a complete list of packages from ckan.  Uses package_search
-        end point.  package_search hits cached state of CKAN managed by SOLR thus
-        cannot be relied upon to return the latest set of data.
+        end point.  package_search hits cached state of CKAN managed by SOLR
+        thus cannot be relied upon to return the latest set of data.
 
-        If latest greatest data is important then use 'getPackagesAndData' method
-        that retrieves the data through individual package_show calls.  Takes a
-        longer period of time though.
+        If latest greatest data is important then use 'getPackagesAndData'
+        method that retrieves the data through individual package_show calls.
+        Takes a longer period of time though.
 
         :return: [description]
         :rtype: [type]
@@ -314,7 +322,8 @@ class CKANWrapper:
             LOGGER.debug(f"number of packages retrieved: {len(packageList)}")
 
             # import json
-            # with open("/mnt/c/Kevin/proj/bcdc_2_bcdc/junk/pkgs_demo.json", 'w') as fh:
+            # with open("/mnt/c/Kevin/proj/bcdc_2_bcdc/junk/pkgs_demo.json",
+            #           'w') as fh:
             #     json.dump(data, fh)
             # raise
             if len(data["result"]["results"]) < params["rows"]:
@@ -371,9 +380,11 @@ class CKANWrapper:
         users = []
         try:
             users = self.remoteapi.action.user_list(**params)
-        except (requests.exceptions.ConnectionError, ckanapi.errors.CKANAPIError):
+        except (requests.exceptions.ConnectionError,
+                ckanapi.errors.CKANAPIError):
             # try manually using the api end point
-            LOGGER.warning("caught error with ckanapi module call, trying directly")
+            LOGGER.warning("caught error with ckanapi module call, trying "
+                           "directly")
             userListendPoint = "api/3/action/user_list"
             userListUrl = f"{self.CKANUrl}{userListendPoint}"
             LOGGER.debug(f"userlist url: {userListUrl}")
@@ -406,8 +417,8 @@ class CKANWrapper:
             if prodHostFromEnvVar == hostInDestUrl:
                 msg = (
                     f"Attempting to perform an operation that writes to an "
-                    "instance that has specifically been defined as read only: "
-                    f"{constants.CKAN_DO_NOT_WRITE_URL}"
+                    "instance that has specifically been defined as read "
+                    f"only: {constants.CKAN_DO_NOT_WRITE_URL}"
                 )
                 raise DoNotWriteToHostError(msg)
             LOGGER.debug(f"safe destination instance: {self.CKANUrl}")
@@ -428,41 +439,46 @@ class CKANWrapper:
         retVal = None
         # TODO: hasn't been tested... Waiting for proper access to prod.
         LOGGER.debug(f"creating a new user with the data: {userData}")
-        try:
-            LOGGER.warning("actual user add api call commented out")
-            retVal = self.remoteapi.action.user_create(**userData)
-        except ckanapi.errors.CKANAPIError:
-            # try as a requests call
-            userCreateEndPoint = "api/3/action/user_create"
-            userCreateURL = f"{self.CKANUrl}{userCreateEndPoint}"
-            LOGGER.debug(f"url end point: {userCreateURL}")
-            resp = requests.post(userCreateURL, headers=self.CKANHeader, json=userData)
-            if self.__isResponseSuccess(resp):
-                respJson = resp.json()
-                retVal = respJson["result"]
+
+        userCreateEndPoint = "api/3/action/user_create"
+        userCreateURL = f"{self.CKANUrl}{userCreateEndPoint}"
+        LOGGER.debug(f"url end point: {userCreateURL}")
+        resp = requests.post(userCreateURL, headers=self.CKANHeader,
+                             json=userData)
+
+        if self.__isResponseSuccess(resp):
+            respJson = resp.json()
+            retVal = respJson["result"]
+        else:
+            respJson = resp.json()
+            LOGGER.debug(f'respJson: {respJson}')
+            # catching this response:
+            # {'help': 'https://cat.data.gov.bc.ca/api/3/action/help_show?name=user_create', # noqa
+            #  'success': False,
+            # 'error':
+            #       {'name': ['That login name is not available.'],
+            # '__type': 'Validation Error'}}
+            if ((((not respJson['success']) and 'name' in respJson['error'])
+                    and len(respJson['error']['name'])) and
+                    'That login name is not available.' in
+                    respJson['error']['name']):
+                msg = (
+                    "cannot create the user as a user with that name already "
+                    "exists.  Data associated with attempted request: "
+                    f"{userData}"
+                )
+                raise CKANUserNameUnAvailable(msg)
             else:
                 raise InvalidRequestError(resp)
-            LOGGER.debug(f"response status code: {resp.status_code}")
-        except ckanapi.errors.ValidationError:
-            # usually because the user already exists but is in an deleted
-            # state.  To resolve retrieve the user, update the user defs
-            # with defs from this description, swap the deleted tag to
-            # false
-            # userData['state'] = 'active'
-            # LOGGER.debug(f"userdata: {userData}")
-            # userShow = {"id": userData['name']}
-            # retVal = self.remoteapi.action.user_show(**userShow)
-            # LOGGER.debug(f"retVal: {retVal}")
-            userData["id"] = userData["name"]
-            LOGGER.warning("actual user add api call commented out")
-            retVal = self.remoteapi.action.user_update(**userData)
+        LOGGER.debug(f"response status code: {resp.status_code}")
         LOGGER.debug(f"User Created: {retVal}")
         return retVal
 
     def updateUser(self, userData):
         """receives a dictionary that it can use to update the data.
 
-        :param userData: a dictionary with the data to use to update an existing
+        :param userData: a dictionary with the data to use to update an
+                         existing
             ckan user
         :type userData: dict
         """
@@ -481,7 +497,8 @@ class CKANWrapper:
             userUpdtEndPoint = "api/3/action/user_update"
             userUpdtURL = f"{self.CKANUrl}{userUpdtEndPoint}"
             LOGGER.debug(f"url end point: {userUpdtURL}")
-            resp = requests.post(userUpdtURL, headers=self.CKANHeader, json=userData)
+            resp = requests.post(userUpdtURL, headers=self.CKANHeader,
+                                 json=userData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -571,14 +588,14 @@ class CKANWrapper:
         LOGGER.debug(f"trying to delete the user: {userId}")
         userParams = {"id": userId}  # noqa
         LOGGER.warning("actual user delete api call commented out")
-        # TODO: uncomment when craig available to verify that ignore configs are working
         try:
             retVal = self.remoteapi.action.user_delete(**userParams)
         except ckanapi.errors.CKANAPIError:
             endPoint = "api/3/action/user_delete"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=userParams)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=userParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -612,7 +629,8 @@ class CKANWrapper:
             endPoint = "api/3/action/group_list"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.get(apiUrl, headers=self.CKANHeader, params=groupConfig)
+            resp = requests.get(apiUrl, headers=self.CKANHeader,
+                                params=groupConfig)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -646,30 +664,32 @@ class CKANWrapper:
             groupData["id"] = groupData["name"]
         try:
             retVal = self.remoteapi.action.group_create(**groupData)
+        except ckanapi.errors.ValidationError:
+            # when this happens its likely because the package already exists
+            # but is in a deleted state, (state='deleted')
+            # going to try to update the data instead
+            retVal = self.remoteapi.action.group_update(**groupData)
+
         except ckanapi.errors.CKANAPIError:
             endPoint = "api/3/action/group_create"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=groupData)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=groupData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
 
-        except ckanapi.errors.ValidationError:
-            # when this happens its likely because the package already exists
-            # but is in a deleted state, (state='deleted')
-            # going to try to update the data instead
-            retVal = self.remoteapi.action.group_update(**groupData)
         if retVal:
             retValStr = json.dumps(retVal)
         LOGGER.debug(f"Group Created: {retValStr[0:100]} ...")
         return retVal
 
     def deleteGroup(self, groupIdentifier=None):
-        """Deletes the groups that matches the provided identifying information.
-        groupIdentifier can be either the group id or name
+        """Deletes the groups that matches the provided identifying
+        information. groupIdentifier can be either the group id or name
 
         :param groupIdentifier: The unique identifier for the group that
             is to be deleted.  Either 'name' or 'id'
@@ -684,7 +704,8 @@ class CKANWrapper:
             endPoint = "api/3/action/group_delete"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgParams)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=orgParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -695,8 +716,8 @@ class CKANWrapper:
     def updateGroup(self, groupData):
         """receives a dictionary that it can use to update the Group data.
 
-        :param groupData: a dictionary with the data to use to update an existing
-            ckan user
+        :param groupData: a dictionary with the data to use to update an
+                          existing ckan user
         :type groupData: dict
         """
         self.checkUrl()
@@ -714,7 +735,8 @@ class CKANWrapper:
             endPoint = "api/3/action/group_update"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=groupData)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=groupData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -727,13 +749,13 @@ class CKANWrapper:
         """[summary]
 
         Changed this method to use requests because it was freezing up during
-        runs.  Origional code can be seen here:
+        runs.  Original code can be seen here:
 
-        https://github.com/bcgov/bcdc2bcdc/blob/31f9bcd09b619268c8de8b7b37455cb666b485c7/src/CKAN.py#L583
+        https://github.com/bcgov/bcdc2bcdc/blob/31f9bcd09b619268c8de8b7b37455cb666b485c7/src/CKAN.py#L583 # noqa
 
         This link includes logic that was put in place for the cati update, which
         detects problems with the more_info field and corrects them.  This is now
-        missing from this impleemntation.  If required again link above
+        missing from this implementation.  If required again link above
 
         :param packageData: [description]
         :type packageData: [type]
@@ -743,21 +765,24 @@ class CKANWrapper:
         self.checkUrl()
         packageJsonStr = json.dumps(packageData)
         LOGGER.debug(
-            f"trying to update a package using the data: {packageJsonStr[0:100]} ..."
+            "trying to update a package using the data: "
+            f"{packageJsonStr[0:100]} ..."
         )
 
         # send the data as a request.post
-        requestTimeOut = 120
         packageUpdateEndPoint = "api/3/action/package_update"
         packageUpdateCall = f"{self.CKANUrl}{packageUpdateEndPoint}"
 
-        # resp = requests.post(packageUpdateCall, json=packageData, headers=self.CKANHeader, timeout=requestTimeOut)
+        # resp = requests.post(packageUpdateCall,
+        #                      json=packageData,
+        #                      headers=self.CKANHeader,
+        #                      timeout=self.requestTimeout)
         try:
             resp = self.rsession.post(
                 packageUpdateCall,
                 json=packageData,
                 headers=self.CKANHeader,
-                timeout=requestTimeOut,
+                timeout=self.requestTimeout
             )
             LOGGER.info(f"package_update status_code: {resp.status_code}")
             responseStruct = resp.json()
@@ -767,13 +792,48 @@ class CKANWrapper:
                 raise InvalidRequestError(retValStr)
         except requests.exceptions.ReadTimeout:
             if retry:
-                LOGGER.error("have already tried resending this requiest")
+                LOGGER.error("have already tried resending this request")
                 raise
             else:
                 LOGGER.warning("got a timeout on this request.. trying again!")
                 self.updatePackage(packageData, retry=True)
 
-    def getOrganizations(self, includeData=False, attempts=0, currentPosition=None):
+    def getOrganizationPage(self, orgConfig, attempts=0):
+        try:
+            # retVal = self.remoteapi.action.organization_list(**orgConfig)
+            endPoint = "api/3/action/organization_list"
+            apiUrl = f"{self.CKANUrl}{endPoint}"
+            LOGGER.debug(f"url end point: {apiUrl}")
+            resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgConfig)
+            if self.__isResponseSuccess(resp):
+                respJson = resp.json()
+                retVal = respJson["result"]
+            else:
+                raise InvalidRequestError(resp)
+
+        except ckanapi.errors.CKANAPIError as err:
+            LOGGER.error(err)
+            # catch 504 errors raised by ckanapi, otherwise re-raise
+            if (
+                ((attempts < maxRetries) and hasattr(err, "extra_msg"))
+                and len(literal_eval(err.extra_msg)) >= 2
+            ) and literal_eval(err.extra_msg)[1] == 504:
+                attempts += 1
+                LOGGER.warning(
+                    f"organization_list: status: 504, retry {attempts} of {self.apiRequestMaxRetries} "
+                )
+                retVal = self.getOrganizationPage(
+                    orgConfig=orgConfig,
+                    attempts=attempts
+                )
+                # if gets here then succeeded, reset attempts
+                attempts = 0
+            else:
+                raise
+        return retVal
+
+    def getOrganizations(self, includeData=False, attempts=0,
+                         currentPosition=None):
         """Gets organizations, if include data is false then will only
         get the names, otherwise will return all the data for the orgs
 
@@ -782,8 +842,6 @@ class CKANWrapper:
         :return: a list of organization dictionaries
         :rtype: list
         """
-        # TODO: call as it is seems to crash with 502 error. breaking it up into
-        #       a paged call
         orgConfig = {}
         organizations = []
         pageSize = 70
@@ -806,39 +864,7 @@ class CKANWrapper:
         while True:
             LOGGER.debug(f"OrgConfig is {orgConfig}")
             LOGGER.debug(f"pagecount is {pageCnt}")
-            try:
-                # retVal = self.remoteapi.action.organization_list(**orgConfig)
-                endPoint = "api/3/action/organization_list"
-                apiUrl = f"{self.CKANUrl}{endPoint}"
-                LOGGER.debug(f"url end point: {apiUrl}")
-                resp = requests.post(apiUrl, headers=self.CKANHeader, json=orgConfig)
-                if self.__isResponseSuccess(resp):
-                    respJson = resp.json()
-                    retVal = respJson["result"]
-                else:
-                    raise InvalidRequestError(resp)
-
-            except ckanapi.errors.CKANAPIError as err:
-                LOGGER.error(err)
-                # catch 504 errors raised by ckanapi, otherwise re-raise
-                if (
-                    ((attempts < maxRetries) and hasattr(err, "extra_msg"))
-                    and len(literal_eval(err.extra_msg)) >= 2
-                ) and literal_eval(err.extra_msg)[1] == 504:
-                    attempts += 1
-                    LOGGER.warning(
-                        f"organization_list: status: 504, retry {attempts} of {maxRetries} "
-                    )
-                    retVal = self.getOrganizations(
-                        includeData=includeData,
-                        attempts=attempts,
-                        currentPosition=currentPosition,
-                    )
-                    # if gets here then succeeded, reset attempts
-                    attempts = 0
-
-                else:
-                    raise
+            retVal = self.getOrganizationPage(orgConfig)
 
             LOGGER.debug(f"records returned: {len(retVal)}")
             organizations.extend(retVal)
@@ -895,6 +921,12 @@ class CKANWrapper:
         LOGGER.debug(f"creating a new organization with the data: {organizationData}")
         try:
             retVal = self.remoteapi.action.organization_create(**organizationData)
+        except ckanapi.errors.ValidationError:
+            LOGGER.warning(
+                f"org {organizationData['name']}, must already exist in deleted state... updating instead"
+            )
+            organizationData["id"] = organizationData["name"]
+            retVal = self.remoteapi.action.organization_update(**organizationData)
         except ckanapi.errors.CKANAPIError:
             endPoint = "api/3/action/organization_create"
             apiUrl = f"{self.CKANUrl}{endPoint}"
@@ -905,25 +937,18 @@ class CKANWrapper:
                 retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
-        except ckanapi.errors.ValidationError:
-            LOGGER.warning(
-                f"org {organizationData['name']}, must already exist in deleted state... updating instead"
-            )
-            organizationData["id"] = organizationData["name"]
-            retVal = self.remoteapi.action.organization_update(**organizationData)
         LOGGER.debug(f"Organization Created: {retVal}")
 
-    def updateOrganization(self, organizationData):
-        """receives a dictionary that it can use to update the organizations data.
+    def updateOrganization(self, organizationData, retry=None):
+        """receives a dictionary that it can use to update the organizations
+        data.
 
-        :param organizationData: a dictionary with the data to use to update an existing
-            ckan organization
+        :param organizationData: a dictionary with the data to use to update an
+                                 existing ckan organization
         :type organizationData: dict
         """
+
         self.checkUrl()
-        # LOGGER.debug(
-        #    f"trying to update a organization using the data: {organizationData}"
-        # )
         LOGGER.debug(f"updating org: {organizationData['name']}")
         try:
             retVal = self.remoteapi.action.organization_update(**organizationData)
@@ -931,15 +956,24 @@ class CKANWrapper:
             endPoint = "api/3/action/organization_update"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=organizationData)
+            resp = requests.post(apiUrl,
+                                 headers=self.CKANHeader,
+                                 json=organizationData,
+                                 timeout=self.requestTimeout)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
             else:
                 raise InvalidRequestError(resp)
-
+        except requests.exceptions.ConnectionError:
+            if (retry) and retry > self.apiRequestMaxRetries:
+                raise
+            if retry is None:
+                retry = 1
+            retVal = self.updateOrganization(organizationData, retry)
         retValJson = json.dumps(retVal)
         LOGGER.debug(f"Organization Updated: {retValJson[0:100]} ...")
+        return retVal
 
     def addPackage(self, packageData, retries=0):
         self.checkUrl()
@@ -951,7 +985,8 @@ class CKANWrapper:
             endPoint = "api/3/action/package_create"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=packageData)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=packageData)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -961,14 +996,6 @@ class CKANWrapper:
             LOGGER.error("Error when adding package...", exc_info=True)
             LOGGER.warning("skipping this package")
             time.sleep(2)
-            # if retries >= 5:
-            #     raise
-            # LOGGER.warning(f'connection error raised on instance: {self.CKANUrl} retry {retries} of 5')
-            # LOGGER.info(f'pause-ing for {retries * 2}')
-            # time.sleep(retries * 2)
-            # retries += 1
-
-            # self.addPackage(packageData, retries)
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg
@@ -985,7 +1012,8 @@ class CKANWrapper:
             endPoint = "api/3/action/package_delete"
             apiUrl = f"{self.CKANUrl}{endPoint}"
             LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.post(apiUrl, headers=self.CKANHeader, json=packageParams)
+            resp = requests.post(apiUrl, headers=self.CKANHeader,
+                                 json=packageParams)
             if self.__isResponseSuccess(resp):
                 respJson = resp.json()
                 retVal = respJson["result"]
@@ -1069,7 +1097,8 @@ class CKANAsyncWrapper:
             if retries > maxRetries:
                 raise
             retries += 1
-            LOGGER.warning(f"non 200 status, trying again... retries: {retries} of 5")
+            LOGGER.warning(f"non 200 status, trying again... retries: "
+                           f"{retries} of 5")
             time.sleep(5)
             retVal = self.packageRequestTask(url, retries)
         return retVal
@@ -1084,13 +1113,12 @@ class CKANAsyncWrapper:
             the 'packageNameList' list.
         :rtype: list of packages
         """
+        LOGGER.debug(f"package name list length: {len(packageNameList)}")
         self.requestSession = requests.Session()
         self.spoolRequests(packageNameList)
         return self.packages
 
-    def spoolRequests(
-        self, packageList, missingPackages=None
-    ):  # pylint: disable=too-many-locals
+    def spoolRequests(self, packageList, missingPackages=None):
         """where the async calls are created.  Gets the list of package names
         and spools up a number of requests, monitors the requests, retrieves the
         data from the requests and stuffs them into self.packages.
@@ -1135,6 +1163,7 @@ class CKANAsyncWrapper:
                 done, _ = concurrent.futures.wait(
                     futures, return_when=concurrent.futures.FIRST_COMPLETED
                 )
+                #LOGGER.debug(f"size of done: {list(done)}")
                 completed += len(done)
                 if not completed % 200:
                     LOGGER.debug(
@@ -1146,8 +1175,9 @@ class CKANAsyncWrapper:
                     # can add error catching and re-add to executor here
                     data = fut.result()
                     self.packages.append(data)
-                # Schedule the next set of futures.  We don't want more than N futures
-                # in the pool at a time, to keep memory consumption down.
+                # Schedule the next set of futures.  We don't want more than N
+                # futures in the pool at a time, to keep memory consumption
+                # down.
                 for pkgName in itertools.islice(packageIterator, len(done)):
                     # LOGGER.debug(f"adding: {pkgName} to the queue")
                     # adding the package name to the url, as a param
@@ -1231,6 +1261,13 @@ class InvalidRequestError(Exception):
         self.message = message
 
 
+class CKANUserNameUnAvailable(ValueError):
+    def __init__(self, message):
+        LOGGER.error(f"error message: {message}")
+        self.message = message
+
+
+
 if __name__ == "__main__":
 
     LOGGER = logging.getLogger()
@@ -1253,10 +1290,6 @@ if __name__ == "__main__":
     #         "air-photo-system-air-photo-polygons-spatial-view",
     #         "air-photo-system-centre-points"]
 
-    #     pkgListPath = 'temp/pkgNames.json'
-    #     with open(pkgListPath) as fh:
-    #         pkgList = json.load(fh)
-    #     LOGGER.debug(f"numpkgs: {len(pkgList)}")
 
     destUrl = os.environ[constants.CKAN_URL_DEST]
     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]

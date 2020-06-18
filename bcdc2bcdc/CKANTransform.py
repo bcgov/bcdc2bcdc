@@ -100,24 +100,25 @@ class TransformationConfig:
         # TODO: could potentially implement using map. instead of if
         # LOGGER.debug(f"data: {data}, boolVal: {boolVal}, parsedData: {parsedData}")
         if isinstance(data, dict):
-            if parsedData is None:
-                parsedData = {}
+            # if parsedData is None:
+            #     parsedData = {}
 
-            for key, value in data.items():
-                if isinstance(value, bool):
-                    if value == boolVal:
-                        # LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
-                        parsedData[key] = value
-                elif isinstance(value, (dict, list)):
-                    parsedData[key] = self.__parseNestForBools(value, boolVal)
-                else:
-                    # a type that shouldn't be, raise error.
-                    msg = (
-                        f"The type associated with the key {key} is not a "
-                        + "dict / list or bool, fix the config file and rerun"
-                        + f"type is: {type(value)} value is {value}"
-                    )
-                    raise ValueError(msg)
+            # for key, value in data.items():
+            #     if isinstance(value, bool):
+            #         if value == boolVal:
+            #             # LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
+            #             parsedData[key] = value
+            #     elif isinstance(value, (dict, list)):
+            #         parsedData[key] = self.__parseNestForBools(value, boolVal)
+            #     else:
+            #         # a type that shouldn't be, raise error.
+            #         msg = (
+            #             f"The type associated with the key {key} is not a "
+            #             + "dict / list or bool, fix the config file and rerun"
+            #             + f"type is: {type(value)} value is {value}"
+            #         )
+            #         raise ValueError(msg)
+            parsedData = self.__parseNestDictForBools(data, boolVal, parsedData)
 
         elif isinstance(data, list):
             if parsedData is None:
@@ -135,6 +136,27 @@ class TransformationConfig:
                     )
                     raise ValueError(msg)
 
+        return parsedData
+
+    def __parseNestDictForBools(self, data, boolVal, parsedData):
+        if parsedData is None:
+            parsedData = {}
+
+        for key, value in data.items():
+            if isinstance(value, bool):
+                if value == boolVal:
+                    # LOGGER.debug(f"key: {key} value: {value} value type: {type(value)}")
+                    parsedData[key] = value
+            elif isinstance(value, (dict, list)):
+                parsedData[key] = self.__parseNestForBools(value, boolVal)
+            else:
+                # a type that shouldn't be, raise error.
+                msg = (
+                    f"The type associated with the key {key} is not a "
+                    + "dict / list or bool, fix the config file and rerun"
+                    + f"type is: {type(value)} value is {value}"
+                )
+                raise ValueError(msg)
         return parsedData
 
     def __getProperties(self, datatype, section, sectionValue):

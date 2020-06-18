@@ -79,16 +79,16 @@ class RunUpdate:
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
 
         # use CKANDataset functionality to determine if differences
-        if srcUserCKANDataSet != destUserCKANDataSet:
-            # perform the update
-            LOGGER.info("found differences between users defined in prod and test")
+        #if srcUserCKANDataSet != destUserCKANDataSet:
+        # perform the update
+        LOGGER.info("found differences between users defined in prod and test")
 
-            deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
-            LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANUserUpdate(
-                self.dataCache, ckanWrapper=self.destCKANWrapper
-            )
-            updater.update(deltaObj)
+        deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
+        LOGGER.info(f"Delta obj for users: {deltaObj}")
+        updater = CKANUpdate.CKANUserUpdate(
+            self.dataCache, ckanWrapper=self.destCKANWrapper
+        )
+        updater.update(deltaObj)
 
     def updateGroups(self, useCache=False):
         """Based on descriptions of SRC / DEST CKAN instances in environment
@@ -128,16 +128,17 @@ class RunUpdate:
         self.dataCache.addData(srcGroupCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destGroupCKANDataSet, constants.DATA_SOURCE.DEST)
 
-        if srcGroupCKANDataSet != destGroupCKANDataSet:
-            LOGGER.info("found differences between group data in src an dest")
-            deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
-            LOGGER.info(f"Delta obj for groups: {deltaObj}")
-            updater = CKANUpdate.CKANGroupUpdate(
-                self.dataCache, ckanWrapper=self.destCKANWrapper
-            )
-            updater.update(deltaObj)
-        else:
-            LOGGER.info("no differences found for groups between src and dest")
+        #if srcGroupCKANDataSet != destGroupCKANDataSet:
+
+        LOGGER.info("found differences between group data in src an dest")
+        deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
+        LOGGER.info(f"Delta obj for groups: {deltaObj}")
+        updater = CKANUpdate.CKANGroupUpdate(
+            self.dataCache, ckanWrapper=self.destCKANWrapper
+        )
+        updater.update(deltaObj)
+        #else:
+        #    LOGGER.info("no differences found for groups between src and dest")
 
     def updateOrganizations(self, useCache=False):
         getOrgsMap = {
@@ -175,14 +176,14 @@ class RunUpdate:
         self.dataCache.addData(srcOrgCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destOrgCKANDataSet, constants.DATA_SOURCE.DEST)
 
-        if srcOrgCKANDataSet != destOrgCKANDataSet:
-            LOGGER.info("found differences between group data in src an dest")
-            deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
-            LOGGER.info(f"Delta obj for orgs: {deltaObj}")
-            updater = CKANUpdate.CKANOrganizationUpdate(
-                dataCache=self.dataCache, ckanWrapper=self.destCKANWrapper
-            )
-            updater.update(deltaObj)
+        #if srcOrgCKANDataSet != destOrgCKANDataSet:
+        LOGGER.info("found differences between group data in src an dest")
+        deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
+        LOGGER.info(f"Delta obj for orgs: {deltaObj}")
+        updater = CKANUpdate.CKANOrganizationUpdate(
+            dataCache=self.dataCache, ckanWrapper=self.destCKANWrapper
+        )
+        updater.update(deltaObj)
 
     def updatePackages(self, useCache=False):
         """ updates packages based on
@@ -223,22 +224,22 @@ class RunUpdate:
         self.dataCache.addData(srcPkgDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
 
-        if srcPkgDataSet != destPkgDataSet:
+        #if srcPkgDataSet != destPkgDataSet:
 
-            LOGGER.debug("packages are not the same")
+        LOGGER.debug("packages are not the same")
 
-            deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
-            LOGGER.info(f"Delta obj for packages: {deltaObj}")
-            updater = CKANUpdate.CKANPackagesUpdate(
-                self.dataCache, ckanWrapper=self.destCKANWrapper
-            )
-            updater.update(deltaObj)
+        deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
+        LOGGER.info(f"Delta obj for packages: {deltaObj}")
+        updater = CKANUpdate.CKANPackagesUpdate(
+            self.dataCache, ckanWrapper=self.destCKANWrapper
+        )
+        updater.update(deltaObj)
 
     def refreshSchemingDefs(self):
         """Every time the update runs it will download the scheming definitions.
         These are used later when transforming the packages for update.
         """
-        # check for scheming file, and delete it, then create a ckanschemoing
+        # check for scheming file, and delete it, then create a ckan schemeing
         # object, cache it in the datacache
         cacheFiles = CacheFiles.CKANCacheFiles()
         schemingCacheFile = cacheFiles.getSchemingCacheFilePath()
@@ -263,12 +264,6 @@ if __name__ == "__main__":
     )
     logConfigFile = os.path.abspath(logConfigFile)
 
-    # Adding a new "verbose" log level, to use: logger.debugv
-    # DEBUG_LEVELV_NUM = 9
-    # logging.addLevelName(DEBUG_LEVELV_NUM, "DEBUGV")
-    # def debugv(self, message, *args, **kws):
-    #     self._log(DEBUG_LEVELV_NUM, message, args, **kws)
-
     # output log file for roller if implemented... not implemented atm
     logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
     logOutputsDir = os.path.normpath(logOutputsDir)
@@ -291,6 +286,6 @@ if __name__ == "__main__":
     # not running user update for now
 
     updater.updateUsers(useCache=True)
-    # updater.updateGroups(useCache=True)
+    updater.updateGroups(useCache=True)
     updater.updateOrganizations(useCache=True)
     updater.updatePackages(useCache=True)

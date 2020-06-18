@@ -15,16 +15,17 @@ CKANTransform module will work directly with CKAN Data objects.
 # pylint: disable=logging-format-interpolation
 
 import json
-import json_delta
 import logging
 import pprint
 import sys
 
+import json_delta
+
+import bcdc2bcdc.CacheFiles as CacheFiles
 import bcdc2bcdc.CKANTransform as CKANTransform
 import bcdc2bcdc.constants as constants
 import bcdc2bcdc.CustomTransformers as CustomTransformers
 import bcdc2bcdc.Diff as Diff
-import bcdc2bcdc.CacheFiles as CacheFiles
 
 LOGGER = logging.getLogger(__name__)
 TRANSCONF = CKANTransform.TransformationConfig()
@@ -190,7 +191,6 @@ class CKANRecord:
             struct = self.comparableJsonData
             flds2Include = self.userPopulatedFields
 
-        # LOGGER.debug(f"struct: {struct}, flds2Include: {flds2Include}")
         newStruct = None
 
         # only fields defined in this struct should be included in the output
@@ -198,44 +198,106 @@ class CKANRecord:
             # currently assuming that if a list is found there will be a single
             # record in the flds2Include configuration that describe what to
             # do with each element in the list
-            newStruct = []
-            if isinstance(flds2Include[0], dict):
-                for structElem in struct:
-                    dataValue = self.filterNonUserGeneratedFields(
-                        structElem, flds2Include[0]
-                    )
-                    newStruct.append(dataValue)
-                return newStruct
+            # newStruct = []
+            # if isinstance(flds2Include[0], dict):
+            #     for structElem in struct:
+            #         dataValue = self.filterNonUserGeneratedFields(
+            #             structElem, flds2Include[0]
+            #         )
+            #         newStruct.append(dataValue)
+            #     return newStruct
+            return self.__filterUserGenFieldsList(struct, flds2Include)
         elif isinstance(flds2Include, dict):
-            newStruct = {}
-            for key in flds2Include:
-                # if the key is a datatype then:
-                #   - get the unique-id for that data type
-                #   - get the ignore list for that data type
-                #   - check each value to make sure its not part
-                #        of an ignore list.  If it is then do not
-                #        include the data.
-                # thinking this is part of a post process that should be run
-                # after the comparable struct is generated.
-                # LOGGER.debug(f'----key: {key}')
-                # LOGGER.debug(f'flds2Include: {flds2Include}')
-                # LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
-                # LOGGER.debug(f'struct: {struct}')
-                # LOGGER.debug(f'newStruct: {newStruct}')
-                if key not in struct:
-                    # field is defined as being required but is not in the object
-                    # that was returned.  Setting it equal to None
-                    struct[key] = None
-                # LOGGER.debug(f'struct[{key}]: {struct[key]}')
+            newStruct = self.__filterUserGenFieldsDict(struct, flds2Include)
+            # newStruct = {}
+            # for key in flds2Include:
+            #     # if the key is a datatype then:
+            #     #   - get the unique-id for that data type
+            #     #   - get the ignore list for that data type
+            #     #   - check each value to make sure its not part
+            #     #        of an ignore list.  If it is then do not
+            #     #        include the data.
+            #     # thinking this is part of a post process that should be run
+            #     # after the comparable struct is generated.
+            #     # LOGGER.debug(f'----key: {key}')
+            #     # LOGGER.debug(f'flds2Include: {flds2Include}')
+            #     # LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
+            #     # LOGGER.debug(f'struct: {struct}')
+            #     # LOGGER.debug(f'newStruct: {newStruct}')
+            #     if key not in struct:
+            #         # field is defined as being required but is not in the object
+            #         # that was returned.  Setting it equal to None
+            #         struct[key] = None
+            #     # LOGGER.debug(f'struct[{key}]: {struct[key]}')
 
-                newStruct[key] = self.filterNonUserGeneratedFields(
-                    struct[key], flds2Include[key]
-                )
-            # LOGGER.debug(f"newStruct: {newStruct}")
+            #     newStruct[key] = self.filterNonUserGeneratedFields(
+            #         struct[key], flds2Include[key]
+            #     )
+            # # LOGGER.debug(f"newStruct: {newStruct}")
             return newStruct
         elif isinstance(flds2Include, bool):
             # LOGGER.debug(f"-----------{struct} is {flds2Include}")
             return struct
+        return newStruct
+
+    def __filterUserGenFieldsList(self, struct, flds2Include):
+        newStruct = []
+        if isinstance(flds2Include[0], dict):
+            for structElem in struct:
+                dataValue = self.filterNonUserGeneratedFields(
+                    structElem, flds2Include[0]
+                )
+                newStruct.append(dataValue)
+            return newStruct
+
+    def __filterUserGenFieldsDict(self, struct, flds2Include):
+        """Used by the filterNonUserGeneratedFields method.
+        filterNonUserGeneratedFields iterates recursively over the data found
+        in particular object.  Looking for property definitions in the
+        flds2Include structure.  If a field is either not found or the
+        definition or the field in flds2Include is false then the property will
+        not be included in the returned data structure.
+
+        During the recursion if, an iteration encouters a dict data structure
+        this method is called with that structure.  It iterates over the
+        flds2Include properties.  If a field is found to be required in the
+        flds2Include it is added to the struct. filterNonUserGeneratedFields
+        then gets called on the actual key and corresponding value and the
+        equivalent data structure in the flds2Include
+
+        :param struct: The input dictionary to evalute
+        :type struct: dict
+        :param flds2Include: The input dictionary that describes the required
+            properties for the 'struct'
+        :type flds2Include: dict
+        :return: a dictionary that only includes properties that are defined in
+            the flds2Include dict
+        :rtype: dict
+        """
+        newStruct = {}
+        for key in flds2Include:
+            # if the key is a datatype then:
+            #   - get the unique-id for that data type
+            #   - get the ignore list for that data type
+            #   - check each value to make sure its not part
+            #        of an ignore list.  If it is then do not
+            #        include the data.
+            # thinking this is part of a post process that should be run
+            # after the comparable struct is generated.
+            # LOGGER.debug(f'----key: {key}')
+            # LOGGER.debug(f'flds2Include: {flds2Include}')
+            # LOGGER.debug(f"flds2Include[key]: {flds2Include[key]}")
+            # LOGGER.debug(f'struct: {struct}')
+            # LOGGER.debug(f'newStruct: {newStruct}')
+            if key not in struct:
+                # field is defined as being required but is not in the object
+                # that was returned.  Setting it equal to None
+                struct[key] = None
+            # LOGGER.debug(f'struct[{key}]: {struct[key]}')
+
+            newStruct[key] = self.filterNonUserGeneratedFields(
+                struct[key], flds2Include[key]
+            )
         return newStruct
 
     def removeEmbeddedIgnores(self, dataCell):
@@ -330,9 +392,8 @@ class CKANRecord:
                 "{self.destRecord.origin} needs to be a 'DEST' type")
             raise InvalidDataRecordOrigin(msg)
 
-    def getComparableStructUsedForAddUpdate(
-        self, dataCache, operationType, destRecord=None
-    ):
+    def getComparableStructUsedForAddUpdate(self, dataCache, operationType,
+                                            destRecord=None):
         """ Starts by transforming the record into a comparable struct, then
         for update the following additional operations need to be run on the
         json struct:
@@ -560,28 +621,11 @@ class CKANRecord:
                 self.comparableJsonData = currentDataset
             self.operations.append(methodName)
 
-    def getPackageDiff(self, inputRecord):
-        """
-        deepdiff does not seem to be working for list of dicts, resources for example
-        report the same resource as an ADD and a REMOVE.
-
-        https://gist.github.com/samuraisam/901117
-        https://pypi.org/project/deep/
-
-        :return: [description]
-        :rtype: [type]
-        """
-        # TODO: NEEDS A MAJOR TIDY UP
-        # retrieve a comparable structure, and remove embedded data types
-        # that have been labelled as ignores
-
-        # TODO: before do anything check to see if this record is an
+    def getResourceDiff(self, inputRecord):
         diff = None
 
         cacheFiles = None
 
-        # don't even go any further if the records unique id, usually name is in
-        # the ignore list
         if not self.isIgnore(inputRecord):
             thisComparable = self.getComparableStruct()
             thisComparable = thisComparable.copy()
@@ -593,24 +637,13 @@ class CKANRecord:
             if "resources" in thisComparable and "resources" in inputComparable:
                 resource1 = thisComparable["resources"].copy()
                 resource2 = inputComparable["resources"].copy()
-                del thisComparable["resources"]
-                del inputComparable["resources"]
-
-                # LOGGER.debug(f'resource: {resource1}')
-                # LOGGER.debug(f'resource: {resource2}')
-
-                # if the value for a specific property is 'None' convert it to None
-                # TODO: this shoudl be a custom transformer
-                for inputResource in [resource1, resource2]:
-                    for cnt in range(0, len(inputResource)):
-                        for key in inputResource[cnt]:
-                            if inputResource[cnt][key] == "None":
-                                inputResource[cnt][key] = None
 
                 resDiffIngoreEmptyTypes = Diff.Diff(resource1, resource2)
                 diff = resDiffIngoreEmptyTypes.getDiff()
 
                 if diff:
+                    # This is all debugging code to help resolve change detection
+                    # issues.
                     # debugging... writing the resources for closer examination
                     if cacheFiles is None:
                         cacheFiles = CacheFiles.CKANCacheFiles()
@@ -620,24 +653,48 @@ class CKANRecord:
                     with open(resPath1, 'w') as fh1:
                         json.dump(resource1, fh1, sort_keys=True)
 
-                    #resPath2 = cacheFiles.getResourceFilePath(name, inputRecord.origin)
                     with open(resPath1, 'a') as fh2:
                         dumpStr = json.dumps(resource2, sort_keys=True)
-                        #
                         fh2.write(f'\n{dumpStr}\n')
 
-                    #LOGGER.debug(f"resource 1: {resource1}")
-                    #LOGGER.debug(f"resource 2: {resource2}")
                     jsonDiff = json_delta.diff(resource1, resource2)
                     LOGGER.debug(f"jsonDiff 2: {jsonDiff}")
+        return diff
+
+    def getPackageDiff(self, inputRecord):
+        """
+        deepdiff does not seem to be working for list of dicts.  Package
+        resources are effected by this.  Have modified how package diffs
+        are calculated so diffs are first calculated on resources then on
+        packages.
+
+        links relateing to diff on complex data structures:
+
+        * https://gist.github.com/samuraisam/901117
+        * https://pypi.org/project/deep/
+
+        :return: the diff data structure, empty if no diff is found
+        :rtype: []
+        """
+        diff = None
+
+        cacheFiles = None
+
+        diff = self.getResourceDiff(inputRecord)
+        if not diff:
             pkgDiff = None
-            if not diff:
-                # LOGGER.debug("resources are the same, checking rest of object")
+            # don't even go any further if the records unique id, usually name is in
+            # the ignore list
+            if not self.isIgnore(inputRecord):
+                thisComparable = self.getComparableStruct()
+                thisComparable = thisComparable.copy()
+                inputComparable = inputRecord.getComparableStruct()
+                inputComparable = inputComparable.copy()
+
                 diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
                 pkgDiff = diffIngoreEmptyTypes.getDiff()
                 jsonDiff = json_delta.diff(thisComparable, inputComparable)
                 LOGGER.debug(f"package Diff: {jsonDiff}")
-            # diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
             if pkgDiff:
                 pp = pprint.PrettyPrinter(indent=4)
@@ -658,13 +715,13 @@ class CKANRecord:
                     fh2.write(f'\n{pkgStr}\n')
                 diff = pkgDiff
                 # LOGGER.debug(f"formatted diff:\n {formattedDiff}")
+
         return diff
 
     def getDiff(self, inputRecord):
         # retrieve a comparable structure, and remove embedded data types
         # that have been labelled as ignores
-
-        # TODO: before do anything check to see if this record is an
+        cacheFiles = None
         diff = None
         if inputRecord.dataType == "packages":
             diff = self.getPackageDiff(inputRecord)
@@ -681,11 +738,42 @@ class CKANRecord:
                 # diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
 
                 if diff:
+                    # TODO: come back and make code option either via arg or
+                    #       env var.
+                    if cacheFiles is None:
+                        cacheFiles = CacheFiles.CKANCacheFiles()
+
+                    name = self.getUniqueIdentifier()
+                    dataDumpPath = cacheFiles.getDataTypeFilePath(name, self.dataType)
+                    with open(dataDumpPath, 'w') as fh1:
+                        json.dump(thisComparable, fh1, sort_keys=True)
+
+                    with open(dataDumpPath, 'a') as fh2:
+                        dumpStr = json.dumps(inputComparable, sort_keys=True)
+                        fh2.write(f'\n{dumpStr}\n')
+
+                    # now to help with debugging get the struct that will be used
+                    # for update and dump it
+                    # dataCache, operationType, destRecord
+                    if inputRecord.origin == constants.DATA_SOURCE.DEST:
+                        updateStruct = self.getComparableStructUsedForAddUpdate(self.dataCache,
+                            constants.UPDATE_TYPES.UPDATE, inputRecord)
+                    else:
+                        updateStruct = inputRecord.getComparableStructUsedForAddUpdate(self.dataCache,
+                            constants.UPDATE_TYPES.UPDATE, self)
+
+                    dataDumpPath = cacheFiles.getDebugDataPath(name, self.dataType, "UPDT")
+                    with open(dataDumpPath, 'w') as fh1:
+                        json.dump(updateStruct, fh1, sort_keys=True)
+
                     pp = pprint.PrettyPrinter(indent=4)
                     recordName = self.getUniqueIdentifier()
                     formatted = pp.pformat(inputComparable)  # noqa
                     formattedDiff = pp.pformat(diff)  # noqa
                     LOGGER.debug(f"record name: {recordName}")
+                    # debugging code...
+                    # dump the structs to a file for evaluation
+
         return diff
 
     def __ne__(self, inputRecord):
@@ -1104,63 +1192,6 @@ class CKANDataSetDeltas:
             the destination ckan instance.
         :rtype: dict
         """
-        # TODO: the logic for this should be moved into the Dataset / record
-        #       object types.  Then same logic can be used for comparison as is
-        #       used to formulate the update data.
-        # should return only fields that are user generated
-
-        # read through the records in the update data set, make sure that
-        # the api data has been calculated.
-
-        # updateStruct = self.getComparableStructUsedForAddUpdate(self.destCKANDataset)
-        # return updateStruct
-
-        # updates = self.filterNonUserGeneratedFields(self.updates)
-        # idFields = TRANSCONF.getIdFieldConfigs(self.destCKANDataset.dataType)
-
-        # # retrieve transformation configs
-        # defaultFields = TRANSCONF.getRequiredFieldDefaultValues(
-        #                             self.destCKANDataset.dataType)
-        # customTransformers = TRANSCONF.getCustomUpdateTransformations(
-        #     self.destCKANDataset.dataType)
-        # enforceTypes = TRANSCONF.getTypeEnforcement(self.destCKANDataset.dataType)
-        # updateFields = TRANSCONF.getFieldsToIncludeOnUpdate(
-        #     self.destCKANDataset.dataType)
-
-        # if updateFields:
-        #     # need to add these onto each record from the destination
-        #     # instances data
-        #     updates = self.addAutoGenFields(
-        #         updates, updateFields, constants.DATA_SOURCE.DEST
-        #     )
-
-        # if defaultFields:
-        #     LOGGER.debug("adding required Fields")
-        #     updates = self.addRequiredDefaultValues(updates, defaultFields)
-
-        # if enforceTypes:
-        #     LOGGER.debug("Addressing property type enforcement")
-        #     updates = self.enforceTypes(updates, enforceTypes)
-
-        # if idFields:
-        #     LOGGER.debug("Addressing remapping of ID fields")
-        #     updates = self.remapIdFields(updates, idFields)
-
-        # # if stringifiedFields:
-        # #     LOGGER.debug("Addressing stringified fields")
-        # #     updates = self.doStringify(updates, stringifiedFields)
-
-        # if customTransformers:
-        #     LOGGER.debug(f"found custom transformers: {customTransformers}")
-        #     methMap = CustomTransformers.MethodMapping(
-        #         self.destCKANDataset.dataType,
-        #         customTransformers
-        #     )
-        #     for customTransformer in customTransformers:
-        #         LOGGER.info(f"loading and running the custom transformer : {customTransformer}")
-        #         methodCall = methMap.getCustomMethodCall(customTransformer)
-        #         methodCall(updates)
-        # return updates
         return self.updates
 
     def addRequiredDefaultValues(self, inputDataStruct, defaultFields):
@@ -1169,8 +1200,9 @@ class CKANDataSetDeltas:
         """
         # TODO: this isn't gonna work
 
-        dataRecordWithRequiredFields = CKANRecord(
-            inputDataStruct, self.destCKANDataset.dataType, constants.DATA_SOURCE.SRC
+        dataRecordWithRequiredFields = CKANRecord(inputDataStruct,
+            self.destCKANDataset.dataType, constants.DATA_SOURCE.SRC,
+            self.destCKANDataset.dataCache
         )
         dataRecordWithRequiredFields.applyRequiredFields()
 
@@ -1409,8 +1441,6 @@ class CKANDataSet(CKANRecordCollection):
 
         self.srcUniqueIdSet = None
         self.destUniqueIdSet = None
-
-        self.parseDataIntoRecords(jsonData)
 
     def populateDataSets(self, destDataSet):
         if self.srcUniqueIdSet is None:
@@ -1653,6 +1683,9 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         self.name2emailLUT = {}
         self.emailSet = None
 
+        self.parseDataIntoRecords(jsonData)
+
+
     def getDuplicateEmailAddresses(self):
         """Will iterate over this dataset and search for records that have
         duplicate email addresses.
@@ -1673,7 +1706,7 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         # first scan through all the records looking for duplicate emails.
         # then create a list that omits any records that correspond with duplicate
         # email addresses, and finally replace the self.recordList with the
-        # new list that does not include the dups
+        # new list that does not include the duplicates
         #
         # find duplicates...
 
@@ -1821,7 +1854,7 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
         self.populateDataSets(destDataSet)
 
         # modify so the intersection between the two sets of data is
-        # calcuated based on eamial addresses.
+        # calculated based on email addresses.
         self.calcEmailLut()
         destDataSet.calcEmailLut()
 
@@ -1860,6 +1893,7 @@ class CKANGroupDataSet(CKANRecordParserMixin, CKANDataSet):
             self, jsonData, constants.TRANSFORM_TYPE_GROUPS, dataCache, origin
         )
         self.recordConstructor = CKANGroupRecord
+        self.parseDataIntoRecords(jsonData)
 
 
 class CKANOrganizationDataSet(CKANRecordParserMixin, CKANDataSet):
@@ -1867,7 +1901,8 @@ class CKANOrganizationDataSet(CKANRecordParserMixin, CKANDataSet):
         CKANDataSet.__init__(
             self, jsonData, constants.TRANSFORM_TYPE_ORGS, dataCache, origin
         )
-        self.recordConstructor = CKANGroupRecord
+        self.recordConstructor = CKANOrganizationRecord
+        self.parseDataIntoRecords(jsonData)
 
 
 class CKANPackageDataSet(CKANRecordParserMixin, CKANDataSet):
@@ -1876,6 +1911,7 @@ class CKANPackageDataSet(CKANRecordParserMixin, CKANDataSet):
             self, jsonData, constants.TRANSFORM_TYPE_PACKAGES, dataCache, origin
         )
         self.recordConstructor = CKANPackageRecord
+        self.parseDataIntoRecords(jsonData)
 
 
 class DataPopulator:
