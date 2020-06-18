@@ -378,25 +378,40 @@ class CKANWrapper:
         LOGGER.debug("getting users")
         params = {"all_fields": includeData}
         users = []
-        try:
-            users = self.remoteapi.action.user_list(**params)
-        except (requests.exceptions.ConnectionError,
-                ckanapi.errors.CKANAPIError):
-            # try manually using the api end point
-            LOGGER.warning("caught error with ckanapi module call, trying "
-                           "directly")
-            userListendPoint = "api/3/action/user_list"
-            userListUrl = f"{self.CKANUrl}{userListendPoint}"
-            LOGGER.debug(f"userlist url: {userListUrl}")
+        # try manually using the api end point
+        LOGGER.warning("caught error with ckanapi module call, trying "
+                        "directly")
+        userListendPoint = "api/3/action/user_list"
+        userListUrl = f"{self.CKANUrl}{userListendPoint}"
+        LOGGER.debug(f"userlist url: {userListUrl}")
 
-            resp = requests.get(userListUrl, headers=self.CKANHeader)
-            if self.__isResponseSuccess(resp):
-                userJson = resp.json()
-                users = userJson["result"]
-            else:
+        resp = requests.get(userListUrl, headers=self.CKANHeader)
+        if self.__isResponseSuccess(resp):
+            userJson = resp.json()
+            users = userJson["result"]
+        else:
                 raise InvalidRequestError(resp)
         LOGGER.info(f"retrieved {len(users)} users")
         return users
+
+    def updateUserAPIKey(self, userId):
+        """[summary]
+
+        :param userId: [description]
+        :type userId: [type]
+        """
+        self.checkUrl()
+        userCreateEndPoint = "api/3/action/user_generate_apikey"
+        userCreateURL = f"{self.CKANUrl}{userCreateEndPoint}"
+        LOGGER.debug(f"url end point: {userCreateURL}")
+        userData = {"id": userId}
+
+        resp = requests.post(userCreateURL, headers=self.CKANHeader,
+                             json=userData, timeout=self.requestTimeout)
+        if self.__isResponseSuccess(resp):
+            respJson = resp.json()
+            retVal = respJson["result"]
+        return retVal
 
     def checkUrl(self):
         """This method has been added to all the methods that perform an
@@ -528,19 +543,16 @@ class CKANWrapper:
                 + "include: (str, dict)"
             )
             raise ValueError(msg)
-        try:
-            retVal = self.remoteapi.action.user_show(**userData)
-        except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/user_show"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
-            LOGGER.debug(f"url end point: {apiUrl}")
-            resp = requests.get(apiUrl, headers=self.CKANHeader, json=userData)
-            if self.__isResponseSuccess(resp):
-                respJson = resp.json()
-                retVal = respJson["result"]
-            else:
-                raise InvalidRequestError(resp)
-            LOGGER.debug(f"response status code: {resp.status_code}")
+        endPoint = "api/3/action/user_show"
+        apiUrl = f"{self.CKANUrl}{endPoint}"
+        LOGGER.debug(f"url end point: {apiUrl}")
+        resp = requests.get(apiUrl, headers=self.CKANHeader, params=userData)
+        if self.__isResponseSuccess(resp):
+            respJson = resp.json()
+            retVal = respJson["result"]
+        else:
+            raise InvalidRequestError(resp)
+        LOGGER.debug(f"response status code: {resp.status_code}")
         return retVal
 
     def getOrganization(self, query):

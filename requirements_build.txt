@@ -8,5 +8,5 @@ pytest==5.4.1
 black>=19.*
 pylint==2.5.3
 pylama==7.7.1
-radon=4.1.0
-xenon==
+radon==4.1.0
+xenon==0.7.0
