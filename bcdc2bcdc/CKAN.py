@@ -827,7 +827,7 @@ class CKANWrapper:
             LOGGER.error(err)
             # catch 504 errors raised by ckanapi, otherwise re-raise
             if (
-                ((attempts < maxRetries) and hasattr(err, "extra_msg"))
+                ((attempts < self.apiRequestMaxRetries) and hasattr(err, "extra_msg"))
                 and len(literal_eval(err.extra_msg)) >= 2
             ) and literal_eval(err.extra_msg)[1] == 504:
                 attempts += 1
