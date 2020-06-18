@@ -31,4 +31,6 @@ jobs:
     # Runs a set of commands using the runners shell
     - name: Run xenon code quality check
       run: |
-        xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
+        ls /usr/local/bin
+        echo $PATH
+        /usr/local/bin/xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
