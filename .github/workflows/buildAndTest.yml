@@ -32,4 +32,4 @@ jobs:
     - name: Run xenon code quality check
       run: |
         python3 -m pip show xenon
-        xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
+        /home/runner/.local/bin/xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
