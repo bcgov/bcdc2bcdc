@@ -33,3 +33,10 @@ jobs:
       run: |
         python3 -m pip show xenon
         /home/runner/.local/bin/xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
+
+    # run sonar cloud
+    - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
