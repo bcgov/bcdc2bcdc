@@ -23,6 +23,7 @@ jobs:
     # Runs a single command using the runners shell
     - name: install build requiremments
       run: |
+        apt-get install python3-setuptools
         python3 -m pip install -r $GITHUB_WORKSPACE/requirements_build.txt
 
     # Runs a set of commands using the runners shell
