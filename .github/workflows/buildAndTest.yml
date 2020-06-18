@@ -23,8 +23,8 @@ jobs:
     # Runs a single command using the runners shell
     - name: install build requiremments
       run: |
-        pip install -r $GITHUB_WORKSPACE/requirements_build.txt
-        
+        python3 -m pip install -r $GITHUB_WORKSPACE/requirements_build.txt
+
     # Runs a set of commands using the runners shell
     - name: Run xenon code quality check
       run: |
