@@ -21,11 +21,11 @@ jobs:
     - uses: actions/checkout@v2
 
     # Runs a single command using the runners shell
-    - name: Run a one-line script
-      run: echo Hello, world!
-
-    # Runs a set of commands using the runners shell
-    - name: Run a multi-line script
+    - name: install build requiremments
       run: |
-        echo Add other actions to build,
-        echo test, and deploy your project.
+        pip install -r $GITHUB_WORKSPACE/requirements_build.txt
+        
+    # Runs a set of commands using the runners shell
+    - name: Run xenon code quality check
+      run: |
+        xenon --max-absolute B --max-modules A --max-average A $GITHUB_WORKSPACE/bcdc2bcdc
