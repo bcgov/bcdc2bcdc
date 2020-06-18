@@ -1294,14 +1294,6 @@ if __name__ == "__main__":
 
     lg = logging.getLogger("urllib3.connectionpool")
     lg.setLevel(logging.INFO)
-    #     pkgList = ["aircraft-emissions-2000-5-km-grid",
-    #         "airfields-trim-enhanced-base-map-ebm",
-    #         "airphoto-centroids",
-    #         "airphoto-flightlines",
-    #         "air-photo-system-air-photo-polygons",
-    #         "air-photo-system-air-photo-polygons-spatial-view",
-    #         "air-photo-system-centre-points"]
-
 
     destUrl = os.environ[constants.CKAN_URL_DEST]
     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
