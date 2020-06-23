@@ -96,7 +96,6 @@ class CKANCacheFiles:
         if not os.path.exists(resDir):
             os.mkdir(resDir)
         while True:
-            #fileName = f'{pkgName}_{keyword}_{origin}_{cnt}.json'
             fileName = f'{pkgName}'
             if keyword:
                 fileName = f'{fileName}_{keyword}'

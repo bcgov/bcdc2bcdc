@@ -22,3 +22,4 @@ updt_group.json
 logs/bcdc2bcdc.log
 build/
 bcdc2bcdc_dev.egg-info/
+.vscode/.ropeproject/

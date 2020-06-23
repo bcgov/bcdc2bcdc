@@ -110,15 +110,15 @@ class CKANWrapper:
 
         packageList = []
         params = {"limit": 500, "offset": 0}
-        package_list_cnt = 0
+        packageListCnt = 0
         while True:
             LOGGER.debug("offset: %s", params["offset"])
-            resp = self.__getWithRetries(packageListEndPoint, params)
-            LOGGER.debug("status: %s", resp.status_code)
-            pkg_list = resp.json()
-            package_list_cnt = package_list_cnt + len(pkg_list["result"])
+            packageListCnt = self.__getWithRetries(packageListEndPoint, params)
+            LOGGER.debug("status: %s", packageListCnt.status_code)
+            pkg_list = packageListCnt.json()
+            packageListCnt = packageListCnt + len(pkg_list["result"])
             LOGGER.debug(
-                "package cnt: %s %s", package_list_cnt, len(pkg_list["result"])
+                "package cnt: %s %s", packageListCnt, len(pkg_list["result"])
             )
             packageList.extend(pkg_list["result"])
             if len(pkg_list["result"]) < params["limit"]:
@@ -814,7 +814,7 @@ class CKANWrapper:
                 self.updatePackage(packageData, retry=True)
 
     def getOrganizationPage(self, orgConfig, attempts=0):
-        """[summary]
+        """Gets the organizations from the CKAN API, one page at a time
 
         :param orgConfig: [description]
         :type orgConfig: [type]
@@ -920,18 +920,16 @@ class CKANWrapper:
         self.checkUrl()
         LOGGER.info(f"trying to delete the organization: {organizationIdentifier}")
         orgParams = {"id": organizationIdentifier}
-        try:
-            retVal = self.remoteapi.action.organization_delete(**orgParams)
-        except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/organization_delete"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
-            LOGGER.debug(f"url end point: {apiUrl}")
-            resp = self.rsession.post(apiUrl, headers=self.CKANHeader, json=orgParams)
-            if self.__isResponseSuccess(resp):
-                respJson = resp.json()
-                retVal = respJson["result"]
-            else:
-                raise InvalidRequestError(resp)
+
+        apiUrl = self.__getUrl('organization_delete')
+        LOGGER.debug(f"url end point: {apiUrl}")
+
+        resp = self.rsession.post(apiUrl, headers=self.CKANHeader, json=orgParams)
+        if self.__isResponseSuccess(resp):
+            respJson = resp.json()
+            retVal = respJson["result"]
+        else:
+            raise InvalidRequestError(resp)
         LOGGER.debug("org delete return val: %s", retVal)
 
     def addOrganization(self, organizationData):
@@ -951,8 +949,7 @@ class CKANWrapper:
             organizationData["id"] = organizationData["name"]
             retVal = self.remoteapi.action.organization_update(**organizationData)
         except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/organization_create"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
+            apiUrl = self.__getUrl('organization_create')
             LOGGER.debug(f"url end point: {apiUrl}")
             resp = self.rsession.post(apiUrl, headers=self.CKANHeader, json=organizationData)
             if self.__isResponseSuccess(resp):
@@ -974,10 +971,8 @@ class CKANWrapper:
         self.checkUrl()
         LOGGER.debug(f"updating org: {organizationData['name']}")
         try:
-            retVal = self.remoteapi.action.organization_update(**organizationData)
-        except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/organization_update"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
+            apiUrl = self.__getUrl('organization_update')
+
             LOGGER.debug(f"url end point: {apiUrl}")
             resp = self.rsession.post(apiUrl,
                                  headers=self.CKANHeader,
@@ -1000,13 +995,9 @@ class CKANWrapper:
 
     def addPackage(self, packageData, retries=0):
         self.checkUrl()
+        retVal = None
         try:
-            LOGGER.debug("adding the package data")
-            retVal = self.remoteapi.action.package_create(**packageData)
-            LOGGER.debug(f"name from retVal: {retVal['name']}, {retVal['id']}")
-        except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/package_create"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
+            apiUrl = self.__getUrl('package_create')
             LOGGER.debug(f"url end point: {apiUrl}")
             resp = self.rsession.post(apiUrl, headers=self.CKANHeader,
                                  json=packageData)
@@ -1019,6 +1010,7 @@ class CKANWrapper:
             LOGGER.error("Error when adding package...", exc_info=True)
             LOGGER.warning("skipping this package")
             time.sleep(2)
+        return retVal
 
     def deletePackage(self, deletePckg):
         """deleting the package: deletePckg
@@ -1029,37 +1021,40 @@ class CKANWrapper:
         self.checkUrl()
         packageParams = {"id": deletePckg}
         LOGGER.debug(f"trying to delete the package: {deletePckg}")
-        try:
-            retVal = self.remoteapi.action.package_delete(**packageParams)
-        except ckanapi.errors.CKANAPIError:
-            endPoint = "api/3/action/package_delete"
-            apiUrl = f"{self.CKANUrl}{endPoint}"
-            LOGGER.debug(f"url end point: {apiUrl}")
-            resp = self.rsession.post(apiUrl, headers=self.CKANHeader,
-                                 json=packageParams)
-            if self.__isResponseSuccess(resp):
-                respJson = resp.json()
-                retVal = respJson["result"]
-            else:
-                raise InvalidRequestError(resp)
+        apiUrl = self.__getUrl('package_delete')
+        LOGGER.debug(f"url end point: {apiUrl}")
+        resp = self.rsession.post(apiUrl, headers=self.CKANHeader,
+                                json=packageParams)
+        if self.__isResponseSuccess(resp):
+            respJson = resp.json()
+            retVal = respJson["result"]
+        else:
+            raise InvalidRequestError(resp)
 
         LOGGER.debug(f"Package Deleted: {retVal}")
 
     def getPackage(self, query):
-        retVal = self.remoteapi.action.package_show(**query)
+        #retVal = self.remoteapi.action.package_show(**query)
+
+        apiUrl = self.__getUrl('package_show')
+        LOGGER.debug(f"url end point: {apiUrl}")
+        resp = self.requestSession.get(apiUrl, headers=self.CKANHeader,
+                                       params=query)
+        respJson = resp.json()
+        retVal = respJson["result"]
         return retVal
 
     def getScheming(self):
         """hits the scheming api retrieving the scheming definitions
 
-        :return: [description]
-        :rtype: [type]
+        :return: returns a dict describing the scheming implementation
+        :rtype: dict
         """
         LOGGER.debug(f"retriving the scheming definitions...")
-        # {{DOMAIN}}api/3/action/scheming_dataset_schema_show?type=bcdc_dataset
-        endPoint = "api/3/action/scheming_dataset_schema_show"
+
+        apiUrl = self.__getUrl('scheming_dataset_schema_show')
         params = {"type": "bcdc_dataset"}
-        apiUrl = f"{self.CKANUrl}{endPoint}"
+
         LOGGER.debug(f"url end point: {apiUrl}")
         resp = self.rsession.post(apiUrl, headers=self.CKANHeader, params=params)
         if self.__isResponseSuccess(resp):
@@ -1194,7 +1189,7 @@ class CKANAsyncWrapper:
                     )
                     # LOGGER.debug(f" num done in this loop: {len(done)}")
                 for fut in done:
-                    original_task = futures.pop(fut)
+                    # you can retrieve the original task using: futures.pop(fut)
                     # can add error catching and re-add to executor here
                     data = fut.result()
                     self.packages.append(data)
