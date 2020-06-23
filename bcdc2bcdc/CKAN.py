@@ -814,6 +814,16 @@ class CKANWrapper:
                 self.updatePackage(packageData, retry=True)
 
     def getOrganizationPage(self, orgConfig, attempts=0):
+        """[summary]
+
+        :param orgConfig: [description]
+        :type orgConfig: [type]
+        :param attempts: [description], defaults to 0
+        :type attempts: int, optional
+        :raises InvalidRequestError: [description]
+        :return: [description]
+        :rtype: [type]
+        """
         try:
             apiUrl = self.__getUrl('organization_list')
             LOGGER.debug(f"url end point: {apiUrl}")

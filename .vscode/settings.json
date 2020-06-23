@@ -77,5 +77,8 @@
     "files.eol": "\n",
     "terminal.integrated.scrollback": 20000,
     "python.linting.pylamaEnabled": true,
-    "python.linting.pylamaArgs": ["--options pylama.ini"]
+    "python.linting.pylamaArgs": ["--options pylama.ini"],
+    "sonarlint.connectedMode.project": {
+        "projectKey": "bcdc2bcdc"
+    }
 }
