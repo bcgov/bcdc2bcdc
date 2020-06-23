@@ -44,8 +44,8 @@ class RunUpdate:
                 "dest": self.destCKANWrapper.getUsers,
             },
             True: {
-                "src": self.srcCKANWrapper.getUsers_cached,
-                "dest": self.destCKANWrapper.getUsers_cached,
+                "src": self.srcCKANWrapper.getUsersCached,
+                "dest": self.destCKANWrapper.getUsersCached,
             },
         }
 
@@ -74,6 +74,7 @@ class RunUpdate:
         # specific to users, implemented a method to augment the ignore list
         # for duplicate users
         dupEmails = srcUserCKANDataSet.getDuplicateEmailAddresses()
+        LOGGER.debug(f"found the following duplicate emails: {dupEmails}")
 
         self.dataCache.addData(srcUserCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
@@ -100,8 +101,8 @@ class RunUpdate:
                 "dest": self.destCKANWrapper.getGroups,
             },
             True: {
-                "src": self.srcCKANWrapper.getGroups_cached,
-                "dest": self.destCKANWrapper.getGroups_cached,
+                "src": self.srcCKANWrapper.getGroupsCached,
+                "dest": self.destCKANWrapper.getGroupsCached,
             },
         }
         srcCacheFile = self.cachedFilesPaths.getSrcGroupJsonPath()
@@ -113,10 +114,6 @@ class RunUpdate:
         groupDataDest = getGroupsMap[useCache]["dest"](
             cacheFileName=destCacheFile, includeData=True
         )
-
-        # groupDataSrc = self.srcCKANWrapper.getGroups(includeData=True)
-        # groupDataDest = self.destCKANWrapper.getGroups(includeData=True)
-        # LOGGER.debug(f"Groupdata is: {groupDataProd}")
 
         srcGroupCKANDataSet = CKANData.CKANGroupDataSet(
             groupDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
@@ -147,8 +144,8 @@ class RunUpdate:
                 "dest": self.destCKANWrapper.getOrganizations,
             },
             True: {
-                "src": self.srcCKANWrapper.getOrganizations_cached,
-                "dest": self.destCKANWrapper.getOrganizations_cached,
+                "src": self.srcCKANWrapper.getOrganizationsCached,
+                "dest": self.destCKANWrapper.getOrganizationsCached,
             },
         }
         srcCacheFile = self.cachedFilesPaths.getSrcOrganizationsJsonPath()
@@ -160,11 +157,6 @@ class RunUpdate:
         orgDataDest = getOrgsMap[useCache]["dest"](
             cacheFileName=destCacheFile, includeData=True
         )
-
-        # orgDataSrc = self.srcCKANWrapper.getOrganizations(includeData=True)
-        # LOGGER.debug(f"first orgDataProd record: {orgDataSrc[0]}")
-        # orgDataDest = self.destCKANWrapper.getOrganizations(includeData=True)
-        # LOGGER.debug(f"first orgDataTest record: {orgDataDest[0]}")
 
         srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
             orgDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
@@ -197,8 +189,8 @@ class RunUpdate:
                 "dest": self.destCKANWrapper.getPackagesAndData,
             },
             True: {
-                "src": self.srcCKANWrapper.getPackagesAndData_cached,
-                "dest": self.destCKANWrapper.getPackagesAndData_cached,
+                "src": self.srcCKANWrapper.getPackagesAndDataCached,
+                "dest": self.destCKANWrapper.getPackagesAndDataCached,
             },
         }
 

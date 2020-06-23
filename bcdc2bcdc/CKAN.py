@@ -115,13 +115,13 @@ class CKANWrapper:
             LOGGER.debug("offset: %s", params["offset"])
             packageListCnt = self.__getWithRetries(packageListEndPoint, params)
             LOGGER.debug("status: %s", packageListCnt.status_code)
-            pkg_list = packageListCnt.json()
-            packageListCnt = packageListCnt + len(pkg_list["result"])
+            pkgList = packageListCnt.json()
+            packageListCnt = packageListCnt + len(pkgList["result"])
             LOGGER.debug(
-                "package cnt: %s %s", packageListCnt, len(pkg_list["result"])
+                "package cnt: %s %s", packageListCnt, len(pkgList["result"])
             )
-            packageList.extend(pkg_list["result"])
-            if len(pkg_list["result"]) < params["limit"]:
+            packageList.extend(pkgList["result"])
+            if len(pkgList["result"]) < params["limit"]:
                 LOGGER.debug("end of pages, breaking out")
                 break
             params["offset"] = params["limit"] + params["offset"]
@@ -192,20 +192,20 @@ class CKANWrapper:
             to the name of the
         :type ckanMethodName: str
         """
-        CKANUrl = self.CKANUrl.strip()
-        if CKANUrl[-1] != '/':
-            CKANUrl = f'{CKANUrl}/'
-        CKANAPIDir = self.CKANBaseUrl.strip()
-        if CKANAPIDir[0] != '/':
-            CKANAPIDir = f'/{CKANAPIDir}'
-        if CKANAPIDir[-1] != '/':
-            CKANAPIDir = f'{CKANAPIDir}/'
+        ckanUrl = self.CKANUrl.strip()
+        if ckanUrl[-1] != '/':
+            ckanUrl = f'{ckanUrl}/'
+        ckanApiDir = self.CKANBaseUrl.strip()
+        if ckanApiDir[0] != '/':
+            ckanApiDir = f'/{ckanApiDir}'
+        if ckanApiDir[-1] != '/':
+            ckanApiDir = f'{ckanApiDir}/'
 
         ckanMethodName = ckanMethodName.replace('/', '').strip()
 
 
-        CKANUrl =  f'{CKANUrl}{CKANAPIDir}{ckanMethodName}'
-        return CKANUrl
+        ckanUrl =  f'{ckanUrl}{ckanApiDir}{ckanMethodName}'
+        return ckanUrl
 
 
     def getPackageNames(self):
@@ -261,7 +261,7 @@ class CKANWrapper:
 
         return packageList
 
-    def getPackagesAndData_cached(self, cacheFileName):
+    def getPackagesAndDataCached(self, cacheFileName):
         """Used for debugging, re-uses a cached version of the package data
         instead of retrieving it from the api.
         """
@@ -292,7 +292,7 @@ class CKANWrapper:
         pkgs = asyncWrapper.getPackages(pkgList)
         return pkgs
 
-    def getPackagesAndData_solr(self):
+    def getPackagesAndDataSolr(self):
         """Collects a complete list of packages from ckan.  Uses package_search
         end point.  package_search hits cached state of CKAN managed by SOLR
         thus cannot be relied upon to return the latest set of data.
@@ -359,7 +359,7 @@ class CKANWrapper:
             raise InvalidRequestError(respJson)
         return orgList
 
-    def getUsers_cached(self, cacheFileName, includeData=False):
+    def getUsersCached(self, cacheFileName, includeData=False):
         if not os.path.exists(cacheFileName):
             users = self.getUsers(includeData)
             with open(cacheFileName, "w") as fh:
@@ -546,6 +546,7 @@ class CKANWrapper:
                     "queries for users must use the parameter 'id' instead "
                     "and not 'name', Going to swap the param name for id."
                 )
+                LOGGER.warning(msg)
                 userData["id"] = userData["name"]
                 del userData["name"]
         else:
@@ -663,7 +664,7 @@ class CKANWrapper:
                 raise InvalidRequestError(resp)
         return retVal
 
-    def getGroups_cached(self, cacheFileName, includeData=False):
+    def getGroupsCached(self, cacheFileName, includeData=False):
         if not os.path.exists(cacheFileName):
             groups = self.getGroups(includeData)
             with open(cacheFileName, "w") as fh:
@@ -871,7 +872,6 @@ class CKANWrapper:
         if not currentPosition:
             currentPosition = 0
         pageCnt = 1
-        maxRetries = 5
 
         if includeData:
             orgConfig = {
@@ -899,7 +899,7 @@ class CKANWrapper:
             pageCnt += 1
         return organizations
 
-    def getOrganizations_cached(self, cacheFileName, includeData=False):
+    def getOrganizationsCached(self, cacheFileName, includeData=False):
         if not os.path.exists(cacheFileName):
             orgs = self.getOrganizations(includeData)
             with open(cacheFileName, "w") as fh:
