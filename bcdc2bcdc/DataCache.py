@@ -156,7 +156,7 @@ class DataCache:
                 + f"is {type(dataOrigin)}.  This is not "
                 + "a valid type for this parameter, must be a constants.DATA_SOURCE type"
             )
-            raise inValidDataType(msg)
+            raise InValidDataType(msg)
         dataType = dataSet.dataType
         fieldmaps = self.transConf.getFieldMappings(dataType)
 
@@ -586,7 +586,7 @@ class CachedIgnores:
         return retVal
 
 
-class inValidDataType(ValueError):
+class InValidDataType(ValueError):
     """Raised when the DataCacheFactory configuration encounters an unexpected
     value or type
     """

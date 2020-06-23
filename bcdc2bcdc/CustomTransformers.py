@@ -96,7 +96,6 @@ class MethodMapping:
             )
             raise ValueError(msg)
 
-
     def getClasses(self):
         classMembers = inspect.getmembers(sys.modules[__name__], inspect.isclass)
         clsNameAsStr = []
@@ -119,7 +118,8 @@ class MethodMapping:
         method = getattr(obj, methodName)
         return method
 
-class ckanObjectUpdateMixin:
+
+class CkanObjectUpdateMixin:
     def getStructToUpdate(self, record):
         """using self.updateType parameter determines the update type
         that was defined for this custom transformation.
@@ -142,8 +142,10 @@ class ckanObjectUpdateMixin:
         # if add or update the update the struct updateableJsonData
         if self.updateType == constants.UPDATE_TYPES.COMPARE:
             updateStruct = record.comparableJsonData
-        elif self.updateType == constants.UPDATE_TYPES.ADD or \
-                self.updateType == constants.UPDATE_TYPES.UPDATE:
+        elif (
+            self.updateType == constants.UPDATE_TYPES.ADD
+            or self.updateType == constants.UPDATE_TYPES.UPDATE
+        ):
             updateStruct = record.updateableJsonData
         return updateStruct
 
@@ -160,13 +162,14 @@ class ckanObjectUpdateMixin:
         :type record: CKANData.CKANRecord
         """
         recordStruct = self.getStructToUpdate(record)
-        if 'resources' in recordStruct:
-            for resCnt in range(0, len(recordStruct['resources'])):
-                for resourceKey in recordStruct['resources'][resCnt]:
-                    if recordStruct['resources'][resCnt][resourceKey] == "None":
-                        recordStruct['resources'][resCnt][resourceKey] = None
+        if "resources" in recordStruct:
+            for resCnt in range(0, len(recordStruct["resources"])):
+                for resourceKey in recordStruct["resources"][resCnt]:
+                    if recordStruct["resources"][resCnt][resourceKey] == "None":
+                        recordStruct["resources"][resCnt][resourceKey] = None
 
-class users(ckanObjectUpdateMixin):
+
+class users(CkanObjectUpdateMixin):
     def __init__(self, updateType):
         self.updateType = updateType
 
@@ -179,10 +182,11 @@ class users(ckanObjectUpdateMixin):
         :rtype: [type]
         """
         recordStruct = self.getStructToUpdate(record)
-        if 'name' in  recordStruct:
-            del recordStruct['name']
+        if "name" in recordStruct:
+            del recordStruct["name"]
 
-class organizations(ckanObjectUpdateMixin):
+
+class organizations(CkanObjectUpdateMixin):
     def __init__(self, updateType):
         self.updateType = updateType
 
@@ -192,7 +196,7 @@ class organizations(ckanObjectUpdateMixin):
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
             modifiedUsers = []
-            users = recordStruct['users']
+            users = recordStruct["users"]
             # iterate over each of the users
             #   retrieve the users email,
             #   map the email to the dest record and
@@ -201,39 +205,46 @@ class organizations(ckanObjectUpdateMixin):
             #                "user_populated_field": "email",
             #                "auto_populated_field": "name"
             for user in users:
-                currentName = user['name']
-                userSrcEmail = record.dataCache.getUserDefinedValue('name',
-                        currentName, 'email', 'users', constants.DATA_SOURCE.SRC)
-                userDestName = record.dataCache.getAutoDefinedValue('name',
-                        userSrcEmail, 'users', constants.DATA_SOURCE.DEST)
-                #LOGGER.debug(f"userDestName: {userDestName}")
+                currentName = user["name"]
+                userSrcEmail = record.dataCache.getUserDefinedValue(
+                    "name", currentName, "email", "users", constants.DATA_SOURCE.SRC
+                )
+                userDestName = record.dataCache.getAutoDefinedValue(
+                    "name", userSrcEmail, "users", constants.DATA_SOURCE.DEST
+                )
+                # LOGGER.debug(f"userDestName: {userDestName}")
                 if not userDestName:
-                    LOGGER.error("Cannot find a corresponding user for the "
-                        f"source user: {currentName}, email: {userSrcEmail}")
-                user['name'] = userDestName
+                    LOGGER.error(
+                        "Cannot find a corresponding user for the "
+                        f"source user: {currentName}, email: {userSrcEmail}"
+                    )
+                user["name"] = userDestName
                 modifiedUsers.append(user)
-            recordStruct['users'] = modifiedUsers
+            recordStruct["users"] = modifiedUsers
 
     def revertUserName(self, record):
         # swap the username back to how it was
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
             modifiedUsers = []
-            users = recordStruct['users']
+            users = recordStruct["users"]
             for user in users:
-                currentName = user['name']
+                currentName = user["name"]
                 # need to find current name in dest, translate to email
                 # find the equivalent email in src, translate back to name
 
-                userDestEmail = record.dataCache.getUserDefinedValue('name',
-                        currentName, 'email', 'users', constants.DATA_SOURCE.DEST)
-                userSrcName = record.dataCache.getAutoDefinedValue('name',
-                        userDestEmail, 'users', constants.DATA_SOURCE.SRC)
-                user['name'] = userSrcName
+                userDestEmail = record.dataCache.getUserDefinedValue(
+                    "name", currentName, "email", "users", constants.DATA_SOURCE.DEST
+                )
+                userSrcName = record.dataCache.getAutoDefinedValue(
+                    "name", userDestEmail, "users", constants.DATA_SOURCE.SRC
+                )
+                user["name"] = userSrcName
                 modifiedUsers.append(user)
-            recordStruct['users'] = modifiedUsers
+            recordStruct["users"] = modifiedUsers
 
-class groups(ckanObjectUpdateMixin):
+
+class groups(CkanObjectUpdateMixin):
     def __init__(self, updateType):
         self.updateType = updateType
 
@@ -243,7 +254,7 @@ class groups(ckanObjectUpdateMixin):
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
             modifiedUsers = []
-            users = recordStruct['users']
+            users = recordStruct["users"]
             # iterate over each of the users
             #   retrieve the users email,
             #   map the email to the dest record and
@@ -252,21 +263,27 @@ class groups(ckanObjectUpdateMixin):
             #                "user_populated_field": "email",
             #                "auto_populated_field": "name"
             for user in users:
-                currentName = user['name']
-                userSrcEmail = record.dataCache.getUserDefinedValue('name',
-                        currentName, 'email', 'users', constants.DATA_SOURCE.SRC)
-                userDestName = record.dataCache.getAutoDefinedValue('name',
-                        userSrcEmail, 'users', constants.DATA_SOURCE.DEST)
-                #LOGGER.debug(f"userDestName: {userDestName}")
+                currentName = user["name"]
+                userSrcEmail = record.dataCache.getUserDefinedValue(
+                    "name", currentName, "email", "users", constants.DATA_SOURCE.SRC
+                )
+                userDestName = record.dataCache.getAutoDefinedValue(
+                    "name", userSrcEmail, "users", constants.DATA_SOURCE.DEST
+                )
+                # LOGGER.debug(f"userDestName: {userDestName}")
                 if not userDestName:
-                    LOGGER.error("Cannot find a corresponding user for the "
-                        f"source user: {currentName}, email: {userSrcEmail}")
-                user['name'] = userDestName
+                    LOGGER.error(
+                        "Cannot find a corresponding user for the "
+                        f"source user: {currentName}, email: {userSrcEmail}"
+                    )
+                user["name"] = userDestName
                 modifiedUsers.append(user)
-            recordStruct['users'] = modifiedUsers
+            recordStruct["users"] = modifiedUsers
+
+
 # names of specific classes need to align with the names in
 # constants.VALID_TRANSFORM_TYPES
-class packages(ckanObjectUpdateMixin):
+class packages(CkanObjectUpdateMixin):
     def __init__(self, updateType):
         self.customTransformations = []
         self.updateType = updateType
@@ -294,7 +311,7 @@ class packages(ckanObjectUpdateMixin):
         :type record: CKANData.CKANRecord
         """
         # apply this on both source and destination records
-        self.__checkForNoneInResource(record, 'json_table_schema', {})
+        self.__checkForNoneInResource(record, "json_table_schema", {})
 
     def fixOFI(self, record):
         """OFI was comming accross as a str bool on source and then an actual boolean
@@ -308,13 +325,16 @@ class packages(ckanObjectUpdateMixin):
         """
         if record.origin == constants.DATA_SOURCE.SRC:
             recordStruct = self.getStructToUpdate(record)
-            if 'ofi' in recordStruct:
-                ofiValue = recordStruct['ofi']
-                if (isinstance(ofiValue, str)) and ofiValue.lower() in ['true', 'false']:
-                    if ofiValue.lower() == 'true':
-                        recordStruct['ofi'] = True
+            if "ofi" in recordStruct:
+                ofiValue = recordStruct["ofi"]
+                if (isinstance(ofiValue, str)) and ofiValue.lower() in [
+                    "true",
+                    "false",
+                ]:
+                    if ofiValue.lower() == "true":
+                        recordStruct["ofi"] = True
                     else:
-                        recordStruct['ofi'] = False
+                        recordStruct["ofi"] = False
 
     def adjustURLDomain(self, record):
         """Looks at the URL field that is part of each packages resources.  The
@@ -328,28 +348,32 @@ class packages(ckanObjectUpdateMixin):
         # only apply on the source
         if record.origin == constants.DATA_SOURCE.SRC:
             recordStruct = self.getStructToUpdate(record)
-            for resCnt in range(0, len(recordStruct['resources'])):
-                if 'url' in recordStruct['resources'][resCnt]:
+            for resCnt in range(0, len(recordStruct["resources"])):
+                if "url" in recordStruct["resources"][resCnt]:
                     # extract the domain, for the record and compare against
                     # the domain of the env var for SRC, if those are the
                     # same then swap it to DEST.
-                    curUrl = recordStruct['resources'][resCnt]['url']
+                    curUrl = recordStruct["resources"][resCnt]["url"]
                     curUrlParser = urllib.parse.urlparse(curUrl)
 
                     # src url parser
-                    srcUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_SRC])
+                    srcUrlParser = urllib.parse.urlparse(
+                        os.environ[constants.CKAN_URL_SRC]
+                    )
                     if curUrlParser.hostname == srcUrlParser.hostname:
                         # swap it to the DEST host as CKAN will do that once the
                         # record is updated.  This allows change detection to not
                         # flag a change.
-                        destUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_DEST])
-                        newUrl = curUrl.replace(srcUrlParser.hostname, destUrlParser.hostname)
+                        destUrlParser = urllib.parse.urlparse(
+                            os.environ[constants.CKAN_URL_DEST]
+                        )
+                        newUrl = curUrl.replace(
+                            srcUrlParser.hostname, destUrlParser.hostname
+                        )
                         LOGGER.debug(f"new url: {newUrl}")
-                        recordStruct['resources'][resCnt]['url'] = newUrl
+                        recordStruct["resources"][resCnt]["url"] = newUrl
                 else:
-                    recordStruct['resources'][resCnt]['url'] = defaultURL
-
-
+                    recordStruct["resources"][resCnt]["url"] = defaultURL
 
             # # also patch the url in the package
             # if ('url' in recordStruct) and recordStruct['url']:
@@ -365,23 +389,29 @@ class packages(ckanObjectUpdateMixin):
             #             recordStruct['url'] = newUrl
 
     def checkSpatialDatatypeForNone(self, record):
-        self.__checkForNoneInResource(record, 'spatial_datatype', '')
+        self.__checkForNoneInResource(record, "spatial_datatype", "")
 
     def checkTemporalExtentForNone(self, record):
-        self.__checkForNoneInResource(record, 'temporal_extent', {}, otherNulls=[''])
+        self.__checkForNoneInResource(record, "temporal_extent", {}, otherNulls=[""])
 
     def checkIsoTopicCategoryForNone(self, record):
-        self.__checkForNoneInResource(record, 'iso_topic_category', [])
+        self.__checkForNoneInResource(record, "iso_topic_category", [])
 
-    def __checkForNoneInResource(self, record, property2Check, sub4NoneValue, otherNulls=None):
+    def __checkForNoneInResource(
+        self, record, property2Check, sub4NoneValue, otherNulls=None
+    ):
         recordStruct = self.getStructToUpdate(record)
-        if 'resources' in recordStruct:
-            for resCnt in range(0, len(recordStruct['resources'])):
-                if (property2Check not in recordStruct['resources'][resCnt]) or \
-                        recordStruct['resources'][resCnt][property2Check] is None:
-                    recordStruct['resources'][resCnt][property2Check] = sub4NoneValue
-                elif otherNulls is not None and recordStruct['resources'][resCnt][property2Check] in otherNulls:
-                    recordStruct['resources'][resCnt][property2Check] = sub4NoneValue
+        if "resources" in recordStruct:
+            for resCnt in range(0, len(recordStruct["resources"])):
+                if (
+                    property2Check not in recordStruct["resources"][resCnt]
+                ) or recordStruct["resources"][resCnt][property2Check] is None:
+                    recordStruct["resources"][resCnt][property2Check] = sub4NoneValue
+                elif (
+                    otherNulls is not None
+                    and recordStruct["resources"][resCnt][property2Check] in otherNulls
+                ):
+                    recordStruct["resources"][resCnt][property2Check] = sub4NoneValue
 
     def fixResourceBCDC_TYPE(self, record):
         """ the property bcdc_type of a Resources that is part of a bcdc
@@ -396,32 +426,39 @@ class packages(ckanObjectUpdateMixin):
         :type record: CKANData.CKANRecord
         """
         # TODO: should really get these from the scheming end point
-        propertyName = 'bcdc_type'
+        propertyName = "bcdc_type"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
-        defaultValue = 'geographic'
+        defaultValue = "geographic"
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+            self.__validateResourceProperty(
+                record, allowableValues, propertyName, defaultValue
+            )
 
     def fixResourceAccessMethod(self, record):
-        propertyName = 'resource_access_method'
+        propertyName = "resource_access_method"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
-        defaultValue = 'direct access'
+        defaultValue = "direct access"
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+            self.__validateResourceProperty(
+                record, allowableValues, propertyName, defaultValue
+            )
 
     def fixResourceStorageFormat(self, record):
         """resource_storage_format
         """
-        propertyName = 'resource_storage_format'
+        propertyName = "resource_storage_format"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
-        defaultValue = 'oracle_sde'
-        # allowableValues = ["arcgis_rest", "atom","cded", "csv","e00","fgdb", "geojson",
-        #                    "georss", "gft", "html","json","kml","kmz",
-        #                    "openapi-json","oracle_sde", "other","pdf","rdf",
-        #                    "shp", "tsv", "txt","wms", "wmts", "xls", "xlsx",
-        #                    "xml","zip"]
+        defaultValue = "oracle_sde"
+        # example values for allowableValues:
+        #   arcgis_rest", "atom","cded", "csv","e00","fgdb", "geojson",
+        #   "georss", "gft", "html","json","kml","kmz",
+        #   "openapi-json","oracle_sde", "other","pdf","rdf",
+        #   "shp", "tsv", "txt","wms", "wmts", "xls", "xlsx",
+        #   "xml","zip"
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+            self.__validateResourceProperty(
+                record, allowableValues, propertyName, defaultValue
+            )
 
     def check4MissingProperties(self, record):
         """iterates over the source and destination resources looking for
@@ -431,33 +468,45 @@ class packages(ckanObjectUpdateMixin):
         :param record: The CKANRecord that is to be updated
         :type record: CKANData.CKANRecord
         """
-        fields2Check = ['mimetype', 'name', 'resource_description', 'url_type']
+        fields2Check = ["mimetype", "name", "resource_description", "url_type"]
         recordStruct = self.getStructToUpdate(record)
 
         # only doing this for resources
-        if 'resources' in recordStruct:
-            for resCnt in range(0, len(recordStruct['resources'])):
+        if "resources" in recordStruct:
+            for resCnt in range(0, len(recordStruct["resources"])):
                 for fld2Check in fields2Check:
-                    if (fld2Check in recordStruct['resources'][resCnt]) and \
-                            not recordStruct['resources'][resCnt][fld2Check]:
-                        del recordStruct['resources'][resCnt][fld2Check]
+                    if (
+                        fld2Check in recordStruct["resources"][resCnt]
+                    ) and not recordStruct["resources"][resCnt][fld2Check]:
+                        del recordStruct["resources"][resCnt][fld2Check]
 
     def fixResourceType(self, record):
-        propertyName = 'resource_type'
+        propertyName = "resource_type"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
-        defaultValue = 'data'
+        defaultValue = "data"
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+            self.__validateResourceProperty(
+                record, allowableValues, propertyName, defaultValue
+            )
 
     def fixIsoTopicCategory(self, record):
         # Take any spaces out of the iso topics on the SRC side
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
-            if 'resources' in recordStruct:
-                for resCnt in range(0, len(recordStruct['resources'])):
-                    if 'iso_topic_category' in recordStruct['resources'][resCnt]:
-                        for isoTopicCnt in range(0, len(recordStruct['resources'][resCnt]['iso_topic_category'])):
-                            recordStruct['resources'][resCnt]['iso_topic_category'][isoTopicCnt] = recordStruct['resources'][resCnt]['iso_topic_category'][isoTopicCnt].strip()
+            if "resources" in recordStruct:
+                for resCnt in range(0, len(recordStruct["resources"])):
+                    if "iso_topic_category" in recordStruct["resources"][resCnt]:
+                        for isoTopicCnt in range(
+                            0,
+                            len(
+                                recordStruct["resources"][resCnt]["iso_topic_category"]
+                            ),
+                        ):
+                            recordStruct["resources"][resCnt]["iso_topic_category"][
+                                isoTopicCnt
+                            ] = recordStruct["resources"][resCnt]["iso_topic_category"][
+                                isoTopicCnt
+                            ].strip()
 
     def fixResourceStorageLocation(self, record):
         """Checks that the resource storage location (resource_storage_location)
@@ -468,8 +517,8 @@ class packages(ckanObjectUpdateMixin):
         """
         # TODO: Should get these validations from the
 
-        propertyName = 'resource_storage_location'
-        defaultValue = 'bc geographic warehouse'
+        propertyName = "resource_storage_location"
+        defaultValue = "bc geographic warehouse"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
         # allowableValues = ["bc geographic warehouse","catalogue data store",
         #                    "esri arcgis online","file system",
@@ -478,7 +527,9 @@ class packages(ckanObjectUpdateMixin):
 
         # only perform if the record is a source object.
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateResourceProperty(record, allowableValues, propertyName, defaultValue)
+            self.__validateResourceProperty(
+                record, allowableValues, propertyName, defaultValue
+            )
 
     def fixPublishState(self, record):
         """ checks to make sure that the packages 'publish_state' contains a
@@ -488,17 +539,17 @@ class packages(ckanObjectUpdateMixin):
         :type record: CKANData.CKANRecord
         """
 
-        defaultValue = 'PUBLISHED'
-        propertyName = 'publish_state'
+        defaultValue = "PUBLISHED"
+        propertyName = "publish_state"
         allowableValues = record.dataCache.scheming.getDatasetDomain(propertyName)
-        #allowableValues = ['DRAFT', 'PUBLISHED', 'PENDING', 'ARCHIVE', 'REJECTED']
+        # allowableValues = ['DRAFT', 'PUBLISHED', 'PENDING', 'ARCHIVE', 'REJECTED']
         # only perform if the record is a source object.
         if record.origin == constants.DATA_SOURCE.SRC:
-            self.__validateProperty(record, allowableValues, propertyName,
-                                    defaultValue)
+            self.__validateProperty(record, allowableValues, propertyName, defaultValue)
 
-    def __validateResourceProperty(self, record, validationDomainList,
-                                   propertyName, defaultValue=None):
+    def __validateResourceProperty(
+        self, record, validationDomainList, propertyName, defaultValue=None
+    ):
         """a generic method that will check to see if the current value associated
         with a property of the resources that make up the current package are
         valid, and if not then assigns the default value.  If no default value
@@ -521,19 +572,28 @@ class packages(ckanObjectUpdateMixin):
         if defaultValue is None:
             defaultValue = validationDomainList[0]
         if defaultValue not in validationDomainList:
-            msg = (f'method is configured with a default value of {defaultValue} '
-                   f'which is not part of the domain for the property {propertyName}. '
-                   f'allowable values: {validationDomainList}')
+            msg = (
+                f"method is configured with a default value of {defaultValue} "
+                f"which is not part of the domain for the property {propertyName}. "
+                f"allowable values: {validationDomainList}"
+            )
             raise ValueError(msg)
-        if 'resources' in recordStruct:
-            for resourceCnt in range(0, len(recordStruct['resources'])):
-                if (propertyName in recordStruct['resources'][resourceCnt]):
-                    if recordStruct['resources'][resourceCnt][propertyName] not in validationDomainList:
-                        recordStruct['resources'][resourceCnt][propertyName] = defaultValue
+        if "resources" in recordStruct:
+            for resourceCnt in range(0, len(recordStruct["resources"])):
+                if propertyName in recordStruct["resources"][resourceCnt]:
+                    if (
+                        recordStruct["resources"][resourceCnt][propertyName]
+                        not in validationDomainList
+                    ):
+                        recordStruct["resources"][resourceCnt][
+                            propertyName
+                        ] = defaultValue
                 else:
-                    recordStruct['resources'][resourceCnt][propertyName] = defaultValue
+                    recordStruct["resources"][resourceCnt][propertyName] = defaultValue
 
-    def __validateProperty(self, record, validationDomainList, propertyName, defaultValue=None):
+    def __validateProperty(
+        self, record, validationDomainList, propertyName, defaultValue=None
+    ):
         """validate that the value associated with the packages 'propertyName'
         contains a valid value as defined by validationDomainList.
 
@@ -584,12 +644,13 @@ class packages(ckanObjectUpdateMixin):
         recordStruct = self.getStructToUpdate(record)
         # only perform if the record is a source object.
         if record.origin == constants.DATA_SOURCE.SRC:
-            if ("security_class" in recordStruct) and recordStruct["security_class"]:
-                if recordStruct["security_class"] not in validSecurityClasses:
-                    if recordStruct["security_class"] == "HIGH-CONFIDENTIAL":
-                        recordStruct["security_class"] = "HIGH-CLASSIFIED"
-                    else:
-                        recordStruct["security_class"] = defaultClass
+            if (
+                ("security_class" in recordStruct) and recordStruct["security_class"]
+            ) and recordStruct["security_class"] not in validSecurityClasses:
+                if recordStruct["security_class"] == "HIGH-CONFIDENTIAL":
+                    recordStruct["security_class"] = "HIGH-CLASSIFIED"
+                else:
+                    recordStruct["security_class"] = defaultClass
 
     def fixResourceStatus(self, record):
         """ Records that have their properties 'resource_status' set to
@@ -603,9 +664,11 @@ class packages(ckanObjectUpdateMixin):
         """
         if record.origin == constants.DATA_SOURCE.SRC:
             recordStruct = self.getStructToUpdate(record)
-            if ( ("resource_status" in recordStruct) and
-                    recordStruct["resource_status"] == "historicalArchive" and
-                    "retention_expiry_date" not in recordStruct):
+            if (
+                ("resource_status" in recordStruct)
+                and recordStruct["resource_status"] == "historicalArchive"
+                and "retention_expiry_date" not in recordStruct
+            ):
                 recordStruct["retention_expiry_date"] = "2222-02-02"
 
     def fixDownloadAudience(self, record):
@@ -647,45 +710,36 @@ class packages(ckanObjectUpdateMixin):
         if ("more_info") in recordStruct and recordStruct["more_info"] is None:
             recordStruct["more_info"] = "[]"
         # if more info has a value but is not a string, ie its a list
-        if (("more_info" in recordStruct) and recordStruct["more_info"]) and \
-                isinstance(recordStruct["more_info"], list):
+        if (("more_info" in recordStruct) and recordStruct["more_info"]) and isinstance(
+            recordStruct["more_info"], list
+        ):
             recordStruct["more_info"] = json.dumps(
                 recordStruct["more_info"], sort_keys=True, separators=(",", ":")
             )
-        if (("more_info" in recordStruct) and recordStruct["more_info"]) and \
-            isinstance(recordStruct["more_info"], str):
+        if (("more_info" in recordStruct) and recordStruct["more_info"]) and isinstance(
+            recordStruct["more_info"], str
+        ):
             # more info exists, has a value in it, and its a string.
             # in this situation code will:
             # * de-stringify
             # * parse
             # * convert link to url
             # * re-stringify with consistent format
-
-            # moreInfoRecord = json.loads(recordStruct["more_info"])
-            # if moreInfoRecord is None:
-            #     moreInfoRecord = []
-            # for listPos in range(0, len(moreInfoRecord)): # noqa
-            #     if "link" in moreInfoRecord[listPos]:
-            #         moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
-            #         del moreInfoRecord[listPos]["link"]
-
-            # recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
-            #         separators=(",", ":"))
             recordStruct = self.__fixMoreInfoAsStr(recordStruct)
 
     def __fixMoreInfoAsStr(self, recordStruct):
         moreInfoRecord = json.loads(recordStruct["more_info"])
         if moreInfoRecord is None:
             moreInfoRecord = []
-        for listPos in range(0, len(moreInfoRecord)): # noqa
+        for listPos in range(0, len(moreInfoRecord)):  # noqa
             if "link" in moreInfoRecord[listPos]:
                 moreInfoRecord[listPos]["url"] = moreInfoRecord[listPos]["link"]
                 del moreInfoRecord[listPos]["link"]
 
-        recordStruct["more_info"] = json.dumps(moreInfoRecord, sort_keys=True,
-                separators=(",", ":"))
+        recordStruct["more_info"] = json.dumps(
+            moreInfoRecord, sort_keys=True, separators=(",", ":")
+        )
         return recordStruct
-
 
     def noNullMoreInfo(self, record):
         """checks to see if moreInfo is set to Null, if it is then it removes
@@ -698,9 +752,8 @@ class packages(ckanObjectUpdateMixin):
         """
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
-            if ("more_info" in recordStruct) and recordStruct['more_info'] \
-                    is None:
-                del recordStruct['more_info']
+            if ("more_info" in recordStruct) and recordStruct["more_info"] is None:
+                del recordStruct["more_info"]
 
     def addStrangeFields(self, record):
         """ These are fields that are "required" for update / add
@@ -712,12 +765,12 @@ class packages(ckanObjectUpdateMixin):
         # record is a CKANData.CKANRecord
         recordStruct = self.getStructToUpdate(record)
 
-        if ("tag_string" not in recordStruct) or \
-                recordStruct['tag_string'] is None:
-            recordStruct['tag_string'] = 'dummy tag string'
-        if ("iso_topic_string" not in recordStruct) or \
-                recordStruct['iso_topic_string'] is None:
-            recordStruct['iso_topic_string'] = 'TBD'
+        if ("tag_string" not in recordStruct) or recordStruct["tag_string"] is None:
+            recordStruct["tag_string"] = "dummy tag string"
+        if ("iso_topic_string" not in recordStruct) or recordStruct[
+            "iso_topic_string"
+        ] is None:
+            recordStruct["iso_topic_string"] = "TBD"
 
     def orgAndSubOrgToNames(self, record):
         """owner_org and sub_orgs are references to organization id values.
@@ -739,35 +792,28 @@ class packages(ckanObjectUpdateMixin):
 
         existsMethodMap = {
             constants.DATA_SOURCE.DEST: dataCache.isAutoValueInDest,
-            constants.DATA_SOURCE.SRC: dataCache.isAutoValueInSrc
+            constants.DATA_SOURCE.SRC: dataCache.isAutoValueInSrc,
         }
         existsMethod = existsMethodMap[record.origin]
 
-        for orgTypeKey in ['owner_org']:
+        for orgTypeKey in ["owner_org"]:
             # type is 'organization'
             # org map field is 'id'
             # Get the struct value for orgs from the original unmodified data
             if orgTypeKey in record.jsonData:
                 currentFieldValue = record.jsonData[orgTypeKey]
 
-                if existsMethod('id', 'organizations', currentFieldValue):
-                    userField = dataCache.getUserDefinedValue('id',
-                                                                currentFieldValue,
-                                                                'name',
-                                                                'organizations',
-                                                                record.origin)
+                if existsMethod("id", "organizations", currentFieldValue):
+                    userField = dataCache.getUserDefinedValue(
+                        "id", currentFieldValue, "name", "organizations", record.origin
+                    )
                     # write the user defined value to the compare structure
                     recordStruct[orgTypeKey] = userField
 
         return record
 
+
 class InvalidCustomTransformation(Exception):
     def __init__(self, message):
         LOGGER.error(message)
         self.message = message
-
-
-# if __name__ == '__main__':
-#     methMap = MethodMapping('packages', ['packageTransform'])
-#     func = methMap.getCustomMethodCall('packageTransform')
-#     func()

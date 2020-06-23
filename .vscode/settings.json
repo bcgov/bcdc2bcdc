@@ -31,6 +31,7 @@
         "bsharrat",
         "cati",
         "ckanapi",
+        "cludge",
         "cludgy",
         "datastruct",
         "dels",
@@ -70,6 +71,7 @@
         "updt",
         "updts",
         "veryhigh",
+        "wmts",
         "xlsx"
     ],
     "python.formatting.provider": "black",
