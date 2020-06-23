@@ -16,6 +16,7 @@
     "python.testing.nosetestsEnabled": false,
     "python.testing.pytestEnabled": true,
     "cSpell.words": [
+        "BCGOV",
         "Bools",
         "CKAN",
         "IDFLD",
