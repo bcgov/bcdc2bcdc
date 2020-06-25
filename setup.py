@@ -7,6 +7,7 @@ using date as versions to simplify
 '''
 import setuptools
 import version
+import os.path
 # Need to move source code into a folder and define a __init__.py file that
 # includes the versions.
 import bcdc2bcdc
@@ -19,7 +20,11 @@ with open('requirements.txt') as f:
     print(f'requirements: {requires}')
 
 # create list of config files
-
+confFiles = []
+for confFile in os.listdir('config'):
+    confFileWithPath = os.path.join('config', confFile)
+    if os.path.isfile(confFileWithPath):
+        confFiles.append(confFileWithPath)
 
 setuptools.setup(
     #name=bcdc_apitests.name,
@@ -43,5 +48,5 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Testing",
         "Operating System :: OS Independent",
-    ],
+    ]
 )
