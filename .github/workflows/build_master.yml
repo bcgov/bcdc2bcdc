@@ -28,7 +28,7 @@ jobs:
       run: |
         sudo apt-get install python3-setuptools
         sudo apt-get install jq
-        python -m pip install --upgrade pip
+        python3 -m pip install --upgrade pip
         python3 -m pip install -r $GITHUB_WORKSPACE/requirements_build.txt
         python3 -m pip install xenon
 
@@ -64,6 +64,6 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
         PKG_TYPE: PROD
       run: |
-        python setup.py sdist bdist_wheel
-        python -m twine upload dist/*
+        python3 setup.py sdist bdist_wheel
+        python3 -m twine upload dist/*
 
