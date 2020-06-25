@@ -1,12 +1,12 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: BUILD Package
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
-  push:
-    branches: ['dev']
+  pull_request:
+    branches: ['master']
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -27,10 +27,10 @@ jobs:
     - name: install build requirements
       run: |
         sudo apt-get install python3-setuptools
+        sudo apt-get install jq
         python -m pip install --upgrade pip
         python3 -m pip install -r $GITHUB_WORKSPACE/requirements_build.txt
         python3 -m pip install xenon
-        sudo apt-get install jq
 
     # Runs a set of commands using the runners shell
     - name: Run xenon code quality check
@@ -46,6 +46,8 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     - name: SonarCloud Quality Gate
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         projId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/component?component=bcdc2bcdc | jq '.current.id' | sed -e 's/^"//' -e 's/"$//')
         analId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/task?id=$projId | jq '.task.analysisId' | sed -e 's/^"//' -e 's/"$//')
@@ -54,4 +56,14 @@ jobs:
           # quality gate did not pass
           exit 1
         fi
+
+    - name: Build Pypi Package
+      if: success()
+      env:
+        TWINE_USERNAME:  ${{ secrets.TWINE_USERNAME }}
+        TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+        PKG_TYPE: PROD
+      run: |
+        python setup.py sdist bdist_wheel
+        python -m twine upload dist/*
 
