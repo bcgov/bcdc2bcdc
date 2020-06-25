@@ -50,10 +50,13 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
         projId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/component?component=bcdc2bcdc | jq '.current.id' | sed -e 's/^"//' -e 's/"$//')
+        echo "project id: $projId"
         analId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/task?id=$projId | jq '.task.analysisId' | sed -e 's/^"//' -e 's/"$//')
+        echo "analysis id: $analId"
         qg=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analId | jq '.projectStatus.status' | sed -e 's/^"//' -e 's/"$//')
         if [ "$qg" != "OK" ]; then
           # quality gate did not pass
+          echo "quality gate Failed: $qg"
           exit 1
         fi
 
