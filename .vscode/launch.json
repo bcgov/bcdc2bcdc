@@ -10,8 +10,17 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env"
-        }, 
+            "envFile": "${workspaceFolder}/.env",
+            "env": { "PYTHONPATH": "${workspaceFolder}" }
+        },
+        {
+            "name": "main.py (CAT)",
+            "type": "python",
+            "request": "launch",
+            "program": "bin/main.py",
+            "console": "integratedTerminal",
+            "envFile": "${workspaceFolder}/.env_newmodel"
+        },
         {
             "name": "Python: test_CKANData: test",
             "type": "python",
@@ -22,8 +31,7 @@
                 "tests/test_CKANData.py::test_user_diffs"
             ],
             "console": "integratedTerminal",
-            "envFile": "${workspaceFolder}/.env",
-            "rootdir": "${workspaceFolder}/tests"
+            "envFile": "${workspaceFolder}/.env"
         },
         {
             "name": "Python: Test",

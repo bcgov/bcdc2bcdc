@@ -1,0 +1,300 @@
+{
+    "users": {
+        "unique_id_field": "name",
+        "ignore_list": [
+            "cati",
+            "idir-aeliving",
+            "aeliving",
+            "idir-bsharrat",
+            "p1",
+            "idir-jchurchi",
+            "bcdc-test-cati",
+            "bcdc-test-cadi",
+            "crigdon",
+            "kjnether",
+            "jhutniak",
+            "idir-stchapma",
+            "idir-yusotoza",
+            "cadi",
+            "brandon",
+            "dbc_user2",
+            "dwelf",
+            "idir-jerho",
+            "idir-loneil",
+            "knetherton",
+            "bsharrat@idir",
+            "crigdon@idir",
+            "jchurchi@idir",
+            "nanyang@idir",
+            "stchapma@idir",
+            "yusotoza@idir",
+            "mdwilkie",
+            "visitor",
+            "stchapma",
+            "logged_in"
+        ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "user_populated_properties": {
+            "name": true,
+            "email": true,
+            "fullname": true,
+            "about": true,
+            "display_name": true,
+            "sysadmin": true,
+            "activity_streams_email_notifications": true,
+            "state": true,
+            "openid": false,
+            "apikey": false,
+            "created": false,
+            "email_hash": false,
+            "number_of_edits": false,
+            "id": false,
+            "number_created_packages": false
+        }
+    },
+    "groups": {
+        "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "user_populated_properties": {
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": false,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "organizations": {
+        "unique_id_field": "name",
+        "user_populated_properties": {
+            "sector": false,
+            "approval_status": true,
+            "image_display_url": false,
+            "url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": true,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "packages": {
+        "unique_id_field": "name",
+        "ignore_list": [
+            "__duplicate__motor-vehicle-hospitalizations-by-region",
+            "__duplicate__motor-vehicle-hospitalizations-by-road-user-type",
+            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006"
+        ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "orgAndSubOrgToNames"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "noNullMoreInfo"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "addStrangeFields"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "addStrangeFields"
+            }
+        ],
+        "user_populated_properties": {
+            "iso_topic_string": true,
+            "retention_expiry_date": true,
+            "license_title": false,
+            "maintainer": true,
+            "publish_state": false,
+            "relationships_as_object": true,
+            "view_audience": true,
+            "private": true,
+            "maintainer_email": true,
+            "num_tags": false,
+            "id": false,
+            "metadata_created": false,
+            "metadata_modified": false,
+            "author": false,
+            "author_email": true,
+            "state": true,
+            "version": true,
+            "license_id": true,
+            "type": true,
+            "resources": [
+                {
+                    "cache_last_updated": false,
+                    "package_id": false,
+                    "resource_storage_access_method": true,
+                    "datastore_active": false,
+                    "id": false,
+                    "size": false,
+                    "format": true,
+                    "state": true,
+                    "edc_resource_type": true,
+                    "hash": true,
+                    "description": true,
+                    "cache_url": false,
+                    "projection_name": true,
+                    "tracking_summary": false,
+                    "last_modified": false,
+                    "url_type": false,
+                    "mimetype": false,
+                    "resource_storage_location": true,
+                    "name": true,
+                    "created": false,
+                    "url": true,
+                    "ofi": true,
+                    "mimetype_inner": false,
+                    "resource_update_cycle": true,
+                    "position": false,
+                    "revision_id": false,
+                    "resource_type": true
+                }
+            ],
+            "more_info": true,
+            "num_resources": false,
+            "tags": [
+                {
+                    "vocabulary_id": false,
+                    "state": true,
+                    "display_name": true,
+                    "id": false,
+                    "name": true
+                }
+            ],
+            "contacts": false,
+            "resource_status": true,
+            "purpose": true,
+            "groups": true,
+            "creator_user_id": false,
+            "download_audience": true,
+            "replacement_record": true,
+            "relationships_as_subject": true,
+            "security_class": true,
+            "dates": false,
+            "organization": false,
+            "name": true,
+            "isopen": true,
+            "url": true,
+            "source_data_path": true,
+            "notes": true,
+            "owner_org": false,
+            "extras": false,
+            "license_url": true,
+            "metadata_visibility": true,
+            "title": true,
+            "revision_id": false,
+            "tag_string": false,
+            "org": true
+        },
+        "update_fields_to_include": [
+            "tags"
+        ],
+        "add_fields_to_include": [
+            "owner_org",
+            "tags",
+            "edc_state",
+            "sub_org"
+        ],
+        "data_type_enforcement": {
+            "resources": []
+        },
+        "required_default_values": {
+            "org": "databc",
+            "retention_expiry_date": "2300-01-01",
+            "resources": [
+                {
+                    "edc_resource_type": "Data",
+                    "format": "other",
+                    "url": "https://www.zoomquilt.org/",
+                    "resource_update_cycle": "unknown",
+                    "resource_storage_access_method": "Indirect Access",
+                    "projection_name": "EPSG_3005 - NAD83 BC Albers",
+                    "resource_storage_location": "External"
+                }
+            ]
+        },
+        "transformations": {
+            "id_fields": [
+                {
+                    "property": "owner_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
+                },
+                {
+                    "property": "sub_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
+                }
+            ]
+        }
+    }
+}

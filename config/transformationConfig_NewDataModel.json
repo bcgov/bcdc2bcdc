@@ -1,0 +1,411 @@
+{
+    "users": {
+        "unique_id_field": "name",
+        "ignore_list_belayfornow": [
+            "cati",
+            "idir-aeliving",
+            "aeliving",
+            "idir-bsharrat",
+            "p1",
+            "idir-jchurchi",
+            "bcdc-test-cati",
+            "bcdc-test-cadi",
+            "crigdon",
+            "kjnether",
+            "jhutniak",
+            "idir-stchapma",
+            "idir-yusotoza",
+            "cadi",
+            "brandon",
+            "dbc_user2",
+            "dwelf",
+            "idir-jerho",
+            "idir-loneil",
+            "knetherton",
+            "bsharrat@idir",
+            "crigdon@idir",
+            "jchurchi@idir",
+            "nanyang@idir",
+            "stchapma@idir",
+            "yusotoza@idir",
+            "mdwilkie",
+            "visitor",
+            "stchapma",
+            "logged_in"
+        ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "removeNameField"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixNoneAsString"
+            }
+        ],
+        "add_fields_to_include": [
+            "name"
+        ],
+        "update_fields_to_include": [
+            "name"
+        ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            },
+            {
+                "user_populated_field": "email",
+                "auto_populated_field": "name"
+            }
+        ],
+        "user_populated_properties": {
+            "name": false,
+            "email": true,
+            "fullname": true,
+            "about": true,
+            "display_name": true,
+            "sysadmin": true,
+            "activity_streams_email_notifications": true,
+            "state": true,
+            "openid": false,
+            "apikey": false,
+            "created": false,
+            "email_hash": false,
+            "number_of_edits": false,
+            "id": false,
+            "number_created_packages": false
+        }
+    },
+    "groups": {
+        "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixNoneAsString"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "remapUserNames"
+            }
+        ],
+        "user_populated_properties": {
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": false,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "organizations": {
+        "unique_id_field": "name",
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "remapUserNames"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixNoneAsString"
+            }
+        ],
+        "user_populated_properties": {
+            "sector": false,
+            "approval_status": true,
+            "image_display_url": false,
+            "url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": true,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "packages": {
+        "unique_id_field": "name",
+        "ignore_list": [
+            "__duplicate__motor-vehicle-hospitalizations-by-region",
+            "__duplicate__motor-vehicle-hospitalizations-by-road-user-type",
+            "-archived-record-for-nelson-data-august-29-2005-to-feb-16-2006",
+            "-archived-fish-related-datasets-cariboo-region"
+        ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceStatus"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixDownloadAudience"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixMoreInfo"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixSecurityClass"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceBCDC_TYPE"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixPackageType"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceStorageLocation"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixPublishState"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceStorageFormat"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceAccessMethod"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixResourceType"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkJsonTableSchemaForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkSpatialDatatypeForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkTemporalExtentForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "checkIsoTopicCategoryForNone"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixIsoTopicCategory"
+            },
+            {
+                "UpdateType": "UPDATE",
+                "CustomMethodName": "adjustURLDomain"
+            },
+            {
+                "UpdateType": "ADD",
+                "CustomMethodName": "adjustURLDomain"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "check4MissingProperties"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixNoneAsString"
+            }
+        ],
+        "user_populated_properties": {
+            "iso_topic_string": false,
+            "retention_expiry_date": true,
+            "license_title": false,
+            "maintainer": true,
+            "publish_state": true,
+            "relationships_as_object": true,
+            "view_audience": true,
+            "private": true,
+            "maintainer_email": true,
+            "num_tags": false,
+            "id": false,
+            "metadata_created": false,
+            "metadata_modified": false,
+            "author": false,
+            "author_email": true,
+            "state": true,
+            "version": true,
+            "license_id": true,
+            "type": true,
+            "resources": [
+                {
+                    "resource_description": true,
+                    "cache_last_updated": false,
+                    "resource_storage_format": true,
+                    "package_id": false,
+                    "json_table_schema": true,
+                    "resource_storage_access_method": true,
+                    "datastore_active": false,
+                    "id": false,
+                    "size": false,
+                    "spatial_datatype": true,
+                    "iso_topic_category": true,
+                    "temporal_extent": true,
+                    "state": true,
+                    "bcdc_type": true,
+                    "resource_access_method": true,
+                    "edc_resource_type": true,
+                    "hash": true,
+                    "description": true,
+                    "format": false,
+                    "projection_name": true,
+                    "cache_url": false,
+                    "mimetype_inner": false,
+                    "url_type": true,
+                    "mimetype": true,
+                    "resource_storage_location": true,
+                    "name": true,
+                    "created": false,
+                    "url": false,
+                    "ofi": false,
+                    "last_modified": false,
+                    "resource_update_cycle": true,
+                    "position": false,
+                    "revision_id": false,
+                    "resource_type": true,
+                    "hash": false
+                }
+            ],
+            "more_info": true,
+            "num_resources": false,
+            "tags": [
+                {
+                    "vocabulary_id": false,
+                    "state": true,
+                    "display_name": true,
+                    "id": false,
+                    "name": true
+                }
+            ],
+            "contacts": false,
+            "resource_status": true,
+            "purpose": true,
+            "groups": [
+                {
+                    "description": false,
+                    "display_name": false,
+                    "id": false,
+                    "image_display_url": false,
+                    "name": true,
+                    "title": false
+                }
+            ],
+            "creator_user_id": false,
+            "download_audience": true,
+            "replacement_record": true,
+            "relationships_as_subject": true,
+            "security_class": true,
+            "dates": false,
+            "organization": false,
+            "name": true,
+            "isopen": true,
+            "url": false,
+            "source_data_path": true,
+            "notes": true,
+            "owner_org": false,
+            "extras": false,
+            "license_url": true,
+            "metadata_visibility": true,
+            "title": true,
+            "revision_id": false,
+            "tag_string": false,
+            "org": false
+        },
+        "add_fields_to_include": [
+            "owner_org"
+        ],
+        "data_type_enforcement": {
+            "resources": []
+        },
+        "required_default_values": {
+            "retention_expiry_date": "2300-01-01",
+            "resources": [
+                {
+                    "edc_resource_type": "Data",
+                    "resource_update_cycle": "unknown",
+                    "resource_storage_access_method": "Indirect Access",
+                    "projection_name": "EPSG_3005 - NAD83 BC Albers",
+                    "resource_storage_location": "External",
+                    "bcdc_type": "geographic",
+                    "description": "",
+                    "mimetype": null,
+                    "name": null,
+                    "resource_description": null,
+                    "state": "active",
+                    "url_type": null
+                }
+            ]
+        },
+        "transformations": {
+            "id_fields": [
+                {
+                    "property": "owner_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
+                }
+            ]
+        }
+    }
+}

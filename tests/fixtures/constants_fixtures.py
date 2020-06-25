@@ -25,7 +25,7 @@ def TestJunkDir():
 @pytest.fixture(scope="session")
 def TestProdUserCacheJsonfile():
     """The cached version of the user data.
-    
+
     :param TestJunkDir: junk directory where caches are located
     :type TestJunkDir: str
     """
@@ -36,14 +36,26 @@ def TestProdUserCacheJsonfile():
 @pytest.fixture(scope="session")
 def TestTestUserCacheJsonfile():
     """The cached version of the user data.
-    
+
     :param TestJunkDir: junk directory where caches are located
     :type TestJunkDir: str
     """
     helper = CKANDataHelpers.CKAN_Test_Paths()
     testJson = helper.getTestUsersCacheJsonFile()
     yield testJson
-    
+
+@pytest.fixture(scope="session")
+def TestDestPackageCacheJsonfile():
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    testJson = helper.getDestPackagesCacheJsonFile()
+    yield testJson
+
+@pytest.fixture(scope="session")
+def TestSrcPackageCacheJsonfile():
+    helper = CKANDataHelpers.CKAN_Test_Paths()
+    testJson = helper.getSrcPackagesCacheJsonFile()
+    yield testJson
+
 @pytest.fixture(scope="session")
 def TestUserJsonFile():
     helper = CKANDataHelpers.CKAN_Test_Paths()

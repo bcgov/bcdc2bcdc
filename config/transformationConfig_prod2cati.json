@@ -1,0 +1,259 @@
+{
+    "users": {
+        "unique_id_field": "name",
+        "ignore_list": [
+            "cati",
+            "idir-aeliving",
+            "aeliving",
+            "idir-bsharrat",
+            "p1",
+            "idir-jchurchi",
+            "bcdc-test-cati",
+            "bcdc-test-cadi",
+            "crigdon",
+            "kjnether",
+            "jhutniak",
+            "idir-stchapma",
+            "idir-yusotoza",
+            "cadi",
+            "brandon",
+            "dbc_user2",
+            "dwelf",
+            "idir-jerho",
+            "idir-loneil",
+            "knetherton",
+            "bsharrat@idir",
+            "crigdon@idir",
+            "jchurchi@idir",
+            "nanyang@idir",
+            "stchapma@idir",
+            "yusotoza@idir",
+            "mdwilkie",
+            "visitor",
+            "stchapma"
+        ],
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "user_populated_properties": {
+            "name": true,
+            "email": true,
+            "fullname": true,
+            "about": true,
+            "display_name": true,
+            "sysadmin": true,
+            "activity_streams_email_notifications": true,
+            "state": true,
+            "openid": false,
+            "apikey": false,
+            "created": false,
+            "email_hash": false,
+            "number_of_edits": false,
+            "id": false,
+            "number_created_packages": false
+        }
+    },
+    "groups": {
+        "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "user_populated_properties": {
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": true,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "organizations": {
+        "unique_id_field": "name",
+        "user_populated_properties": {
+            "sector": true,
+            "approval_status": true,
+            "image_display_url": false,
+            "title": true,
+            "name": true,
+            "is_organization": true,
+            "state": true,
+            "image_url": false,
+            "groups": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "users": [
+                {
+                    "capacity": true,
+                    "name": true
+                }
+            ],
+            "type": true,
+            "id": false,
+            "tags": false,
+            "description": true
+        },
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "update_fields_to_include": [
+            "id"
+        ]
+    },
+    "packages": {
+        "unique_id_field": "name",
+        "field_mapping": [
+            {
+                "user_populated_field": "name",
+                "auto_populated_field": "id"
+            }
+        ],
+        "custom_transformation_methods": [
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "packageTransform"
+            }
+        ],
+        "user_populated_properties": {
+            "license_title": false,
+            "maintainer": true,
+            "publish_state": false,
+            "relationships_as_object": true,
+            "view_audience": true,
+            "private": true,
+            "maintainer_email": true,
+            "num_tags": false,
+            "id": false,
+            "metadata_created": false,
+            "metadata_modified": false,
+            "author": false,
+            "author_email": true,
+            "state": true,
+            "version": true,
+            "license_id": true,
+            "type": true,
+            "resources": false,
+            "more_info": false,
+            "num_resources": false,
+            "tags": false,
+            "contacts": false,
+            "resource_status": true,
+            "purpose": true,
+            "groups": [
+                {
+                    "name": true
+                }
+            ],
+            "creator_user_id": false,
+            "download_audience": true,
+            "replacement_record": true,
+            "relationships_as_subject": true,
+            "security_class": true,
+            "dates": false,
+            "organization": false,
+            "name": true,
+            "isopen": true,
+            "url": true,
+            "source_data_path": true,
+            "notes": true,
+            "owner_org": false,
+            "extras": false,
+            "license_url": false,
+            "metadata_visibility": true,
+            "title": true,
+            "revision_id": false
+        },
+        "update_fields_to_include": [
+            "tags",
+            "owner_org"
+        ],
+        "add_fields_to_include": [
+            "resources",
+            "owner_org",
+            "tags",
+            "edc_state"
+        ],
+        "data_type_enforcement": {
+            "more_info": [],
+            "resources": []
+        },
+        "required_default_values": {
+            "tag_string": "TEST",
+            "org": "databc",
+            "owner_org": "databc",
+            "iso_topic_string": "undefined",
+            "publish_state": "DRAFT",
+            "edc_state": "PUBLISHED",
+            "resources": [
+                {
+                    "iso_topic_string": "TBD",
+                    "bcdc_type": "geographic",
+                    "projection_name": "epsg3005",
+                    "format": "other",
+                    "url": "https://www.zoomquilt.org/",
+                    "resource_storage_format": "txt",
+                    "resource_update_cycle": "notPlanned",
+                    "resource_storage_access_method": "direct access",
+                    "resource_storage_location": "unspecified",
+                    "resource_access_method": "direct access",
+                    "resource_type": "data",
+                    "edc_resource_type": "Data",
+                    "edc_state": "PUBLISHED",
+                    "download_audience": "Public"
+                }
+            ]
+        },
+        "transformations": {
+            "id_fields": [
+                {
+                    "property": "owner_org",
+                    "obj_type": "organizations",
+                    "obj_field": "id"
+                }
+            ],
+            "field_remapping": [
+                {
+                    "property": "object_name",
+                    "description": "this is just an example, not implemented, this description is ignored",
+                    "remapped_property": {
+                        "resources": {
+                            "object_name": "some value"
+                        }
+                    },
+                    "type": null
+                }
+            ]
+        }
+    }
+}
