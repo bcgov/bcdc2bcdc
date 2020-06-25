@@ -30,6 +30,7 @@ jobs:
         python -m pip install --upgrade pip
         python3 -m pip install -r $GITHUB_WORKSPACE/requirements_build.txt
         python3 -m pip install xenon
+        sudo apt-get install jq
 
     # Runs a set of commands using the runners shell
     - name: Run xenon code quality check
@@ -43,3 +44,14 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    - name: SonarCloud Quality Gate
+      run: |
+        projId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/component?component=bcdc2bcdc | jq '.current.id' | sed -e 's/^"//' -e 's/"$//')
+        analId=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/ce/task?id=$projId | jq '.task.analysisId' | sed -e 's/^"//' -e 's/"$//')
+        qg=$(curl  -u $SONAR_TOKEN: https://sonarcloud.io/api/qualitygates/project_status?analysisId=$analId | jq '.projectStatus.status' | sed -e 's/^"//' -e 's/"$//')
+        if [ "$qg" != "OK" ]; then
+          # quality gate did not pass
+          exit 1
+        fi
+

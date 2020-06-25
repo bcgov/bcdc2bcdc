@@ -65,6 +65,3 @@ class Diff:
                 LOGGER.debug("ignore: {keyVal}")
                 retVal = True
         return retVal
-
-
-

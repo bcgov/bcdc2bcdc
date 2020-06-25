@@ -38,32 +38,26 @@ class RunUpdate:
 
     def updateUsers(self, useCache=False):
 
-        getUsersMap = {
-            False: {
-                "src": self.srcCKANWrapper.getUsers,
-                "dest": self.destCKANWrapper.getUsers,
-            },
+        argList = {
             True: {
-                "src": self.srcCKANWrapper.getUsersCached,
-                "dest": self.destCKANWrapper.getUsersCached,
+                "src": {"cacheFileName":  self.cachedFilesPaths.getSrcUserJsonPath(),
+                        "includeData": True},
+                "dest": {"cacheFileName": self.cachedFilesPaths.getSrcUserJsonPath(),
+                        "includeData": True}
             },
+            False: {
+                "src": {"cacheFileName":  None,
+                        "includeData": True},
+                "dest": {"cacheFileName": None,
+                        "includeData": True}
+            }
         }
+        # TODO: Need to figure out how to call the getusers with or
+        #       without cache and then deal with the other methods
+        userDataSrc = self.srcCKANWrapper.getUsers(**argList[useCache]['src'])
+        userDataDest = self.destCKANWrapper.getUsers(**argList[useCache]['dest'])
 
-        srcCacheFile = self.cachedFilesPaths.getSrcUserJsonPath()
-        destCacheFile = self.cachedFilesPaths.getDestUserJsonPath()
-
-        # get the raw json data from the api
-        # userDataSrc = self.srcCKANWrapper.getUsers(includeData=True)
-        # userDataDest = self.destCKANWrapper.getUsers(includeData=True)
-        userDataSrc = getUsersMap[useCache]["src"](
-            cacheFileName=srcCacheFile, includeData=True
-        )
-        userDataDest = getUsersMap[useCache]["dest"](
-            cacheFileName=destCacheFile, includeData=True
-        )
-
-        # wrap the data with CKANDataset class
-        # cache is populated when delta obj is requested!
+        # cache will be populated when delta obj is requested
         srcUserCKANDataSet = CKANData.CKANUsersDataSet(
             userDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
         )
@@ -80,9 +74,8 @@ class RunUpdate:
         self.dataCache.addData(destUserCKANDataSet, constants.DATA_SOURCE.DEST)
 
         # use CKANDataset functionality to determine if differences
-        #if srcUserCKANDataSet != destUserCKANDataSet:
         # perform the update
-        LOGGER.info("found differences between users defined in prod and test")
+        LOGGER.info("calculating deltas between src / dest for users...")
 
         deltaObj = srcUserCKANDataSet.getDelta(destUserCKANDataSet)
         LOGGER.info(f"Delta obj for users: {deltaObj}")
@@ -95,25 +88,22 @@ class RunUpdate:
         """Based on descriptions of SRC / DEST CKAN instances in environment
         variables performes the update, reading from SRC, writing to DEST.
         """
-        getGroupsMap = {
-            False: {
-                "src": self.srcCKANWrapper.getGroups,
-                "dest": self.destCKANWrapper.getGroups,
-            },
+        argList = {
             True: {
-                "src": self.srcCKANWrapper.getGroupsCached,
-                "dest": self.destCKANWrapper.getGroupsCached,
+                "src": {"cacheFileName":  self.cachedFilesPaths.getSrcGroupJsonPath(),
+                        "includeData": True},
+                "dest": {"cacheFileName": self.cachedFilesPaths.getDestGroupJsonPath(),
+                        "includeData": True}
             },
+            False: {
+                "src": {"cacheFileName":  None,
+                        "includeData": True},
+                "dest": {"cacheFileName": None,
+                        "includeData": True}
+            }
         }
-        srcCacheFile = self.cachedFilesPaths.getSrcGroupJsonPath()
-        destCacheFile = self.cachedFilesPaths.getDestGroupJsonPath()
-
-        groupDataSrc = getGroupsMap[useCache]["src"](
-            cacheFileName=srcCacheFile, includeData=True
-        )
-        groupDataDest = getGroupsMap[useCache]["dest"](
-            cacheFileName=destCacheFile, includeData=True
-        )
+        groupDataSrc = self.srcCKANWrapper.getGroups(**argList[useCache]['src'])
+        groupDataDest = self.destCKANWrapper.getGroups(**argList[useCache]['dest'])
 
         srcGroupCKANDataSet = CKANData.CKANGroupDataSet(
             groupDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
@@ -125,9 +115,7 @@ class RunUpdate:
         self.dataCache.addData(srcGroupCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destGroupCKANDataSet, constants.DATA_SOURCE.DEST)
 
-        #if srcGroupCKANDataSet != destGroupCKANDataSet:
-
-        LOGGER.info("found differences between group data in src an dest")
+        LOGGER.info("calculating deltas between src / dest for groups...")
         deltaObj = srcGroupCKANDataSet.getDelta(destGroupCKANDataSet)
         LOGGER.info(f"Delta obj for groups: {deltaObj}")
         updater = CKANUpdate.CKANGroupUpdate(
@@ -138,25 +126,22 @@ class RunUpdate:
         #    LOGGER.info("no differences found for groups between src and dest")
 
     def updateOrganizations(self, useCache=False):
-        getOrgsMap = {
-            False: {
-                "src": self.srcCKANWrapper.getOrganizations,
-                "dest": self.destCKANWrapper.getOrganizations,
-            },
+        argList = {
             True: {
-                "src": self.srcCKANWrapper.getOrganizationsCached,
-                "dest": self.destCKANWrapper.getOrganizationsCached,
+                "src": {"cacheFileName":  self.cachedFilesPaths.getSrcOrganizationsJsonPath(),
+                        "includeData": True},
+                "dest": {"cacheFileName": self.cachedFilesPaths.getDestOrganizationsJsonPath(),
+                        "includeData": True}
             },
+            False: {
+                "src": {"cacheFileName":  None,
+                        "includeData": True},
+                "dest": {"cacheFileName": None,
+                        "includeData": True}
+            }
         }
-        srcCacheFile = self.cachedFilesPaths.getSrcOrganizationsJsonPath()
-        destCacheFile = self.cachedFilesPaths.getDestOrganizationsJsonPath()
-
-        orgDataSrc = getOrgsMap[useCache]["src"](
-            cacheFileName=srcCacheFile, includeData=True
-        )
-        orgDataDest = getOrgsMap[useCache]["dest"](
-            cacheFileName=destCacheFile, includeData=True
-        )
+        orgDataSrc = self.srcCKANWrapper.getOrganizations(**argList[useCache]['src'])
+        orgDataDest = self.destCKANWrapper.getOrganizations(**argList[useCache]['dest'])
 
         srcOrgCKANDataSet = CKANData.CKANOrganizationDataSet(
             orgDataSrc, self.dataCache, constants.DATA_SOURCE.SRC
@@ -168,8 +153,7 @@ class RunUpdate:
         self.dataCache.addData(srcOrgCKANDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destOrgCKANDataSet, constants.DATA_SOURCE.DEST)
 
-        #if srcOrgCKANDataSet != destOrgCKANDataSet:
-        LOGGER.info("found differences between group data in src an dest")
+        LOGGER.info("calculating deltas between src / dest for organizations...")
         deltaObj = srcOrgCKANDataSet.getDelta(destOrgCKANDataSet)
         LOGGER.info(f"Delta obj for orgs: {deltaObj}")
         updater = CKANUpdate.CKANOrganizationUpdate(
@@ -183,28 +167,18 @@ class RunUpdate:
         :param useCache: [description], defaults to False
         :type useCache: bool, optional
         """
-        getPackagesMap = {
-            False: {
-                "src": self.srcCKANWrapper.getPackagesAndData,
-                "dest": self.destCKANWrapper.getPackagesAndData,
-            },
+        argList = {
             True: {
-                "src": self.srcCKANWrapper.getPackagesAndDataCached,
-                "dest": self.destCKANWrapper.getPackagesAndDataCached,
+                "src": {"cacheFileName":  self.cachedFilesPaths.getSrcPackagesJsonPath()},
+                "dest": {"cacheFileName": self.cachedFilesPaths.getDestPackagesJsonPath()}
             },
+            False: {
+                "src": {"cacheFileName":  None},
+                "dest": {"cacheFileName": None}
+            }
         }
-
-        srcCacheFile = self.cachedFilesPaths.getSrcPackagesJsonPath()
-        destCacheFile = self.cachedFilesPaths.getDestPackagesJsonPath()
-
-        srcPkgList = getPackagesMap[useCache]["src"](cacheFileName=srcCacheFile)
-        destPkgList = getPackagesMap[useCache]["dest"](cacheFileName=destCacheFile)
-
-        # TODO: once debug is complete remove the canned part
-        # srcPkgList = self.srcCKANWrapper.getPackagesAndData()
-        # destPkgList = self.destCKANWrapper.getPackagesAndData()
-        # srcPkgList = self.srcCKANWrapper.getPackagesAndData_cached(constants.CACHE_SRC_PKGS_FILE)
-        # destPkgList = self.destCKANWrapper.getPackagesAndData_cached(constants.CACHE_DEST_PKGS_FILE)
+        srcPkgList = self.srcCKANWrapper.getPackagesAndData(**argList[useCache]['src'])
+        destPkgList = self.destCKANWrapper.getPackagesAndData(**argList[useCache]['dest'])
 
         srcPkgDataSet = CKANData.CKANPackageDataSet(
             srcPkgList, self.dataCache, constants.DATA_SOURCE.SRC
@@ -216,9 +190,7 @@ class RunUpdate:
         self.dataCache.addData(srcPkgDataSet, constants.DATA_SOURCE.SRC)
         self.dataCache.addData(destPkgDataSet, constants.DATA_SOURCE.DEST)
 
-        #if srcPkgDataSet != destPkgDataSet:
-
-        LOGGER.debug("packages are not the same")
+        LOGGER.debug("calculating deltas between src / dest for packages...")
 
         deltaObj = srcPkgDataSet.getDelta(destPkgDataSet)
         LOGGER.info(f"Delta obj for packages: {deltaObj}")
@@ -242,10 +214,23 @@ class RunUpdate:
         scheming = CKANScheming.Scheming()
         self.dataCache.setScheming(scheming)
 
+    def checkForRequiredEnvironmentVariables(self):
+        """Checks to make sure that required environment variables have been
+        populated
+        """
+        for envVarName in constants.REQUIRED_ENV_VARS:
+            if envVarName not in os.environ:
+                msg = (
+                    f"Script requires the environment variable {envVarName} "
+                    "to be populated"
+                )
+                raise NameError(msg)
+
 
 if __name__ == "__main__":
 
-    # ----- LOGGING SETUP -----
+    # LOGGING SETUP
+    # -----------------------------------------------------------------------
     appDir = os.path.dirname(__file__)
     # LOG config file
     logConfigFile = os.path.join(
@@ -271,13 +256,18 @@ if __name__ == "__main__":
     LOGGER = logging.getLogger("main")
     LOGGER.debug(f"__name__ is {__name__}")
 
-    # ----- RUN SCRIPT -----
+    #  RUN SCRIPT
+    # -----------------------------------------------------------------------
     updater = RunUpdate()
+    updater.checkForRequiredEnvironmentVariables()
     updater.refreshSchemingDefs()
+
+    useCache = False
     # This is complete, commented out while work on group
     # not running user update for now
-
-    updater.updateUsers(useCache=True)
-    updater.updateGroups(useCache=True)
-    updater.updateOrganizations(useCache=True)
-    updater.updatePackages(useCache=True)
+    if constants.isDataDebug():
+        useCache=True
+    updater.updateUsers(useCache=useCache)
+    updater.updateGroups(useCache=useCache)
+    updater.updateOrganizations(useCache=useCache)
+    updater.updatePackages(useCache=useCache)

@@ -520,10 +520,6 @@ class packages(CkanObjectUpdateMixin):
         propertyName = "resource_storage_location"
         defaultValue = "bc geographic warehouse"
         allowableValues = record.dataCache.scheming.getResourceDomain(propertyName)
-        # allowableValues = ["bc geographic warehouse","catalogue data store",
-        #                    "esri arcgis online","file system",
-        #                    "ministry or other database", "unspecified",
-        #                    "web or ftp site", "pub.data.gov.bc.ca" ]
 
         # only perform if the record is a source object.
         if record.origin == constants.DATA_SOURCE.SRC:

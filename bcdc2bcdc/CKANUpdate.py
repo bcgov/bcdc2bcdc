@@ -29,7 +29,7 @@ import bcdc2bcdc.constants as constants
 LOGGER = logging.getLogger(__name__)
 
 
-class CKANUpdate_abc(abc.ABC):
+class CKANUpdateAbstract(abc.ABC):
     """
     abstract base class used to define the interface for CKANUpdate objects.
 
@@ -117,30 +117,7 @@ class UpdateMixin:
             retVal = recordCollection
         return retVal
 
-        # if isinstance(inputData, list):
-        #     filteredData = []
-        #     for inputVal in inputData:
-        #         if inputVal not in self.ignoreList:
-        #             filteredData.append(inputVal)
-        #         else:
-        #             LOGGER.debug(f"found filter value, {inputVal} removing from" +
-        #                 "update list")
-        # elif isinstance(inputData, dict):
-        #     filteredData = {}
-        #     for inputVal in inputData:
-        #         #LOGGER.debug(f"input value: {inputVal}")
-        #         if inputVal not in self.ignoreList:
-        #             filteredData[inputVal] = inputData[inputVal]
-        #         else:
-        #             LOGGER.debug(f"found filter value, {inputVal} removing from" +
-        #                 "update list")
-        # else:
-        #     msg = f"received type  {type(inputData)}.  Must be a list or dict"
-        #     raise TypeError(msg)
-        # return filteredData
-
-
-class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
+class CKANUserUpdate(UpdateMixin, CKANUpdateAbstract):
     """implements the abstract base class CKANUpdate_abc to allow user data to
     be updated easily
 
@@ -153,7 +130,7 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
     """
 
     def __init__(self, dataCache, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
+        CKANUpdateAbstract.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_USERS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
@@ -184,7 +161,7 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
             # TODO:For consistency sake should move the password insertion to
             #      a custom transformer for ADD / UPDATE operations
             addStruct["password"] = os.environ[constants.CKAN_ONETIME_PASSWORD]
-            resp = self.CKANWrap.addUser(addStruct)
+            self.CKANWrap.addUser(addStruct)
         except CKAN.CKANUserNameUnAvailable:
             # check that we haven't exceeded the maximum number of retries
             # get the record unique identifier
@@ -260,14 +237,14 @@ class CKANUserUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.debug("updates complete")
 
 
-class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
+class CKANGroupUpdate(UpdateMixin, CKANUpdateAbstract):
     def __init__(self, dataCache, ckanWrapper=None):
         """Gets a list of updates
 
         :param ckanWrapper: [description], defaults to None
         :type ckanWrapper: [type], optional
         """
-        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
+        CKANUpdateAbstract.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_GROUPS
         self.CKANTranformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTranformConfig.getIgnoreList(self.dataType)
@@ -329,7 +306,7 @@ class CKANGroupUpdate(UpdateMixin, CKANUpdate_abc):
         LOGGER.debug("updates complete")
 
 
-class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
+class CKANOrganizationUpdate(UpdateMixin, CKANUpdateAbstract):
     """
     implements the interface defined by CKANUpdate_abc, the actual update
     method comes from the mixin.
@@ -339,7 +316,7 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
     """
 
     def __init__(self, dataCache, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
+        CKANUpdateAbstract.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_ORGS
         self.CKANTransformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
@@ -401,7 +378,7 @@ class CKANOrganizationUpdate(UpdateMixin, CKANUpdate_abc):
             self.CKANWrap.updateOrganization(updtStruct)
 
 
-class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
+class CKANPackagesUpdate(UpdateMixin, CKANUpdateAbstract):
     """
     implements the interface defined by CKANUpdate_abc, the actual update
     method comes from the mixin.
@@ -411,7 +388,7 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
     """
 
     def __init__(self, dataCache, ckanWrapper=None):
-        CKANUpdate_abc.__init__(self, dataCache, ckanWrapper)
+        CKANUpdateAbstract.__init__(self, dataCache, ckanWrapper)
         self.dataType = constants.TRANSFORM_TYPE_PACKAGES
         self.CKANTransformConfig = CKANTransform.TransformationConfig()
         self.ignoreList = self.CKANTransformConfig.getIgnoreList(self.dataType)
@@ -429,15 +406,15 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
         )
         uniqueIds = addCollection.getUniqueIdentifiers()
         uniqueIds.sort()
-        # sortedList = sorted(addStruct, key=operator.itemgetter('name'))
         for addDataSetName in uniqueIds:
             addDataRecord = addCollection.getRecordByUniqueId(addDataSetName)
             addStruct = addDataRecord.getComparableStructUsedForAddUpdate(
                 self.dataCache, constants.UPDATE_TYPES.ADD
             )
-            with open("add_package.json", "w") as fh:
-                json.dump(addStruct, fh)
-                LOGGER.debug("wrote data to: add_package.json")
+            if constants.isDataDebug():
+                with open("add_package.json", "w") as fh:
+                    json.dump(addStruct, fh)
+                    LOGGER.debug("wrote data to: add_package.json")
             LOGGER.info(f"adding package: {addDataSetName}")
             jsonStr = json.dumps(addStruct)
             LOGGER.debug(f"pkg Struct: {jsonStr[0:100]} ...")
@@ -474,10 +451,15 @@ class CKANPackagesUpdate(UpdateMixin, CKANUpdate_abc):
                 self.dataCache, constants.UPDATE_TYPES.UPDATE
             )
 
-            tmpCacheFileName = "updt_package.json"
-            with open(tmpCacheFileName, "w") as fh:
-                json.dump(updtStruct, fh)
-                LOGGER.debug(f"wrote updt data for {updateName} to: {tmpCacheFileName}")
+            if constants.isDataDebug():
+                tmpCacheFileName = "updt_package.json"
+                with open(tmpCacheFileName, "w") as fh:
+                    json.dump(updtStruct, fh)
+                    LOGGER.debug(f"wrote updt data for {updateName} to: {tmpCacheFileName}")
 
             LOGGER.info(f"updating the package: {updateName}")
             self.CKANWrap.updatePackage(updtStruct)
+            # was originally going to catch this and fix, but realized that
+            # it is more likely a problem due to a lack of migration on the
+            # cat instance, if need to do that catch
+            #  CKAN.MoreInfoNeedsDeStringify

@@ -16,6 +16,7 @@ CKANTransform module will work directly with CKAN Data objects.
 
 import json
 import logging
+import os
 import pprint
 import sys
 
@@ -665,13 +666,12 @@ class CKANRecord:
                 pkgDiff = diffIngoreEmptyTypes.getDiff()
                 jsonDiff = json_delta.diff(thisComparable, inputComparable)
                 LOGGER.debug(f"package Diff: {jsonDiff}")
+                diff = pkgDiff
 
-            if pkgDiff:
-                pp = pprint.PrettyPrinter(indent=4)
+            if pkgDiff and constants.isDataDebug():
                 recordName = self.getUniqueIdentifier()
-                #formatted = pp.pformat(inputComparable)  # noqa
-                #formattedDiff = pp.pformat(diff)  # noqa
                 LOGGER.debug(f"record name with diff: {recordName}")
+
                 if cacheFiles is None:
                     cacheFiles = CacheFiles.CKANCacheFiles()
 
@@ -679,12 +679,9 @@ class CKANRecord:
                 with open(pkgPath1, 'w') as fh1:
                     json.dump(thisComparable, fh1, sort_keys=True)
 
-                #pkgPath2 = cacheFiles.getDebugDataPath(recordName, self.origin, 'PKG')
                 with open(pkgPath1, 'a') as fh2:
                     pkgStr = json.dumps(inputComparable, sort_keys=True)
                     fh2.write(f'\n{pkgStr}\n')
-                diff = pkgDiff
-                # LOGGER.debug(f"formatted diff:\n {formattedDiff}")
 
         return diff
 
@@ -696,53 +693,6 @@ class CKANRecord:
             diff = self.getPackageDiff(inputRecord)
         else:
             diff = self.getGenericDiff(inputRecord)
-            # # don't even go any further if the records unique id, usually name is in
-            # # the ignore list
-            # if not self.isIgnore(inputRecord):
-            #     thisComparable = self.getComparableStruct()
-            #     inputComparable = inputRecord.getComparableStruct()
-
-            #     diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
-            #     diff = diffIngoreEmptyTypes.getDiff()
-            #     # diff = deepdiff.DeepDiff(thisComparable, inputComparable, ignore_order=True)
-
-            #     if diff:
-            #         # TODO: come back and make code option either via arg or
-            #         #       env var.
-            #         if cacheFiles is None:
-            #             cacheFiles = CacheFiles.CKANCacheFiles()
-
-            #         name = self.getUniqueIdentifier()
-            #         dataDumpPath = cacheFiles.getDataTypeFilePath(name, self.dataType)
-            #         with open(dataDumpPath, 'w') as fh1:
-            #             json.dump(thisComparable, fh1, sort_keys=True)
-
-            #         with open(dataDumpPath, 'a') as fh2:
-            #             dumpStr = json.dumps(inputComparable, sort_keys=True)
-            #             fh2.write(f'\n{dumpStr}\n')
-
-            #         # now to help with debugging get the struct that will be used
-            #         # for update and dump it
-            #         # dataCache, operationType, destRecord
-            #         if inputRecord.origin == constants.DATA_SOURCE.DEST:
-            #             updateStruct = self.getComparableStructUsedForAddUpdate(self.dataCache,
-            #                 constants.UPDATE_TYPES.UPDATE, inputRecord)
-            #         else:
-            #             updateStruct = inputRecord.getComparableStructUsedForAddUpdate(self.dataCache,
-            #                 constants.UPDATE_TYPES.UPDATE, self)
-
-            #         dataDumpPath = cacheFiles.getDebugDataPath(name, self.dataType, "UPDT")
-            #         with open(dataDumpPath, 'w') as fh1:
-            #             json.dump(updateStruct, fh1, sort_keys=True)
-
-            #         pp = pprint.PrettyPrinter(indent=4)
-            #         recordName = self.getUniqueIdentifier()
-            #         formatted = pp.pformat(inputComparable)  # noqa
-            #         formattedDiff = pp.pformat(diff)  # noqa
-            #         LOGGER.debug(f"record name: {recordName}")
-            #         # debugging code...
-            #         # dump the structs to a file for evaluation
-
         return diff
 
     def getGenericDiff(self, inputRecord):
@@ -757,23 +707,6 @@ class CKANRecord:
             diff = diffIngoreEmptyTypes.getDiff()
 
             if diff:
-                # TODO: come back and make code option either via arg or
-                #       env var.
-                if cacheFiles is None:
-                    cacheFiles = CacheFiles.CKANCacheFiles()
-
-                name = self.getUniqueIdentifier()
-                dataDumpPath = cacheFiles.getDataTypeFilePath(name, self.dataType)
-                with open(dataDumpPath, 'w') as fh1:
-                    json.dump(thisComparable, fh1, sort_keys=True)
-
-                with open(dataDumpPath, 'a') as fh2:
-                    dumpStr = json.dumps(inputComparable, sort_keys=True)
-                    fh2.write(f'\n{dumpStr}\n')
-
-                # now to help with debugging get the struct that will be used
-                # for update and dump it
-                # dataCache, operationType, destRecord
                 if inputRecord.origin == constants.DATA_SOURCE.DEST:
                     updateStruct = self.getComparableStructUsedForAddUpdate(self.dataCache,
                         constants.UPDATE_TYPES.UPDATE, inputRecord)
@@ -781,17 +714,29 @@ class CKANRecord:
                     updateStruct = inputRecord.getComparableStructUsedForAddUpdate(self.dataCache,
                         constants.UPDATE_TYPES.UPDATE, self)
 
-                dataDumpPath = cacheFiles.getDebugDataPath(name, self.dataType, "UPDT")
-                with open(dataDumpPath, 'w') as fh1:
-                    json.dump(updateStruct, fh1, sort_keys=True)
+                if constants.isDataDebug():
+                    # TODO: come back and make code option either via arg or
+                    #       env var.
+                    if cacheFiles is None:
+                        cacheFiles = CacheFiles.CKANCacheFiles()
 
-                pp = pprint.PrettyPrinter(indent=4)
-                recordName = self.getUniqueIdentifier()
-                formatted = pp.pformat(inputComparable)  # noqa
-                formattedDiff = pp.pformat(diff)  # noqa
-                LOGGER.debug(f"record name: {recordName}")
-                # debugging code...
-                # dump the structs to a file for evaluation
+                    name = self.getUniqueIdentifier()
+                    dataDumpPath = cacheFiles.getDataTypeFilePath(name, self.dataType)
+                    with open(dataDumpPath, 'w') as fh1:
+                        json.dump(thisComparable, fh1, sort_keys=True)
+
+                    with open(dataDumpPath, 'a') as fh2:
+                        dumpStr = json.dumps(inputComparable, sort_keys=True)
+                        fh2.write(f'\n{dumpStr}\n')
+
+                    # now to help with debugging get the struct that will be used
+                    # for update and dump it
+                    # dataCache, operationType, destRecord
+
+                    dataDumpPath = cacheFiles.getDebugDataPath(name, self.dataType, "UPDT")
+                    with open(dataDumpPath, 'w') as fh1:
+                        json.dump(updateStruct, fh1, sort_keys=True)
+
         return diff
 
     def __ne__(self, inputRecord):
@@ -837,18 +782,11 @@ class DataCell:
             are to be removed.
         :type positions: list of ints
         """
-        # LOGGER.debug(f"remove positions: {positions}")
         newStruct = []
         for pos in range(0, len(self.struct)):
             if pos not in positions:
                 newStruct.append(self.struct[pos])
-            else:
-                # LOGGER.debug(f"removing: {pos} {self.struct[pos]}")
-                pass
-        # LOGGER.debug(f"old struct: {self.struct}")
-        # LOGGER.debug(f"new struct: {newStruct}")
         self.struct = newStruct
-        # transfer changes to the parent
 
     def generateNewCell(self, key):
         """The current cell is a dict, generates a new cell for the position
@@ -903,7 +841,6 @@ class CKANUserRecord(CKANRecord):
         # calls the parent isIgnore method then adds additional logic that
         # will check to see if the record's email is duplicated by other emails.
         isIgnore = super().isIgnore(inputRecord)
-        # isIgnore = super(CKANRecord, self).isIgnore(inputRecord)
         if not isIgnore and self.duplicateEmail:
             isIgnore = True
         return isIgnore
@@ -1748,8 +1685,11 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
             for userRecord in self:
                 email = userRecord.getFieldValue(constants.USER_EMAIL_PROPERTY)
                 uniId = userRecord.getUniqueIdentifier()
-                self.email2NameLUT[email] = uniId
-                self.name2emailLUT[uniId] = email
+                if email is not None and uniId is not None:
+                    self.email2NameLUT[email] = uniId
+                    self.name2emailLUT[uniId] = email
+                else:
+                    LOGGER.warning(f"email or user is None: {email}, {uniId}")
             self.emailSet = set(list(self.email2NameLUT.keys()))
 
     def calcAddCollection(self, destDataSet):
@@ -1787,6 +1727,8 @@ class CKANUsersDataSet(CKANRecordParserMixin, CKANDataSet):
 
         emailDiff = self.emailSet.intersection(destDataSet.emailSet)
         emails2Check4Update = list(emailDiff)
+        LOGGER.debug(f'emails 2 check 4 update: {len(emails2Check4Update)}, {type(emails2Check4Update)}')
+
         emails2Check4Update.sort()
 
         updateCollection = CKANRecordCollection(self.dataType)

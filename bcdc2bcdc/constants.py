@@ -3,6 +3,7 @@ import enum
 
 
 # Environment variable names used to retrieve urls and api keys
+# ----------------------------------------------------------------
 # src is where ckan objects will be read from
 # dest is where ckan objects will be written to
 # CKAN_DO_NOT_WRITE_URL - This is used to protect the the prod instance.
@@ -23,6 +24,17 @@ CKAN_TRANS_CONF_FILE = 'CKAN_TRANSFORMATION_CONFIG'
 
 # default password to assign to newly generated users
 CKAN_ONETIME_PASSWORD = "CKAN_NEW_USER_PSWD"
+
+REQUIRED_ENV_VARS = [CKAN_APIKEY_DEST, CKAN_URL_DEST, CKAN_APIKEY_SRC,
+                     CKAN_URL_SRC, CKAN_DO_NOT_WRITE_URL]
+
+# debugging env var... when this param is set to 'TRUE'
+# a bunch of files will get dumped to the temp directory and a detailed
+# directory called: 'details_<cnt>' is created, with comparison files to help
+# debug why change control is getting triggered.
+DUMP_DEBUG_DATA = "DUMP_DEBUG_DATA"
+
+# -----------------END ENV VAR DEFS -----------------------------
 
 # name and expected location for the transformation configuration file.
 TRANSFORM_CONFIG_FILE_NAME = "transformationConfig_prod2cat.json"
@@ -121,7 +133,12 @@ def getCachedDir():
     cacheDir = os.path.normpath(cacheDirRelative)
     return cacheDir
 
-
+def isDataDebug():
+    retVal = False
+    if ((DUMP_DEBUG_DATA in os.environ ) and
+        os.environ[DUMP_DEBUG_DATA].upper() == 'TRUE'):
+        retVal = True
+    return retVal
 
 # TODO: Search code for 'src' and 'dest' and replace with references to enum
 class DATA_SOURCE(enum.Enum):
