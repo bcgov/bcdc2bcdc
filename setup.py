@@ -18,6 +18,9 @@ with open('requirements.txt') as f:
     requires = f.read().splitlines()
     print(f'requirements: {requires}')
 
+# create list of config files
+
+
 setuptools.setup(
     #name=bcdc_apitests.name,
     name=version.pkg_name,
@@ -33,7 +36,7 @@ setuptools.setup(
     python_requires='>=3.6.*, <4',
     install_requires=requires,
     include_package_data=True,
-    scripts=['bin/main.py'],
+    scripts=['bin/runBCDC2BCDC.py'],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Programming Language :: Python :: 3.6",

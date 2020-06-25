@@ -36,14 +36,21 @@ wrapper = bcdc2bcdc.CKAN.CKANWrapper(url=url, apiKey=apiKey)
 ignoreList = ['kjnether', 'admin', 'bsharrat@idir', 'crigdon@idir',
              'mdwilkie', 'idir-bsharrat1', 'stchapma@idir', 'yusotoza',
              'ajbenter']
+ignoreList = ['kjnether', 'admin']
+
 
 users = wrapper.getUsers(includeData=True)
-LOGGER.debug(f'users: {len(users)}')
+
+# run special stuff
+#ignoreList = []
+#users = [{'name':'kjnether', 'apikey': 'silly'}]
+#LOGGER.debug(f'users: {len(users)}')
 #print(f'few users: {users[0:5]}')
 
 cnt = 0
 for user in users:
     userName = user['name']
+
     if userName not in ignoreList:
         LOGGER.info(f"{userName} apikey before: {user['apikey']}")
         try:
