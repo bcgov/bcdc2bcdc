@@ -25,5 +25,4 @@ bcdc2bcdc_dev.egg-info/
 .vscode/.ropeproject/
 projectid.json
 bcdc2bcdc.egg-info/
-
-dist/bcdc2bcdc-0.0.2.tar.gz
+dist/

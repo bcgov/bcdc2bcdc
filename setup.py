@@ -4,6 +4,12 @@ Created on Jun. 6, 2019
 @author: KJNETHER
 
 using date as versions to simplify
+
+useful links on setup params:
+* https://stackoverflow.com/questions/24347450/how-do-you-add-additional-files-to-a-wheel
+* https://setuptools.readthedocs.io/en/latest/setuptools.html#including-data-files
+* https://packaging.python.org/guides/distributing-packages-using-setuptools/?highlight=package_data#package-data
+
 '''
 import setuptools
 import version
@@ -21,8 +27,8 @@ with open('requirements.txt') as f:
 
 # create list of config files
 confFiles = []
-for confFile in os.listdir('config'):
-    confFileWithPath = os.path.join('config', confFile)
+for confFile in os.listdir('bcdc2bcdc_config'):
+    confFileWithPath = os.path.join('bcdc2bcdc_config', confFile)
     if os.path.isfile(confFileWithPath):
         confFiles.append(confFileWithPath)
 
@@ -48,5 +54,12 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Topic :: Software Development :: Testing",
         "Operating System :: OS Independent",
-    ]
+    ],
+    package_data={
+         'bcdc2bcdc':
+		     ['../bcdc2bcdc_config/transformationConfig_NewDataModel.json',
+              '../bcdc2bcdc_config/transformationConfig_prod2cat.json',
+              '../bcdc2bcdc_config/transformationConfig_prod2cat.json',
+              '../bcdc2bcdc_config/transformationConfig_prod2cati.json',
+              '../bcdc2bcdc_config/logger.config']}
 )

@@ -448,6 +448,10 @@ class CKANRecord:
                     # LOGGER.debug(f"remapped autopop value from: {parentFieldValue}"
                     #             " to {destAutoGenId}")
                     self.updateableJsonData[parentFieldName] = destAutoGenId
+                else:
+                    # the autogen id is dest already.  Make sure its added to the
+                    # updateable object
+                    self.updateableJsonData[parentFieldName] = parentFieldValue
             self.operations.append(methodName)
 
     def applyAutoGenFields(self, destRecord, actionType):

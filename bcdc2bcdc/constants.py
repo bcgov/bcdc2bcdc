@@ -37,8 +37,8 @@ DUMP_DEBUG_DATA = "DUMP_DEBUG_DATA"
 # -----------------END ENV VAR DEFS -----------------------------
 
 # name and expected location for the transformation configuration file.
-TRANSFORM_CONFIG_FILE_NAME = "transformationConfig_prod2cat.json"
-TRANSFORM_CONFIG_DIR = "config"
+TRANSFORM_CONFIG_FILE_NAME = "transformationConfig_NewDataModel.json"
+TRANSFORM_CONFIG_DIR = "bcdc2bcdc_config"
 
 # transformation config sections, each of these sections in the config
 # file will describe different information necessary for either the
@@ -106,6 +106,7 @@ VALID_TRANSFORM_TYPES = [TRANSFORM_TYPE_USERS, TRANSFORM_TYPE_GROUPS,
 LOGGING_CONFIG_FILE_NAME = 'logger.config'
 LOGGING_OUTPUT_DIR = 'logs'
 LOGGING_OUTPUT_FILE_NAME = 'bcdc2bcdc.log'
+LOGGING_OUTPUT_FILE_ENV_VAR = 'LOG_FILE_PATH'
 
 # cached versions of data used by tests
 CACHE_DATA_DIR = 'data'
@@ -139,6 +140,8 @@ def isDataDebug():
         os.environ[DUMP_DEBUG_DATA].upper() == 'TRUE'):
         retVal = True
     return retVal
+
+
 
 # TODO: Search code for 'src' and 'dest' and replace with references to enum
 class DATA_SOURCE(enum.Enum):

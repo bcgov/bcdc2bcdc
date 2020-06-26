@@ -17,16 +17,10 @@ import distlib.index
 
 pkg_name = bcdc2bcdc.name
 
-if ('PKG_TYPE' in os.environ) and os.environ['PKG_TYPE'] in ['MASTER', 'PROD']:
-    pkg_name = bcdc2bcdc.name.replace('_', '-')
-elif ('PKG_TYPE' in os.environ) and os.environ['PKG_TYPE'] in ['DEV']:
+
+pkg_name = bcdc2bcdc.name.replace('_', '-')
+if ('PKG_TYPE' in os.environ) and os.environ['PKG_TYPE'] in ['DEV']:
     pkg_name = 'bcdc2bcdc-dev'
-else:
-    msg = 'The package name is calculated based on the value of the environment' + \
-          ' variable, PKG_TYPE.  This environment variable is either not set ' + \
-          'or contains an unexpected value.  Valid values include: "MASTER", ' + \
-          '"PROD" and "DEV"'
-    raise EnvironmentError(msg)
 
 print(f'package name: {pkg_name}')
 
@@ -148,4 +142,4 @@ if next_version == version or is_less_than(next_version, version):
     next_version = increment_version(version)
 
 print(f'current version is: {version}')
-print(f'next version is: {next_version}')
+print(f'next version    is: {next_version}')

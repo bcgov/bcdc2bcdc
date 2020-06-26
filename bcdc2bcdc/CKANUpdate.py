@@ -18,7 +18,6 @@ inferred from each record.dataType
 import abc
 import json
 import logging
-import operator
 import os
 
 import bcdc2bcdc.CKAN as CKAN
@@ -212,7 +211,7 @@ class CKANUserUpdate(UpdateMixin, CKANUpdateAbstract):
         :param updtStruct: list of user data to be used to update users
         :type updtStruct: list
         """
-        LOGGER.debug(f"number of updates: {len(updtCollection)}")
+        LOGGER.info(f'{len(updtCollection)} to be deleted to destination instance')
         uniqueIds = updtCollection.getUniqueIdentifiers()
         uniqueIds.sort()
 
