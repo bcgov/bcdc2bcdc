@@ -9,6 +9,7 @@ import logging
 import os
 import re
 
+import requests
 import packaging.version
 
 import bcdc2bcdc
@@ -50,30 +51,23 @@ def get_package_version():
 
 def get_current_pypy_version():
     '''
-    Query pypi to determine the latest version of the package
+    Query pypi to determine the latest version of the package.
+
+    tried a bunch of different ways to get the pypi version, including
+    distlib.index.PackageIndex().search('package_name')
+
+    only the requests approach seems to be reliable.
     '''
     LOGGER.debug('getting pypi package version')
     LOGGER.debug("package name: %s", pkg_name)
-    pkg_indx = distlib.index.PackageIndex()
-    srch = pkg_indx.search(pkg_name)
     version = '0.0.0'
 
-    pkg_info = None
-
-    for i in srch:
-        LOGGER.debug("pkg: %s", i)
-        # package names sometimes have _ other times -, so considering them
-        # interchangeably
-        if i['name'] == pkg_name or i['name'].replace('-', '_') == pkg_name:
-            LOGGER.debug("pkg : %s", i)
-            pkg_info = i
-
-    if pkg_info:
-        version = pkg_info['version']
-
-
+    response = requests.get(f'https://pypi.org/pypi/{pkg_name}/json')
+    if response.status_code == 200:
+        pkgJson = response.json()
+        if ('info' in pkgJson) and 'version' in pkgJson['info']:
+            version = pkgJson['info']['version']
     return version
-
 
 def is_less_than(next_version, current_version):
     '''
@@ -120,7 +114,6 @@ def is_less_than(next_version, current_version):
     if packaging.version.parse(next_nostr) <= packaging.version.parse(cur_nostr):
         next_is_less_than_cur = True
     return next_is_less_than_cur
-
 
 def increment_version(version):
     '''
