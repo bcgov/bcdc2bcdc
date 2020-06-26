@@ -375,19 +375,6 @@ class packages(CkanObjectUpdateMixin):
                 else:
                     recordStruct["resources"][resCnt]["url"] = defaultURL
 
-            # # also patch the url in the package
-            # if ('url' in recordStruct) and recordStruct['url']:
-            #     curUrl = recordStruct['url']
-            #     curUrlParser = urllib.parse.urlparse(curUrl)
-
-            #     # src url parser
-            #     srcUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_SRC])
-            #     if curUrlParser.hostname == srcUrlParser.hostname:
-            #             destUrlParser = urllib.parse.urlparse(os.environ[constants.CKAN_URL_DEST])
-            #             newUrl = curUrl.replace(srcUrlParser.hostname, destUrlParser.hostname)
-            #             LOGGER.debug(f"new url: {newUrl}")
-            #             recordStruct['url'] = newUrl
-
     def checkSpatialDatatypeForNone(self, record):
         self.__checkForNoneInResource(record, "spatial_datatype", "")
 
