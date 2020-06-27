@@ -1,0 +1,5 @@
+include config/logger.config
+include config/transformationConfig_NewDataModel.json
+include config/transformationConfig_prod2cat.json
+include config/transformationConfig_prod2cat.json
+include config/transformationConfig_prod2cati.json

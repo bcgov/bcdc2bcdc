@@ -26,6 +26,19 @@ class CKANCacheFiles:
             LOGGER.info(f"creating the temp dir: {self.dir}")
             os.mkdir(self.dir)
 
+    def getLogConfigFileFullPath(self):
+        """Calculates the path to the log config file relative to the
+        path of this module
+
+        :return: log configuration file for BCDC2BCDC
+        :rtype: str, path
+        """
+        logConfFilePath = os.path.join(os.path.dirname(__file__), '..',
+                     constants.TRANSFORM_CONFIG_DIR,
+                     constants.LOGGING_CONFIG_FILE_NAME)
+        logConfFilePath = os.path.abspath(logConfFilePath)
+        return logConfFilePath
+
     def getJunkDirPath(self):
         """calculates the path to a Junk dir where the temporary cached
         versions of various objects will be kept.

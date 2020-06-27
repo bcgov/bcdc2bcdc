@@ -14,10 +14,10 @@
             "env": { "PYTHONPATH": "${workspaceFolder}" }
         },
         {
-            "name": "main.py (CAT)",
+            "name": "runBCDC2BCDC.py (CAT)",
             "type": "python",
             "request": "launch",
-            "program": "bin/main.py",
+            "program": "bin/runBCDC2BCDC.py",
             "console": "integratedTerminal",
             "envFile": "${workspaceFolder}/.env_newmodel"
         },

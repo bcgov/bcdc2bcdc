@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """[summary]
 """
 # pylint: disable=logging-format-interpolation, wrong-import-position
@@ -232,27 +233,42 @@ if __name__ == "__main__":
     # LOGGING SETUP
     # -----------------------------------------------------------------------
     appDir = os.path.dirname(__file__)
-    # LOG config file
-    logConfigFile = os.path.join(
-        appDir,
-        "..",
-        constants.TRANSFORM_CONFIG_DIR,
-        constants.LOGGING_CONFIG_FILE_NAME,
-    )
-    logConfigFile = os.path.abspath(logConfigFile)
 
-    # output log file for roller if implemented... not implemented atm
-    logOutputsDir = os.path.join(appDir, "..", constants.LOGGING_OUTPUT_DIR)
-    logOutputsDir = os.path.normpath(logOutputsDir)
-    if not os.path.exists(logOutputsDir):
-        os.mkdir(logOutputsDir)
-
-    logOutputsFilePath = os.path.join(logOutputsDir, constants.LOGGING_OUTPUT_FILE_NAME)
-    logOutputsFilePath = logOutputsFilePath.replace(os.path.sep, posixpath.sep)
+    filePathUtils = CacheFiles.CKANCacheFiles()
+    logConfigFile = filePathUtils.getLogConfigFileFullPath()
     print(f"log config file: {logConfigFile}")
+
+    logOutputsFilePath = ''
+
     logging.config.fileConfig(
-        logConfigFile, defaults={"logfilename": logOutputsFilePath}
+        logConfigFile
+        #, defaults={"logfilename": logOutputsFilePath}
     )
+
+    # Code here will add a file log file handler if the environment variable
+    # LOGGING_OUTPUT_DIR_ENV_VAR is defined with a path to an output
+    # log file name, if not then logging will just go to console
+    if constants.LOGGING_OUTPUT_FILE_ENV_VAR in os.environ:
+        print("config logger")
+        logOutputsFilePath = os.environ[constants.LOGGING_OUTPUT_FILE_ENV_VAR]
+        fh = logging.FileHandler(logOutputsFilePath)
+        rootLogger = logging.getLogger()
+
+        loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+        formatterSet = False
+        for logger in loggers:
+            if 'bcdc2bcdc' in logger.name:
+                if not formatterSet:
+                    formatter = logger.handlers[0].formatter
+                    fh.setFormatter(formatter)
+                    formatterSet = True
+                    rootLogger.addHandler(fh)
+                logger.addHandler(fh)
+        rootLogger.info("new messages")
+
+        LOGGER = logging.getLogger("main")
+        LOGGER.addHandler(fh)
+
     LOGGER = logging.getLogger("main")
     LOGGER.debug(f"__name__ is {__name__}")
 

@@ -272,7 +272,7 @@ class TransformationConfig:
                 + f"include fields are: {retVal}"
             )
         else:
-            LOGGER.info(f"no ignore values found for type: {datatype}")
+            LOGGER.info(f"No fields to include for update defined for datatype: {datatype}")
         return retVal
 
     def getRequiredFieldDefaultValues(self, datatype):
