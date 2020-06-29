@@ -32,11 +32,6 @@ Things that can be configured in this file for each object type:
     they do not exist in the source object they get populated with these default
     values.
 
-* **stringified_fields:** A simple list of the properties associated with an
-    object type that should be "stringified" before they are sent to the api
-    for either an update / add.  Currently only supports a simple struct of one
-    dimension list.
-
 * **data_type_enforcement:** Describes the strict types that a fields must comply
     with.  If the field is None / Null then will modify the type of the field so
     that it matches the expected type.
