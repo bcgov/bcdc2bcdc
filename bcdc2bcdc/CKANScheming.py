@@ -3,6 +3,7 @@
 import json
 import os.path
 
+import bcdc2bcdc.constants as constants
 import bcdc2bcdc.CacheFiles as CacheFiles
 import bcdc2bcdc.CKAN as CKAN
 
@@ -14,18 +15,21 @@ class Scheming:
     """
 
     def __init__(self):
-        cacheFiles = CacheFiles.CKANCacheFiles()
-        schemingCacheFile = cacheFiles.getSchemingCacheFilePath()
-        if os.path.exists(schemingCacheFile):
-            # load from cache file if its there
-            with open(schemingCacheFile, "r") as fh:
-                self.struct = json.load(fh)
-        else:
+        self.struct = None
+        if constants.isDataDebug():
+            cacheFiles = CacheFiles.CKANCacheFiles()
+            schemingCacheFile = cacheFiles.getSchemingCacheFilePath()
+            if os.path.exists(schemingCacheFile):
+                # load from cache file if its there
+                with open(schemingCacheFile, "r") as fh:
+                    self.struct = json.load(fh)
+        if not self.struct:
             # otherwise make api call and then create the cache file
             ckanWrap = CKAN.CKANWrapper()
             self.struct = ckanWrap.getScheming()
-            with open(schemingCacheFile, "w") as fh:
-                json.dump(self.struct, fh)
+            if constants.isDataDebug():
+                with open(schemingCacheFile, "w") as fh:
+                    json.dump(self.struct, fh)
 
     def getResourceDomain(self, fieldname):
         """Gets the domains if they are defined for the provided

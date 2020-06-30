@@ -19,10 +19,10 @@ add_package.json
 updt_package.json
 updt_group.json
 .env*
-logs/bcdc2bcdc.log
 build/
 bcdc2bcdc_dev.egg-info/
 .vscode/.ropeproject/
 projectid.json
 bcdc2bcdc.egg-info/
 dist/
+*.log
