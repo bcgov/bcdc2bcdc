@@ -267,6 +267,10 @@
             {
                 "UpdateType": "COMPARE",
                 "CustomMethodName": "fixNoneAsString"
+            },
+            {
+                "UpdateType": "COMPARE",
+                "CustomMethodName": "fixViewAudience"
             }
         ],
         "user_populated_properties": {

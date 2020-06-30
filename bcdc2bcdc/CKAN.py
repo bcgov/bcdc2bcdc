@@ -813,8 +813,13 @@ class CKANWrapper:
             retValStr = json.dumps(responseStruct)
             LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
 
-            if (resp.status_code == 409) and "Only lists of dicts can be placed against subschema ('more_info'" in responseStruct['message']:
-                raise MoreInfoNeedsDeStringify(retValStr)
+            if (resp.status_code == 409):
+                # trying to isolate some different validation errors and raise
+                # different error messages associated with each of them
+                if 'message' in responseStruct and "Only lists of dicts can be placed against subschema ('more_info'" in responseStruct['message']:
+                    raise MoreInfoNeedsDeStringify(retValStr)
+                else:
+                    raise InvalidRequestError(retValStr)
             elif resp.status_code < 200 or resp.status_code >= 300:
                 raise InvalidRequestError(retValStr)
         except requests.exceptions.ReadTimeout:

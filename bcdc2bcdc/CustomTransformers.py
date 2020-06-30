@@ -10,6 +10,7 @@ import inspect
 import json
 import logging
 import os.path
+import re
 import sys
 import urllib.parse
 
@@ -662,15 +663,54 @@ class packages(CkanObjectUpdateMixin):
         :param record: The input record (json struct) that is to be updated
         :type record: dict
         """
+        self.__fixDataSetPropertyUsingDomainWordMatch(record, 'download_audience', 'Public')
+
+    def fixViewAudience(self, record):
+        """checks the view audience entries against the values described by
+        scheming.
+
+        :param record: [description]
+        :type record: [type]
+        """
+        self.__fixDataSetPropertyUsingDomainWordMatch(record, 'view_audience', 'Public')
+
+    def __fixDataSetPropertyUsingDomainWordMatch(self, record, propertyName, defaultValue):
+        """This method does the following:
+          * looks for the property 'propertyName' in the record.
+          * Gets the valid domain list from the scheming extension for the property
+          * Iterates over each word in the current value looking for a match with
+            a value in the domain
+          * if a match is found then the valid domain value is assigned to the
+            structure.
+          * if the propertyName is a null then it will be assigned the default Value
+
+        :param record: input CKANData.CKANRecord object that is to be updated
+        :type record: CKANData.CKANRecord
+        :param propertyName: The name of the property that is to be updated
+        :type propertyName: str
+        :param defaultValue: The default value for this property
+        :type defaultValue: str
+        """
         recordStruct = self.getStructToUpdate(record)
         if record.origin == constants.DATA_SOURCE.SRC:
-            validDownloadAudiences = ["Government", "Named users", "Public"]
-            defaultValue = "Public"
-            if "download_audience" in recordStruct:
-                if recordStruct["download_audience"] is None:
-                    recordStruct["download_audience"] = defaultValue
-                elif recordStruct["download_audience"] not in validDownloadAudiences:
-                    recordStruct["download_audience"] = defaultValue
+            validDownloadAudiences = record.dataCache.scheming.getDatasetDomain(propertyName)
+            # marker to identify if a value has been found, then exit loop
+            complete = False
+            if propertyName in recordStruct:
+                if recordStruct[propertyName] is None:
+                    recordStruct[propertyName] = defaultValue
+                elif recordStruct[propertyName] not in validDownloadAudiences:
+                    # work iteration looking for a word in the current struct
+                    # that matches an entry in the domain of valid values
+                    for wordFromRecord in re.split('\s+', recordStruct[propertyName]):
+                        for domain in validDownloadAudiences:
+                            if domain.lower() == wordFromRecord.lower():
+                                defaultValue = domain
+                                complete = True
+                                break
+                        if complete:
+                            break
+                    recordStruct[propertyName] = defaultValue
 
     def fixMoreInfo(self, record):
         """ fixes the 'more_info' field so that it can be consistently compared
