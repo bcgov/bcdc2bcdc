@@ -600,6 +600,7 @@ class CKANRecord:
         diff = None
 
         cacheFiles = None
+        verbosity = constants.isDataDebug()
 
         if not self.isIgnore(inputRecord):
             thisComparable = self.getComparableStruct()
@@ -632,7 +633,7 @@ class CKANRecord:
                         dumpStr = json.dumps(resource2, sort_keys=True)
                         fh2.write(f'\n{dumpStr}\n')
 
-                    jsonDiff = json_delta.diff(resource1, resource2)
+                    jsonDiff = json_delta.diff(resource1, resource2, verbose=verbosity)
                     LOGGER.debug(f"jsonDiff 2: {jsonDiff}")
         return diff
 
@@ -654,6 +655,7 @@ class CKANRecord:
         diff = None
 
         cacheFiles = None
+        verbosity = constants.isDataDebug()
 
         diff = self.getResourceDiff(inputRecord)
         if not diff:
@@ -668,7 +670,8 @@ class CKANRecord:
 
                 diffIngoreEmptyTypes = Diff.Diff(thisComparable, inputComparable)
                 pkgDiff = diffIngoreEmptyTypes.getDiff()
-                jsonDiff = json_delta.diff(thisComparable, inputComparable)
+
+                jsonDiff = json_delta.diff(thisComparable, inputComparable, verbose=verbosity)
                 LOGGER.debug(f"package Diff: {jsonDiff}")
                 diff = pkgDiff
 

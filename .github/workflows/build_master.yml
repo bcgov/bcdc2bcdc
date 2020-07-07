@@ -67,3 +67,17 @@ jobs:
         python3 setup.py sdist bdist_wheel
         python3 -m twine upload dist/*
 
+      - name: Retrieve package version from pypi
+        run: |
+          PACKAGE_JSON_URL="https://pypi.org/pypi/bcdc2bcdc/json"
+          echo ::set-env name=TAG_NAME::$(curl -s "$PACKAGE_JSON_URL" | jq  -r '.releases | keys | .[]' | sort -V | tail -1 -)
+
+      - name: Create the docker image
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: guylafleur/bcdc2bcdc
+          tag_with_ref: true
+          tag_with_sha: true
+          tags: ${{ env.TAG_NAME }}

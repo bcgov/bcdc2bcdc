@@ -234,7 +234,7 @@ class CKANWrapper:
             if not isinstance(pageData, list):
                 LOGGER.debug(f"page data is: {pageData}")
             if packageList:
-                LOGGER.debug(f"last element: " f"{packageList[len(packageList) - 1]}")
+                LOGGER.debug(f"last element: {packageList[len(packageList) - 1]}")
             if pageData:
                 LOGGER.debug(f"first add element: {pageData[0]}")
             LOGGER.debug(f"pageData len: {len(pageData)}")
@@ -813,8 +813,13 @@ class CKANWrapper:
             retValStr = json.dumps(responseStruct)
             LOGGER.debug(f"Package Updated: {retValStr[0:125]} ...")
 
-            if (resp.status_code == 409) and "Only lists of dicts can be placed against subschema ('more_info'" in responseStruct['message']:
-                raise MoreInfoNeedsDeStringify(retValStr)
+            if (resp.status_code == 409):
+                # trying to isolate some different validation errors and raise
+                # different error messages associated with each of them
+                if ('message' in responseStruct) and "Only lists of dicts can be placed against subschema ('more_info'" in responseStruct['message']:
+                    raise MoreInfoNeedsDeStringify(retValStr)
+                else:
+                    raise InvalidRequestError(retValStr)
             elif resp.status_code < 200 or resp.status_code >= 300:
                 raise InvalidRequestError(retValStr)
         except requests.exceptions.ReadTimeout:
@@ -1048,8 +1053,6 @@ class CKANWrapper:
         LOGGER.debug(f"Package Deleted: {retVal}")
 
     def getPackage(self, query):
-        # retVal = self.remoteapi.action.package_show(**query)
-
         apiUrl = self.__getUrl("package_show")
         LOGGER.debug(f"url end point: {apiUrl}")
         resp = self.requestSession.get(apiUrl, headers=self.CKANHeader, params=query)
@@ -1334,10 +1337,6 @@ if __name__ == "__main__":
 
     destUrl = os.environ[constants.CKAN_URL_DEST]
     destAPIKey = os.environ[constants.CKAN_APIKEY_DEST]
-
-    # asyncWrap = CKANAsyncWrapper(destUrl, destAPIKey)
-    # pkgs = asyncWrap.getPackages(pkgList)
-    # LOGGER.debug(f"packages returned {len(pkgs)}")
 
     wrapper = CKANWrapper()
     testDataPath = "updt_package_test.json"
